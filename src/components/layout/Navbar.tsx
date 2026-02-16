@@ -8,7 +8,7 @@ import { Menu, X, Phone, Calendar } from "lucide-react";
 const navLinks = [
     { label: "Home", href: "/" },
     { label: "Services", href: "/services" },
-    { label: "Online Consultation", href: "/consultation" },
+    { label: "Consultation", href: "/consultation" },
     { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },
 ];
@@ -28,8 +28,8 @@ export default function Navbar() {
     return (
         <header
             className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
-                    ? "glass shadow-[var(--shadow-card)]"
-                    : "bg-transparent"
+                ? "glass shadow-[var(--shadow-card)]"
+                : "bg-transparent"
                 }`}
         >
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -64,6 +64,9 @@ export default function Navbar() {
 
                     {/* Desktop Actions */}
                     <div className="hidden lg:flex items-center gap-4">
+                        <Link href="/auth/patient" className="text-sm font-semibold text-secondary hover:text-primary transition-colors no-underline px-4">
+                            Sign In
+                        </Link>
                         <a
                             href="tel:+1234567890"
                             className="flex items-center gap-2 text-sm font-medium text-text-secondary hover:text-primary transition-colors no-underline"

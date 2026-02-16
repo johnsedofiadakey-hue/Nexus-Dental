@@ -3,7 +3,7 @@
 // POST /api/auth/patient/otp/verify
 // ============================================
 
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { verifyOTP as verifyOTPService, signPatientToken, apiError, apiSuccess } from "@/lib/auth";
 import { logAudit, getClientIP, getUserAgent } from "@/lib/audit/logger";
@@ -71,7 +71,8 @@ export async function POST(request: NextRequest) {
             userAgent: getUserAgent(request.headers),
         });
 
-        return apiSuccess({
+        const responsePayload = {
+            success: true,
             token,
             patient: {
                 id: patient.id,
@@ -81,7 +82,20 @@ export async function POST(request: NextRequest) {
                 tenantId: patient.tenantId,
                 isVerified: true,
             },
+        };
+
+        const res = NextResponse.json(responsePayload);
+
+        // Set secure HTTP-only cookie
+        res.cookies.set("nexus_token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            path: "/",
+            maxAge: 60 * 60 * 24 * 30, // 30 days for patients
         });
+
+        return res;
     } catch (error) {
         console.error("[Auth] OTP verification error:", error);
         return apiError("Internal server error", 500);

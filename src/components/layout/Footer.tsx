@@ -154,24 +154,10 @@ export default function Footer() {
                     <p className="text-xs text-slate-500">
                         © {new Date().getFullYear()} Nexus Dental. All rights reserved.
                     </p>
-                    <div className="flex gap-6">
-                        <Link
-                            href="/privacy"
-                            className="text-xs text-slate-500 hover:text-slate-300 transition-colors no-underline"
-                        >
-                            Privacy Policy
-                        </Link>
-                        <Link
-                            href="/terms"
-                            className="text-xs text-slate-500 hover:text-slate-300 transition-colors no-underline"
-                        >
-                            Terms of Service
-                        </Link>
-                        <Link
-                            href="/accessibility"
-                            className="text-xs text-slate-500 hover:text-slate-300 transition-colors no-underline"
-                        >
-                            Accessibility
+                    <div className="flex flex-wrap items-center gap-6">
+                        <Link href="/auth/staff" className="text-secondary/60 hover:text-secondary text-sm font-medium flex items-center gap-2 transition-all group no-underline">
+                            <div className="h-1.5 w-1.5 rounded-full bg-secondary/30 group-hover:bg-primary transition-colors" />
+                            Staff Access
                         </Link>
                     </div>
                 </div>

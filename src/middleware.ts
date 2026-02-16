@@ -9,13 +9,15 @@ import { NextRequest, NextResponse } from "next/server";
 const PUBLIC_ROUTES = [
     "/",
     "/services",
-    "/book",
+    "/booking",
     "/about",
     "/contact",
     "/consultation",
     "/privacy",
     "/terms",
     "/accessibility",
+    "/auth/patient",
+    "/auth/staff",
 ];
 
 const PUBLIC_API_ROUTES = [
@@ -80,11 +82,16 @@ export function middleware(request: NextRequest) {
         pathname.startsWith("/dashboard") ||
         pathname.startsWith("/admin") ||
         pathname.startsWith("/system") ||
-        pathname.startsWith("/portal")
+        pathname.startsWith("/portal") ||
+        pathname.startsWith("/clinical")
     ) {
         const token = request.cookies.get("nexus_token")?.value;
         if (!token) {
-            const loginUrl = new URL("/login", request.url);
+            // Check if it's a patient route or staff route
+            const isPatientRoute = pathname.startsWith("/portal");
+            const loginPath = isPatientRoute ? "/auth/patient" : "/auth/staff";
+
+            const loginUrl = new URL(loginPath, request.url);
             loginUrl.searchParams.set("redirect", pathname);
             return NextResponse.redirect(loginUrl);
         }

@@ -3,7 +3,7 @@
 // POST /api/auth/login
 // ============================================
 
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { signToken, verifyPassword, resolveUserPermissions, apiError, apiSuccess } from "@/lib/auth";
 import { logAudit, getClientIP, getUserAgent } from "@/lib/audit/logger";
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
             userAgent: getUserAgent(request.headers),
         });
 
-        const response: AuthResponse = {
+        const responsePayload: AuthResponse = {
             success: true,
             token,
             user: {
@@ -114,7 +114,18 @@ export async function POST(request: NextRequest) {
             },
         };
 
-        return apiSuccess(response);
+        const res = NextResponse.json(responsePayload);
+
+        // Set secure HTTP-only cookie
+        res.cookies.set("nexus_token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            path: "/",
+            maxAge: 60 * 60 * 24 * 7, // 7 days
+        });
+
+        return res;
     } catch (error) {
         console.error("[Auth] Login error:", error);
         return apiError("Internal server error", 500);

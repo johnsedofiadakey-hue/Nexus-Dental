@@ -150,6 +150,7 @@ model Tenant {
   actionControlLogs  ActionControlLog[]
   invoices           Invoice[]
   prescriptions      Prescription[]
+  reviews            Review[]
 
   @@map("tenants")
 }
@@ -278,6 +279,7 @@ model Patient {
   supportTickets SupportTicket[]
   invoices       Invoice[]
   prescriptions  Prescription[]
+  reviews        Review[]
 
   @@unique([tenantId, phone])
   @@index([tenantId])
@@ -626,4 +628,27 @@ model BackupLog {
 
   @@index([status])
   @@map("backup_logs")
+}
+// ─────────────────────────────────────────────
+// REVIEWS & FEEDBACK
+// ─────────────────────────────────────────────
+
+model Review {
+  id        String   @id @default(cuid())
+  tenantId  String
+  patientId String?  // Optional if guest review allowed, but usually tied to patient
+  authorName String
+  rating    Int      @default(5)
+  comment   String
+  isApproved Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  patient Patient? @relation(fields: [patientId], references: [id])
+
+  @@index([tenantId])
+  @@index([isApproved])
+  @@map("reviews")
 }
