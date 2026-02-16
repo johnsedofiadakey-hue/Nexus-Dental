@@ -1,0 +1,629 @@
+// ============================================
+// NEXUS DENTAL — Prisma Schema
+// Multi-Tenant Healthcare SaaS Platform
+// ============================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────
+
+enum TenantStatus {
+  ACTIVE
+  FROZEN
+  MAINTENANCE
+  SUSPENDED
+}
+
+enum UserRole {
+  SYSTEM_OWNER
+  ADMIN
+  DOCTOR
+  NURSE
+  RECEPTIONIST
+  INVENTORY_MANAGER
+  BILLING_STAFF
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CHECKED_IN
+  IN_IMAGING
+  IN_CHAIR
+  COMPLETED
+  CHECKOUT
+  CANCELLED
+  NO_SHOW
+}
+
+enum AppointmentType {
+  IN_PERSON
+  VIRTUAL
+}
+
+enum ServiceCategory {
+  GENERAL
+  COSMETIC
+  ORTHODONTICS
+  RESTORATIVE
+  PEDIATRIC
+  EMERGENCY
+  CONSULTATION
+}
+
+enum TicketSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  EMERGENCY
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_ON_PATIENT
+  ESCALATED
+  RESOLVED
+  CLOSED
+}
+
+enum NotificationChannel {
+  WHATSAPP
+  SMS
+  EMAIL
+  PUSH
+}
+
+enum NotificationStatus {
+  PENDING
+  QUEUED
+  SENT
+  DELIVERED
+  FAILED
+}
+
+enum OverrideAction {
+  INVENTORY_ADJUST
+  APPOINTMENT_STATUS_CHANGE
+  REMINDER_DISABLE
+  ESCALATION_DOWNGRADE
+  BUFFER_REMOVAL
+  PERMISSION_OVERRIDE
+  SCHEDULE_OVERRIDE
+}
+
+enum SystemStatus {
+  OPERATIONAL
+  MAINTENANCE
+  DEGRADED
+}
+
+enum BackupStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+// ─────────────────────────────────────────────
+// MULTI-TENANT
+// ─────────────────────────────────────────────
+
+model Tenant {
+  id        String       @id @default(cuid())
+  name      String
+  slug      String       @unique
+  status    TenantStatus @default(ACTIVE)
+  logo      String?
+  address   String?
+  phone     String?
+  email     String?
+  website   String?
+  timezone  String       @default("UTC")
+  settings  Json         @default("{}")
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  // Relations
+  users              User[]
+  roles              Role[]
+  patients           Patient[]
+  services           Service[]
+  appointments       Appointment[]
+  inventoryItems     InventoryItem[]
+  supportTickets     SupportTicket[]
+  notifications      Notification[]
+  auditLogs          AuditLog[]
+  actionControlLogs  ActionControlLog[]
+  invoices           Invoice[]
+  prescriptions      Prescription[]
+
+  @@map("tenants")
+}
+
+// ─────────────────────────────────────────────
+// AUTH & RBAC
+// ─────────────────────────────────────────────
+
+model User {
+  id           String     @id @default(cuid())
+  tenantId     String?
+  email        String     @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  role         UserRole
+  status       UserStatus @default(ACTIVE)
+  phone        String?
+  avatar       String?
+  specialty    String?    // For doctors
+  licenseNo    String?    // For doctors
+  bio          String?    // For doctors
+  lastLoginAt  DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  // Relations
+  tenant             Tenant?            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userOverrides      UserOverride[]
+  doctorAppointments Appointment[]      @relation("DoctorAppointments")
+  auditLogs          AuditLog[]
+  actionControlLogs  ActionControlLog[]
+  supportMessages    SupportMessage[]
+  invoicesCreated    Invoice[]          @relation("InvoiceCreator")
+  prescriptions      Prescription[]     @relation("PrescribingDoctor")
+
+  @@index([tenantId])
+  @@index([email])
+  @@map("users")
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  rolePermissions RolePermission[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  category    String?  // e.g., "appointments", "inventory", "billing"
+  createdAt   DateTime @default(now())
+
+  // Relations
+  rolePermissions RolePermission[]
+  userOverrides   UserOverride[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           String @id @default(cuid())
+  roleId       String
+  permissionId String
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model UserOverride {
+  id           String  @id @default(cuid())
+  userId       String
+  permissionId String
+  granted      Boolean @default(true) // true = extend, false = restrict
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, permissionId])
+  @@map("user_overrides")
+}
+
+// ─────────────────────────────────────────────
+// PATIENTS
+// ─────────────────────────────────────────────
+
+model Patient {
+  id            String    @id @default(cuid())
+  tenantId      String
+  phone         String
+  firstName     String
+  lastName      String
+  email         String?
+  dateOfBirth   DateTime?
+  gender        String?
+  address       String?
+  bloodType     String?
+  allergies     String?
+  medicalNotes  String?
+  insuranceProvider String?
+  insurancePolicyNo String?
+  avatar        String?
+  isVerified    Boolean   @default(false)
+  lastVisitAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  appointments   Appointment[]
+  supportTickets SupportTicket[]
+  invoices       Invoice[]
+  prescriptions  Prescription[]
+
+  @@unique([tenantId, phone])
+  @@index([tenantId])
+  @@map("patients")
+}
+
+// ─────────────────────────────────────────────
+// SERVICES
+// ─────────────────────────────────────────────
+
+model Service {
+  id          String          @id @default(cuid())
+  tenantId    String
+  name        String
+  description String?
+  category    ServiceCategory
+  duration    Int             // in minutes
+  price       Float
+  isActive    Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  // Relations
+  tenant                Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  appointments          Appointment[]
+  procedureInventoryMap ProcedureInventoryMap[]
+
+  @@index([tenantId])
+  @@map("services")
+}
+
+// ─────────────────────────────────────────────
+// APPOINTMENTS
+// ─────────────────────────────────────────────
+
+model Appointment {
+  id             String            @id @default(cuid())
+  tenantId       String
+  patientId      String
+  doctorId       String
+  serviceId      String
+  type           AppointmentType   @default(IN_PERSON)
+  status         AppointmentStatus @default(SCHEDULED)
+  dateTime       DateTime
+  endTime        DateTime
+  bufferMinutes  Int               @default(15)
+  notes          String?
+  cancellationReason String?
+  videoSessionId String?           // For virtual appointments
+  checkedInAt    DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  // Relations
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  patient      Patient       @relation(fields: [patientId], references: [id])
+  doctor       User          @relation("DoctorAppointments", fields: [doctorId], references: [id])
+  service      Service       @relation(fields: [serviceId], references: [id])
+  invoice      Invoice?
+  prescription Prescription?
+  transitions  AppointmentTransition[]
+
+  @@index([tenantId])
+  @@index([doctorId, dateTime])
+  @@index([patientId])
+  @@map("appointments")
+}
+
+model AppointmentTransition {
+  id            String            @id @default(cuid())
+  appointmentId String
+  fromStatus    AppointmentStatus
+  toStatus      AppointmentStatus
+  triggeredBy   String            // userId
+  reason        String?
+  timestamp     DateTime          @default(now())
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@index([appointmentId])
+  @@map("appointment_transitions")
+}
+
+// ─────────────────────────────────────────────
+// INVENTORY
+// ─────────────────────────────────────────────
+
+model InventoryItem {
+  id        String   @id @default(cuid())
+  tenantId  String
+  name      String
+  sku       String?
+  quantity  Int      @default(0)
+  threshold Int      @default(10) // Low-stock alert threshold
+  unit      String   @default("units")
+  cost      Float?
+  supplier  String?
+  expiresAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant                Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  procedureInventoryMap ProcedureInventoryMap[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@map("inventory_items")
+}
+
+model ProcedureInventoryMap {
+  id              String @id @default(cuid())
+  serviceId       String
+  inventoryItemId String
+  quantityUsed    Float  @default(1)
+
+  service       Service       @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceId, inventoryItemId])
+  @@map("procedure_inventory_map")
+}
+
+// ─────────────────────────────────────────────
+// BILLING
+// ─────────────────────────────────────────────
+
+model Invoice {
+  id            String   @id @default(cuid())
+  tenantId      String
+  patientId     String
+  appointmentId String   @unique
+  createdById   String
+  amount        Float
+  tax           Float    @default(0)
+  discount      Float    @default(0)
+  totalAmount   Float
+  status        String   @default("UNPAID") // UNPAID, PAID, PARTIAL, VOID
+  paidAt        DateTime?
+  notes         String?
+  items         Json     @default("[]") // Line items
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  patient     Patient     @relation(fields: [patientId], references: [id])
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+  createdBy   User        @relation("InvoiceCreator", fields: [createdById], references: [id])
+
+  @@index([tenantId])
+  @@index([patientId])
+  @@map("invoices")
+}
+
+// ─────────────────────────────────────────────
+// PRESCRIPTIONS
+// ─────────────────────────────────────────────
+
+model Prescription {
+  id            String   @id @default(cuid())
+  tenantId      String
+  patientId     String
+  appointmentId String   @unique
+  doctorId      String
+  medications   Json     @default("[]")
+  instructions  String?
+  issuedAt      DateTime @default(now())
+  validUntil    DateTime?
+  version       Int      @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  patient     Patient     @relation(fields: [patientId], references: [id])
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+  doctor      User        @relation("PrescribingDoctor", fields: [doctorId], references: [id])
+
+  @@index([tenantId])
+  @@index([patientId])
+  @@map("prescriptions")
+}
+
+// ─────────────────────────────────────────────
+// SUPPORT & TRIAGE
+// ─────────────────────────────────────────────
+
+model SupportTicket {
+  id          String         @id @default(cuid())
+  tenantId    String
+  patientId   String
+  issueType   String
+  severity    TicketSeverity @default(MEDIUM)
+  subject     String
+  description String
+  status      TicketStatus   @default(OPEN)
+  attachments Json           @default("[]")
+  assignedTo  String?
+  resolvedAt  DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  // Relations
+  tenant   Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  patient  Patient          @relation(fields: [patientId], references: [id])
+  messages SupportMessage[]
+
+  @@index([tenantId])
+  @@index([severity])
+  @@map("support_tickets")
+}
+
+model SupportMessage {
+  id        String   @id @default(cuid())
+  ticketId  String
+  senderId  String
+  senderRole String
+  content   String
+  attachments Json   @default("[]")
+  isInternal Boolean @default(false) // Staff-only notes
+  timestamp DateTime @default(now())
+
+  // Relations
+  ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  sender User         @relation(fields: [senderId], references: [id])
+
+  @@index([ticketId])
+  @@map("support_messages")
+}
+
+// ─────────────────────────────────────────────
+// NOTIFICATIONS
+// ─────────────────────────────────────────────
+
+model Notification {
+  id          String             @id @default(cuid())
+  tenantId    String
+  recipientId String
+  channel     NotificationChannel
+  type        String             // e.g., APPOINTMENT_CONFIRMED
+  title       String
+  content     String
+  metadata    Json               @default("{}")
+  status      NotificationStatus @default(PENDING)
+  sentAt      DateTime?
+  deliveredAt DateTime?
+  failedAt    DateTime?
+  failReason  String?
+  createdAt   DateTime           @default(now())
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([recipientId])
+  @@index([status])
+  @@map("notifications")
+}
+
+// ─────────────────────────────────────────────
+// AUDIT LOG
+// ─────────────────────────────────────────────
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  tenantId  String?  // null for system-level actions
+  userId    String
+  action    String
+  entity    String
+  entityId  String
+  oldValue  Json?
+  newValue  Json?
+  ipAddress String?
+  userAgent String?
+  timestamp DateTime @default(now())
+
+  // Relations
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User    @relation(fields: [userId], references: [id])
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([entity, entityId])
+  @@index([timestamp])
+  @@map("audit_logs")
+}
+
+// ─────────────────────────────────────────────
+// OVERRIDE ENGINE
+// ─────────────────────────────────────────────
+
+model ActionControlLog {
+  id        String         @id @default(cuid())
+  tenantId  String
+  userId    String
+  action    OverrideAction
+  entity    String
+  entityId  String
+  reason    String
+  oldValue  Json?
+  newValue  Json?
+  metadata  Json           @default("{}")
+  timestamp DateTime       @default(now())
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([tenantId])
+  @@index([action])
+  @@index([timestamp])
+  @@map("action_control_logs")
+}
+
+// ─────────────────────────────────────────────
+// SYSTEM CONFIG
+// ─────────────────────────────────────────────
+
+model SystemConfig {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+
+  @@map("system_config")
+}
+
+// ─────────────────────────────────────────────
+// BACKUP LOG
+// ─────────────────────────────────────────────
+
+model BackupLog {
+  id           String       @id @default(cuid())
+  type         String       @default("FULL") // FULL, TENANT
+  tenantId     String?      // null = full system backup
+  status       BackupStatus @default(PENDING)
+  filePath     String?
+  fileSize     BigInt?
+  triggeredBy  String
+  startedAt    DateTime     @default(now())
+  completedAt  DateTime?
+  errorMessage String?
+
+  @@index([status])
+  @@map("backup_logs")
+}
