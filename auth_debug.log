@@ -130,3 +130,443 @@ Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$DEVELOPMENT$2f$dentalcl
     at async requestHandlerImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/router-server.js:496:13)
     at async Server.requestListener (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/start-server.js:226:13)
 
+[2026-02-17T11:25:34.772Z] Login Error: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique()` invocation in
+/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/[root-of-the-server]__3cb5f307._.js:955:169
+
+  952     return (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$auth$2f$middleware$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["apiError"])("Email and password are required", 400);
+  953 }
+  954 // Find user by email
+→ 955 const user = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique(
+Value 'CLINIC_OWNER' not found in enum 'UserRole'
+Stack: PrismaClientKnownRequestError: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique()` invocation in
+/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/[root-of-the-server]__3cb5f307._.js:955:169
+
+  952     return (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$auth$2f$middleware$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["apiError"])("Email and password are required", 400);
+  953 }
+  954 // Find user by email
+→ 955 const user = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique(
+Value 'CLINIC_OWNER' not found in enum 'UserRole'
+    at zr.handleRequestError (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:65:8172)
+    at zr.handleAndLogRequestError (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:65:7467)
+    at zr.request (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:65:7174)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async a (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:75:5816)
+    at async POST (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/[root-of-the-server]__3cb5f307._.js:955:22)
+    at async AppRouteRouteModule.do (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:5:37866)
+    at async AppRouteRouteModule.handle (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:5:45156)
+    at async responseGenerator (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/node_modules_next_9074a424._.js:15350:38)
+    at async AppRouteRouteModule.handleResponse (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:1:191938)
+    at async handleResponse (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/node_modules_next_9074a424._.js:15413:32)
+    at async Module.handler (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/node_modules_next_9074a424._.js:15466:13)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1442:9)
+    at async DevServer.renderPageComponent (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1494:24)
+    at async DevServer.renderToResponseImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1544:32)
+    at async DevServer.pipeImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1038:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/next-server.js:395:17)
+    at async DevServer.handleRequestImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:929:17)
+    at async /Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/dev/next-dev-server.js:387:20
+    at async Span.traceAsyncFn (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/trace/trace.js:157:20)
+    at async DevServer.handleRequest (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/dev/next-dev-server.js:383:24)
+    at async invokeRender (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/router-server.js:248:21)
+    at async handleRequest (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/router-server.js:447:24)
+    at async requestHandlerImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/router-server.js:496:13)
+    at async Server.requestListener (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/start-server.js:226:13)
+
+[2026-02-17T11:25:47.192Z] Login Error: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique()` invocation in
+/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/[root-of-the-server]__3cb5f307._.js:955:169
+
+  952     return (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$auth$2f$middleware$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["apiError"])("Email and password are required", 400);
+  953 }
+  954 // Find user by email
+→ 955 const user = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique(
+Value 'CLINIC_OWNER' not found in enum 'UserRole'
+Stack: PrismaClientKnownRequestError: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique()` invocation in
+/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/[root-of-the-server]__3cb5f307._.js:955:169
+
+  952     return (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$auth$2f$middleware$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["apiError"])("Email and password are required", 400);
+  953 }
+  954 // Find user by email
+→ 955 const user = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique(
+Value 'CLINIC_OWNER' not found in enum 'UserRole'
+    at zr.handleRequestError (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:65:8172)
+    at zr.handleAndLogRequestError (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:65:7467)
+    at zr.request (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:65:7174)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async a (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:75:5816)
+    at async POST (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/[root-of-the-server]__3cb5f307._.js:955:22)
+    at async AppRouteRouteModule.do (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:5:37866)
+    at async AppRouteRouteModule.handle (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:5:45156)
+    at async responseGenerator (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/node_modules_next_9074a424._.js:15350:38)
+    at async AppRouteRouteModule.handleResponse (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:1:191938)
+    at async handleResponse (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/node_modules_next_9074a424._.js:15413:32)
+    at async Module.handler (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/node_modules_next_9074a424._.js:15466:13)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1442:9)
+    at async DevServer.renderPageComponent (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1494:24)
+    at async DevServer.renderToResponseImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1544:32)
+    at async DevServer.pipeImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1038:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/next-server.js:395:17)
+    at async DevServer.handleRequestImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:929:17)
+    at async /Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/dev/next-dev-server.js:387:20
+    at async Span.traceAsyncFn (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/trace/trace.js:157:20)
+    at async DevServer.handleRequest (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/dev/next-dev-server.js:383:24)
+    at async invokeRender (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/router-server.js:248:21)
+    at async handleRequest (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/router-server.js:447:24)
+    at async requestHandlerImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/router-server.js:496:13)
+    at async Server.requestListener (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/start-server.js:226:13)
+
+[2026-02-17T11:26:39.436Z] Login Error: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique()` invocation in
+/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/[root-of-the-server]__3cb5f307._.js:955:169
+
+  952     return (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$auth$2f$middleware$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["apiError"])("Email and password are required", 400);
+  953 }
+  954 // Find user by email
+→ 955 const user = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique(
+Value 'CLINIC_OWNER' not found in enum 'UserRole'
+Stack: PrismaClientKnownRequestError: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique()` invocation in
+/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/[root-of-the-server]__3cb5f307._.js:955:169
+
+  952     return (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$auth$2f$middleware$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["apiError"])("Email and password are required", 400);
+  953 }
+  954 // Find user by email
+→ 955 const user = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique(
+Value 'CLINIC_OWNER' not found in enum 'UserRole'
+    at zr.handleRequestError (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:65:8172)
+    at zr.handleAndLogRequestError (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:65:7467)
+    at zr.request (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:65:7174)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async a (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:75:5816)
+    at async POST (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/[root-of-the-server]__3cb5f307._.js:955:22)
+    at async AppRouteRouteModule.do (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:5:37866)
+    at async AppRouteRouteModule.handle (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:5:45156)
+    at async responseGenerator (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/node_modules_next_9074a424._.js:15350:38)
+    at async AppRouteRouteModule.handleResponse (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:1:191938)
+    at async handleResponse (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/node_modules_next_9074a424._.js:15413:32)
+    at async Module.handler (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/node_modules_next_9074a424._.js:15466:13)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1442:9)
+    at async DevServer.renderPageComponent (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1494:24)
+    at async DevServer.renderToResponseImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1544:32)
+    at async DevServer.pipeImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1038:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/next-server.js:395:17)
+    at async DevServer.handleRequestImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:929:17)
+    at async /Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/dev/next-dev-server.js:387:20
+    at async Span.traceAsyncFn (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/trace/trace.js:157:20)
+    at async DevServer.handleRequest (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/dev/next-dev-server.js:383:24)
+    at async invokeRender (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/router-server.js:248:21)
+    at async handleRequest (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/router-server.js:447:24)
+    at async requestHandlerImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/router-server.js:496:13)
+    at async Server.requestListener (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/start-server.js:226:13)
+
+[2026-02-17T11:28:29.563Z] Login Error: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique()` invocation in
+/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/[root-of-the-server]__3cb5f307._.js:955:169
+
+  952     return (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$auth$2f$middleware$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["apiError"])("Email and password are required", 400);
+  953 }
+  954 // Find user by email
+→ 955 const user = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique(
+Value 'CLINIC_OWNER' not found in enum 'UserRole'
+Stack: PrismaClientKnownRequestError: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique()` invocation in
+/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/[root-of-the-server]__3cb5f307._.js:955:169
+
+  952     return (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$auth$2f$middleware$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["apiError"])("Email and password are required", 400);
+  953 }
+  954 // Find user by email
+→ 955 const user = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique(
+Value 'CLINIC_OWNER' not found in enum 'UserRole'
+    at zr.handleRequestError (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:65:8172)
+    at zr.handleAndLogRequestError (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:65:7467)
+    at zr.request (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:65:7174)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async a (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:75:5816)
+    at async POST (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/[root-of-the-server]__3cb5f307._.js:955:22)
+    at async AppRouteRouteModule.do (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:5:37866)
+    at async AppRouteRouteModule.handle (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:5:45156)
+    at async responseGenerator (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/node_modules_next_9074a424._.js:15350:38)
+    at async AppRouteRouteModule.handleResponse (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:1:191938)
+    at async handleResponse (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/node_modules_next_9074a424._.js:15413:32)
+    at async Module.handler (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/node_modules_next_9074a424._.js:15466:13)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1442:9)
+    at async DevServer.renderPageComponent (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1494:24)
+    at async DevServer.renderToResponseImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1544:32)
+    at async DevServer.pipeImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1038:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/next-server.js:395:17)
+    at async DevServer.handleRequestImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:929:17)
+    at async /Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/dev/next-dev-server.js:387:20
+    at async Span.traceAsyncFn (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/trace/trace.js:157:20)
+    at async DevServer.handleRequest (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/dev/next-dev-server.js:383:24)
+    at async invokeRender (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/router-server.js:248:21)
+    at async handleRequest (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/router-server.js:447:24)
+    at async requestHandlerImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/router-server.js:496:13)
+    at async Server.requestListener (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/start-server.js:226:13)
+
+[2026-02-17T11:39:55.725Z] Login Error: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique()` invocation in
+/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/[root-of-the-server]__3cb5f307._.js:955:169
+
+  952     return (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$auth$2f$middleware$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["apiError"])("Email and password are required", 400);
+  953 }
+  954 // Find user by email
+→ 955 const user = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique(
+Value 'CLINIC_OWNER' not found in enum 'UserRole'
+Stack: PrismaClientKnownRequestError: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique()` invocation in
+/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/[root-of-the-server]__3cb5f307._.js:955:169
+
+  952     return (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$auth$2f$middleware$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["apiError"])("Email and password are required", 400);
+  953 }
+  954 // Find user by email
+→ 955 const user = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique(
+Value 'CLINIC_OWNER' not found in enum 'UserRole'
+    at zr.handleRequestError (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:65:8172)
+    at zr.handleAndLogRequestError (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:65:7467)
+    at zr.request (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:65:7174)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async a (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:75:5816)
+    at async POST (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/[root-of-the-server]__3cb5f307._.js:955:22)
+    at async AppRouteRouteModule.do (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:5:37866)
+    at async AppRouteRouteModule.handle (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:5:45156)
+    at async responseGenerator (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/node_modules_next_9074a424._.js:15350:38)
+    at async AppRouteRouteModule.handleResponse (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:1:191938)
+    at async handleResponse (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/node_modules_next_9074a424._.js:15413:32)
+    at async Module.handler (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/node_modules_next_9074a424._.js:15466:13)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1442:9)
+    at async DevServer.renderPageComponent (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1494:24)
+    at async DevServer.renderToResponseImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1544:32)
+    at async DevServer.pipeImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1038:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/next-server.js:395:17)
+    at async DevServer.handleRequestImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:929:17)
+    at async /Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/dev/next-dev-server.js:387:20
+    at async Span.traceAsyncFn (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/trace/trace.js:157:20)
+    at async DevServer.handleRequest (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/dev/next-dev-server.js:383:24)
+    at async invokeRender (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/router-server.js:248:21)
+    at async handleRequest (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/router-server.js:447:24)
+    at async requestHandlerImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/router-server.js:496:13)
+    at async Server.requestListener (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/start-server.js:226:13)
+
+[2026-02-17T11:40:52.010Z] Login Error: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique()` invocation in
+/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/[root-of-the-server]__3cb5f307._.js:955:169
+
+  952     return (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$auth$2f$middleware$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["apiError"])("Email and password are required", 400);
+  953 }
+  954 // Find user by email
+→ 955 const user = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique(
+Value 'CLINIC_OWNER' not found in enum 'UserRole'
+Stack: PrismaClientKnownRequestError: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique()` invocation in
+/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/[root-of-the-server]__3cb5f307._.js:955:169
+
+  952     return (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$auth$2f$middleware$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["apiError"])("Email and password are required", 400);
+  953 }
+  954 // Find user by email
+→ 955 const user = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique(
+Value 'CLINIC_OWNER' not found in enum 'UserRole'
+    at zr.handleRequestError (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:65:8172)
+    at zr.handleAndLogRequestError (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:65:7467)
+    at zr.request (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:65:7174)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async a (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:75:5816)
+    at async POST (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/[root-of-the-server]__3cb5f307._.js:955:22)
+    at async AppRouteRouteModule.do (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:5:37866)
+    at async AppRouteRouteModule.handle (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:5:45156)
+    at async responseGenerator (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/node_modules_next_9074a424._.js:15350:38)
+    at async AppRouteRouteModule.handleResponse (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:1:191938)
+    at async handleResponse (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/node_modules_next_9074a424._.js:15413:32)
+    at async Module.handler (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/node_modules_next_9074a424._.js:15466:13)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1442:9)
+    at async DevServer.renderPageComponent (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1494:24)
+    at async DevServer.renderToResponseImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1544:32)
+    at async DevServer.pipeImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1038:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/next-server.js:395:17)
+    at async DevServer.handleRequestImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:929:17)
+    at async /Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/dev/next-dev-server.js:387:20
+    at async Span.traceAsyncFn (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/trace/trace.js:157:20)
+    at async DevServer.handleRequest (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/dev/next-dev-server.js:383:24)
+    at async invokeRender (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/router-server.js:248:21)
+    at async handleRequest (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/router-server.js:447:24)
+    at async requestHandlerImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/router-server.js:496:13)
+    at async Server.requestListener (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/start-server.js:226:13)
+
+[2026-02-17T12:16:49.126Z] Login Error: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique()` invocation in
+/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/[root-of-the-server]__3cb5f307._.js:955:169
+
+  952     return (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$auth$2f$middleware$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["apiError"])("Email and password are required", 400);
+  953 }
+  954 // Find user by email
+→ 955 const user = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique(
+Value 'CLINIC_OWNER' not found in enum 'UserRole'
+Stack: PrismaClientKnownRequestError: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique()` invocation in
+/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/[root-of-the-server]__3cb5f307._.js:955:169
+
+  952     return (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$auth$2f$middleware$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["apiError"])("Email and password are required", 400);
+  953 }
+  954 // Find user by email
+→ 955 const user = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique(
+Value 'CLINIC_OWNER' not found in enum 'UserRole'
+    at zr.handleRequestError (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:65:8172)
+    at zr.handleAndLogRequestError (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:65:7467)
+    at zr.request (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:65:7174)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async a (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:75:5816)
+    at async POST (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/[root-of-the-server]__3cb5f307._.js:955:22)
+    at async AppRouteRouteModule.do (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:5:37866)
+    at async AppRouteRouteModule.handle (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:5:45156)
+    at async responseGenerator (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/node_modules_next_9074a424._.js:15350:38)
+    at async AppRouteRouteModule.handleResponse (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:1:191938)
+    at async handleResponse (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/node_modules_next_9074a424._.js:15413:32)
+    at async Module.handler (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/node_modules_next_9074a424._.js:15466:13)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1442:9)
+    at async DevServer.renderPageComponent (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1494:24)
+    at async DevServer.renderToResponseImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1544:32)
+    at async DevServer.pipeImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1038:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/next-server.js:395:17)
+    at async DevServer.handleRequestImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:929:17)
+    at async /Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/dev/next-dev-server.js:387:20
+    at async Span.traceAsyncFn (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/trace/trace.js:157:20)
+    at async DevServer.handleRequest (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/dev/next-dev-server.js:383:24)
+    at async invokeRender (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/router-server.js:248:21)
+    at async handleRequest (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/router-server.js:447:24)
+    at async requestHandlerImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/router-server.js:496:13)
+    at async Server.requestListener (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/start-server.js:226:13)
+
+[2026-02-17T12:19:48.190Z] Login Error: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique()` invocation in
+/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/[root-of-the-server]__3cb5f307._.js:955:169
+
+  952     return (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$auth$2f$middleware$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["apiError"])("Email and password are required", 400);
+  953 }
+  954 // Find user by email
+→ 955 const user = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique(
+Value 'CLINIC_OWNER' not found in enum 'UserRole'
+Stack: PrismaClientKnownRequestError: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique()` invocation in
+/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/[root-of-the-server]__3cb5f307._.js:955:169
+
+  952     return (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$auth$2f$middleware$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["apiError"])("Email and password are required", 400);
+  953 }
+  954 // Find user by email
+→ 955 const user = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique(
+Value 'CLINIC_OWNER' not found in enum 'UserRole'
+    at zr.handleRequestError (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:65:8172)
+    at zr.handleAndLogRequestError (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:65:7467)
+    at zr.request (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:65:7174)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async a (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:75:5816)
+    at async POST (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/[root-of-the-server]__3cb5f307._.js:955:22)
+    at async AppRouteRouteModule.do (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:5:37866)
+    at async AppRouteRouteModule.handle (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:5:45156)
+    at async responseGenerator (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/node_modules_next_9074a424._.js:15350:38)
+    at async AppRouteRouteModule.handleResponse (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:1:191938)
+    at async handleResponse (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/node_modules_next_9074a424._.js:15413:32)
+    at async Module.handler (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/node_modules_next_9074a424._.js:15466:13)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1442:9)
+    at async DevServer.renderPageComponent (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1494:24)
+    at async DevServer.renderToResponseImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1544:32)
+    at async DevServer.pipeImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1038:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/next-server.js:395:17)
+    at async DevServer.handleRequestImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:929:17)
+    at async /Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/dev/next-dev-server.js:387:20
+    at async Span.traceAsyncFn (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/trace/trace.js:157:20)
+    at async DevServer.handleRequest (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/dev/next-dev-server.js:383:24)
+    at async invokeRender (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/router-server.js:248:21)
+    at async handleRequest (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/router-server.js:447:24)
+    at async requestHandlerImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/router-server.js:496:13)
+    at async Server.requestListener (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/start-server.js:226:13)
+
+[2026-02-17T12:28:07.963Z] Login Error: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique()` invocation in
+/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/[root-of-the-server]__3cb5f307._.js:956:169
+
+  953     return (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$auth$2f$middleware$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["apiError"])("Email and password are required", 400);
+  954 }
+  955 // Find user by email
+→ 956 const user = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique(
+Value 'CLINIC_OWNER' not found in enum 'UserRole'
+Stack: PrismaClientKnownRequestError: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique()` invocation in
+/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/[root-of-the-server]__3cb5f307._.js:956:169
+
+  953     return (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$auth$2f$middleware$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["apiError"])("Email and password are required", 400);
+  954 }
+  955 // Find user by email
+→ 956 const user = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique(
+Value 'CLINIC_OWNER' not found in enum 'UserRole'
+    at zr.handleRequestError (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:65:8172)
+    at zr.handleAndLogRequestError (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:65:7467)
+    at zr.request (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:65:7174)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async a (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:75:5816)
+    at async POST (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/[root-of-the-server]__3cb5f307._.js:956:22)
+    at async AppRouteRouteModule.do (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:5:37866)
+    at async AppRouteRouteModule.handle (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:5:45156)
+    at async responseGenerator (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/node_modules_next_9074a424._.js:15350:38)
+    at async AppRouteRouteModule.handleResponse (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:1:191938)
+    at async handleResponse (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/node_modules_next_9074a424._.js:15413:32)
+    at async Module.handler (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/node_modules_next_9074a424._.js:15466:13)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1442:9)
+    at async DevServer.renderPageComponent (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1494:24)
+    at async DevServer.renderToResponseImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1544:32)
+    at async DevServer.pipeImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1038:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/next-server.js:395:17)
+    at async DevServer.handleRequestImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:929:17)
+    at async /Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/dev/next-dev-server.js:387:20
+    at async Span.traceAsyncFn (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/trace/trace.js:157:20)
+    at async DevServer.handleRequest (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/dev/next-dev-server.js:383:24)
+    at async invokeRender (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/router-server.js:248:21)
+    at async handleRequest (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/router-server.js:447:24)
+    at async requestHandlerImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/router-server.js:496:13)
+    at async Server.requestListener (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/start-server.js:226:13)
+
+[2026-02-17T12:30:16.891Z] Login Error: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique()` invocation in
+/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/[root-of-the-server]__3cb5f307._.js:956:169
+
+  953     return (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$auth$2f$middleware$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["apiError"])("Email and password are required", 400);
+  954 }
+  955 // Find user by email
+→ 956 const user = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique(
+Value 'CLINIC_OWNER' not found in enum 'UserRole'
+Stack: PrismaClientKnownRequestError: 
+Invalid `__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique()` invocation in
+/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/[root-of-the-server]__3cb5f307._.js:956:169
+
+  953     return (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$auth$2f$middleware$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["apiError"])("Email and password are required", 400);
+  954 }
+  955 // Find user by email
+→ 956 const user = await __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$db$2f$prisma$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].user.findUnique(
+Value 'CLINIC_OWNER' not found in enum 'UserRole'
+    at zr.handleRequestError (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:65:8172)
+    at zr.handleAndLogRequestError (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:65:7467)
+    at zr.request (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:65:7174)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async a (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/@prisma/client/runtime/client.js:75:5816)
+    at async POST (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/[root-of-the-server]__3cb5f307._.js:956:22)
+    at async AppRouteRouteModule.do (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:5:37866)
+    at async AppRouteRouteModule.handle (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:5:45156)
+    at async responseGenerator (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/node_modules_next_9074a424._.js:15350:38)
+    at async AppRouteRouteModule.handleResponse (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:1:191938)
+    at async handleResponse (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/node_modules_next_9074a424._.js:15413:32)
+    at async Module.handler (/Users/truth/DEVELOPMENT/dentalclinic/.next/dev/server/chunks/node_modules_next_9074a424._.js:15466:13)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1442:9)
+    at async DevServer.renderPageComponent (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1494:24)
+    at async DevServer.renderToResponseImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1544:32)
+    at async DevServer.pipeImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:1038:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/next-server.js:395:17)
+    at async DevServer.handleRequestImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/base-server.js:929:17)
+    at async /Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/dev/next-dev-server.js:387:20
+    at async Span.traceAsyncFn (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/trace/trace.js:157:20)
+    at async DevServer.handleRequest (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/dev/next-dev-server.js:383:24)
+    at async invokeRender (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/router-server.js:248:21)
+    at async handleRequest (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/router-server.js:447:24)
+    at async requestHandlerImpl (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/router-server.js:496:13)
+    at async Server.requestListener (/Users/truth/DEVELOPMENT/dentalclinic/node_modules/next/dist/server/lib/start-server.js:226:13)
+

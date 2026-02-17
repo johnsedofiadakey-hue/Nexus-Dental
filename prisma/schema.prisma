@@ -39,6 +39,14 @@ enum UserStatus {
   SUSPENDED
 }
 
+enum PrescriptionStatus {
+  PENDING
+  FILLED
+  CANCELLED
+  EXPIRED
+}
+
+
 enum AppointmentStatus {
   SCHEDULED
   CHECKED_IN
@@ -442,29 +450,31 @@ model Invoice {
 // ─────────────────────────────────────────────
 
 model Prescription {
-  id            String   @id @default(cuid())
+  id            String             @id @default(cuid())
   tenantId      String
   patientId     String
-  appointmentId String   @unique
+  appointmentId String?            @unique
   doctorId      String
-  medications   Json     @default("[]")
+  status        PrescriptionStatus @default(PENDING)
+  medications   Json               @default("[]") // List of {name, dosage, quantity, instructions, inventoryId?}
   instructions  String?
-  issuedAt      DateTime @default(now())
+  issuedAt      DateTime           @default(now())
   validUntil    DateTime?
-  version       Int      @default(1)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  version       Int                @default(1)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
 
   // Relations
   tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   patient     Patient     @relation(fields: [patientId], references: [id])
-  appointment Appointment @relation(fields: [appointmentId], references: [id])
+  appointment Appointment? @relation(fields: [appointmentId], references: [id])
   doctor      User        @relation("PrescribingDoctor", fields: [doctorId], references: [id])
 
   @@index([tenantId])
   @@index([patientId])
   @@map("prescriptions")
 }
+
 
 // ─────────────────────────────────────────────
 // SUPPORT & TRIAGE
@@ -652,4 +662,31 @@ model Review {
   @@index([tenantId])
   @@index([isApproved])
   @@map("reviews")
+}
+
+// ─────────────────────────────────────────────
+// GLOBAL SETTINGS (White-Labeling)
+// ─────────────────────────────────────────────
+
+model GlobalSettings {
+  id String @id @default("global-settings")
+  
+  // Platform Branding
+  platformName String @default("Nexus Dental")
+  logoUrl String?
+  primaryColor String @default("#008080")
+  secondaryColor String @default("#FFD700")
+  
+  // Contact & Support
+  supportEmail String?
+  supportPhone String?
+  
+  // Feature Flags
+  maintenanceMode Boolean @default(false)
+  allowRegistration Boolean @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("global_settings")
 }

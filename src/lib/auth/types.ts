@@ -29,6 +29,7 @@ export interface SystemOwnerJWTPayload {
 
 export type UserRoleType =
     | "SYSTEM_OWNER"
+    | "CLINIC_OWNER"
     | "ADMIN"
     | "DOCTOR"
     | "NURSE"
@@ -143,6 +144,8 @@ export const PERMISSIONS = {
 
 export const DEFAULT_ROLE_PERMISSIONS: Record<UserRoleType, string[]> = {
     SYSTEM_OWNER: Object.values(PERMISSIONS),
+    CLINIC_OWNER: Object.values(PERMISSIONS).filter(p => !p.startsWith('system:')), // Everything except global system management
+
 
     ADMIN: [
         PERMISSIONS.APPOINTMENTS_VIEW,
