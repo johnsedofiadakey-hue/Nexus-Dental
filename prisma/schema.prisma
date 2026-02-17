@@ -24,6 +24,7 @@ enum TenantStatus {
 
 enum UserRole {
   SYSTEM_OWNER
+  CLINIC_OWNER
   ADMIN
   DOCTOR
   NURSE

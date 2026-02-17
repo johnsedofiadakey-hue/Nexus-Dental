@@ -29,10 +29,18 @@ import { useState } from "react";
 const NAV_ITEMS = {
     SYSTEM_OWNER: [
         { label: "Overview", icon: LayoutDashboard, href: "/system/dashboard" },
-        { label: "Tenants", icon: Building2, href: "/system/tenants" },
-        { label: "Audit Logs", icon: ShieldAlert, href: "/system/audit" },
-        { label: "Health", icon: Activity, href: "/system/health" },
-        { label: "Settings", icon: Settings, href: "/system/settings" },
+        { label: "Tenants", icon: Building2, href: "/system/dashboard/tenants" },
+        { label: "Audit Logs", icon: ShieldAlert, href: "/system/dashboard/audit" },
+        { label: "Health", icon: Activity, href: "/system/dashboard/health" },
+        { label: "Settings", icon: Settings, href: "/system/dashboard/settings" },
+    ],
+    CLINIC_OWNER: [
+        { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+        { label: "Employees", icon: Users, href: "/dashboard/staff" },
+        { label: "Appointments", icon: Calendar, href: "/appointments" },
+        { label: "Patients", icon: Users, href: "/patients" },
+        { label: "Inventory", icon: Package, href: "/inventory" },
+        { label: "Settings", icon: Settings, href: "/dashboard/settings" },
     ],
     STAFF: [
         { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
@@ -50,7 +58,7 @@ const NAV_ITEMS = {
 };
 
 interface SidebarProps {
-    role: "SYSTEM_OWNER" | "STAFF" | "PATIENT";
+    role: "SYSTEM_OWNER" | "CLINIC_OWNER" | "STAFF" | "PATIENT";
     className?: string; // Correctly using string type for className
 }
 
