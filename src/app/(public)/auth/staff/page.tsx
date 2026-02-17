@@ -31,14 +31,24 @@ export default function StaffLoginPage() {
             const data = await res.json();
 
             if (data.success) {
-                toast.success("Welcome back, Doctor");
-                // Check role and redirect
-                if (data.user.role === "SYSTEM_OWNER") {
+                toast.success(`Welcome back, ${data.user.firstName}`);
+                // Role-based redirection logic
+                const role = data.user.role;
+                if (role === "SYSTEM_OWNER") {
+                    router.push("/system/dashboard");
+                } else if (role === "CLINIC_OWNER" || role === "RECEPTIONIST") {
                     router.push("/dashboard");
-                } else {
+                } else if (role === "DOCTOR" || role === "NURSE") {
                     router.push("/clinical");
+                } else if (role === "FINANCE_OFFICER" || role === "BILLING_STAFF") {
+                    router.push("/finance");
+                } else if (role === "INVENTORY_MANAGER") {
+                    router.push("/inventory");
+                } else {
+                    router.push("/dashboard");
                 }
             } else {
+
                 toast.error(data.error || "Authentication failed");
             }
         } catch (error) {
