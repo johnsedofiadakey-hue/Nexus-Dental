@@ -116,6 +116,13 @@ export function Sidebar({ role, className }: SidebarProps) {
             <div className="p-3 border-t border-slate-100">
                 <Button
                     variant="ghost"
+                    onClick={() => {
+                        // Clear auth token
+                        document.cookie = "nexus_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT";
+                        // Redirect to appropriate login portal
+                        const loginPortal = role === "PATIENT" ? "/auth/patient" : "/auth/staff";
+                        window.location.href = loginPortal;
+                    }}
                     className={cn(
                         "w-full justify-start gap-3 rounded-xl hover:bg-red-50 hover:text-red-700",
                         collapsed && "justify-center px-0"
