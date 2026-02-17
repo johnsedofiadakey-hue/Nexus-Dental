@@ -42,12 +42,32 @@ const NAV_ITEMS = {
         { label: "Inventory", icon: Package, href: "/inventory" },
         { label: "Settings", icon: Settings, href: "/dashboard/settings" },
     ],
-    STAFF: [
+    DOCTOR: [
+        { label: "Clinical", icon: Stethoscope, href: "/clinical" },
+        { label: "My Appointments", icon: Calendar, href: "/appointments/mine" },
+        { label: "Patients", icon: Users, href: "/patients" },
+    ],
+    NURSE: [
+        { label: "Clinical", icon: Stethoscope, href: "/clinical" },
+        { label: "Appointments", icon: Calendar, href: "/appointments" },
+        { label: "Patients", icon: Users, href: "/patients" },
+    ],
+    RECEPTIONIST: [
         { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
         { label: "Appointments", icon: Calendar, href: "/appointments" },
         { label: "Patients", icon: Users, href: "/patients" },
-        { label: "Inventory", icon: Package, href: "/inventory" },
         { label: "Support", icon: LifeBuoy, href: "/support" },
+    ],
+    INVENTORY_MANAGER: [
+        { label: "Inventory", icon: Package, href: "/inventory" },
+        { label: "Purchase Orders", icon: ShieldAlert, href: "/inventory/orders" },
+        { label: "Suppliers", icon: Building2, href: "/inventory/suppliers" },
+    ],
+    BILLING_STAFF: [
+        { label: "Dashboard", icon: LayoutDashboard, href: "/finance" },
+        { label: "Invoices", icon: Calendar, href: "/finance/invoices" },
+        { label: "Payments", icon: Activity, href: "/finance/payments" },
+        { label: "Reports", icon: ShieldAlert, href: "/finance/reports" },
     ],
     PATIENT: [
         { label: "Home", icon: LayoutDashboard, href: "/portal" },
@@ -58,8 +78,8 @@ const NAV_ITEMS = {
 };
 
 interface SidebarProps {
-    role: "SYSTEM_OWNER" | "CLINIC_OWNER" | "STAFF" | "PATIENT";
-    className?: string; // Correctly using string type for className
+    role: "SYSTEM_OWNER" | "CLINIC_OWNER" | "DOCTOR" | "NURSE" | "RECEPTIONIST" | "INVENTORY_MANAGER" | "BILLING_STAFF" | "PATIENT";
+    className?: string;
 }
 
 export function Sidebar({ role, className }: SidebarProps) {

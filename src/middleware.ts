@@ -83,7 +83,11 @@ export function middleware(request: NextRequest) {
         pathname.startsWith("/admin") ||
         pathname.startsWith("/system") ||
         pathname.startsWith("/portal") ||
-        pathname.startsWith("/clinical")
+        pathname.startsWith("/clinical") ||
+        pathname.startsWith("/finance") ||
+        pathname.startsWith("/inventory") ||
+        pathname.startsWith("/appointments") ||
+        pathname.startsWith("/patients")
     ) {
         const token = request.cookies.get("nexus_token")?.value;
         if (!token) {
