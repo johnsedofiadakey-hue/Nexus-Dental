@@ -53,17 +53,8 @@ export async function GET(request: NextRequest) {
             const staffUser = user as JWTPayload;
             const dbUser = await prisma.user.findUnique({
                 where: { id: staffUser.userId },
-                select: {
-                    id: true,
-                    firstName: true,
-                    lastName: true,
-                    email: true,
-                    role: true,
-                    status: true,
-                    specialty: true,
-                    avatar: true,
-                    tenantId: true,
-                    lastLoginAt: true,
+                include: {
+                    roles: true,
                 },
             });
 
@@ -71,9 +62,16 @@ export async function GET(request: NextRequest) {
                 return apiError("User not found", 404);
             }
 
+            const userRoles = dbUser.roles.map((r: any) => r.systemRole).filter(Boolean) as string[];
+            const primaryRole = userRoles[0] || "RECEPTIONIST";
+
+            const { passwordHash, ...safeUser } = dbUser as any;
+
             return apiSuccess({
                 type: staffUser.type,
-                ...dbUser,
+                ...safeUser,
+                role: primaryRole,
+                roles: userRoles,
                 permissions: staffUser.permissions,
                 featureFlags: staffUser.featureFlags,
             });

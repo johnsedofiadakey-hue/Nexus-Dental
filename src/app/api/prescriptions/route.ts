@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest, apiError, apiSuccess } from "@/lib/auth";
 import { PharmacyService } from "@/lib/services/pharmacy.service";
-import { PrescriptionStatus } from "@prisma/client";
 import { JWTPayload } from "@/lib/auth/types";
 
 
@@ -18,7 +17,7 @@ export async function GET(request: NextRequest) {
 
         const { searchParams } = new URL(request.url);
 
-        const status = searchParams.get("status") as PrescriptionStatus;
+        const status = searchParams.get("status") as any;
         const patientId = searchParams.get("patientId");
 
         if (patientId) {
@@ -70,7 +69,7 @@ export async function POST(request: NextRequest) {
             validUntil: validUntil ? new Date(validUntil) : undefined,
         });
 
-        return apiSuccess(prescription, "Prescription issued successfully", 201);
+        return apiSuccess(prescription, 201);
     } catch (error: any) {
         console.error("[Prescriptions API] POST Error:", error);
         return apiError(error.message || "Internal Server Error", 500);

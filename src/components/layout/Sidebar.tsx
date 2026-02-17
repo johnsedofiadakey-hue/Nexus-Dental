@@ -18,7 +18,9 @@ import {
     Building2,
     Activity,
     MessageSquare,
-    Video
+    Video,
+    Pill,
+    Globe
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -40,6 +42,8 @@ const NAV_ITEMS = {
         { label: "Appointments", icon: Calendar, href: "/appointments" },
         { label: "Patients", icon: Users, href: "/patients" },
         { label: "Inventory", icon: Package, href: "/inventory" },
+        { label: "Pharmacy", icon: Pill, href: "/dashboard/pharmacy" },
+        { label: "Content Manager", icon: Globe, href: "/dashboard/content" },
         { label: "Settings", icon: Settings, href: "/dashboard/settings" },
     ],
     ADMIN: [
@@ -48,6 +52,8 @@ const NAV_ITEMS = {
         { label: "Appointments", icon: Calendar, href: "/appointments" },
         { label: "Patients", icon: Users, href: "/patients" },
         { label: "Inventory", icon: Package, href: "/inventory" },
+        { label: "Pharmacy", icon: Pill, href: "/dashboard/pharmacy" },
+        { label: "Content Manager", icon: Globe, href: "/dashboard/content" },
         { label: "Support", icon: LifeBuoy, href: "/support" },
         { label: "Settings", icon: Settings, href: "/dashboard/settings" },
     ],
@@ -59,6 +65,7 @@ const NAV_ITEMS = {
     ],
     NURSE: [
         { label: "Clinical", icon: Stethoscope, href: "/clinical" },
+        { label: "Pharmacy", icon: Pill, href: "/dashboard/pharmacy" },
         { label: "Appointments", icon: Calendar, href: "/appointments" },
         { label: "Patients", icon: Users, href: "/patients" },
     ],
@@ -88,15 +95,30 @@ const NAV_ITEMS = {
 };
 
 interface SidebarProps {
-    role: "SYSTEM_OWNER" | "CLINIC_OWNER" | "ADMIN" | "DOCTOR" | "NURSE" | "RECEPTIONIST" | "INVENTORY_MANAGER" | "BILLING_STAFF" | "PATIENT";
-
+    role?: UserRoleType; // DEPRECATED: Current primary role (still used for some logic)
+    roles?: UserRoleType[]; // NEW: All assigned roles
     className?: string;
 }
 
-export function Sidebar({ role, className }: SidebarProps) {
+type UserRoleType = "SYSTEM_OWNER" | "CLINIC_OWNER" | "ADMIN" | "DOCTOR" | "NURSE" | "RECEPTIONIST" | "INVENTORY_MANAGER" | "BILLING_STAFF" | "PATIENT";
+
+export function Sidebar({ role, roles = [], className }: SidebarProps) {
     const pathname = usePathname();
     const [collapsed, setCollapsed] = useState(false);
-    const navItems = NAV_ITEMS[role] || [];
+
+    // Combine roles if roles prop is provided, otherwise fallback to singular role
+    const activeRoles = roles.length > 0 ? roles : (role ? [role] : []);
+
+    // Merge navigation items from all active roles
+    const navItems = activeRoles.reduce((acc, r) => {
+        const items = NAV_ITEMS[r as keyof typeof NAV_ITEMS] || [];
+        items.forEach(item => {
+            if (!acc.find(a => a.href === item.href)) {
+                acc.push(item);
+            }
+        });
+        return acc;
+    }, [] as any[]);
 
     return (
         <div

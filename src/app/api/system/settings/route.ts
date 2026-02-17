@@ -1,62 +1,86 @@
+// ============================================
+// NEXUS DENTAL — Platform Settings API
+// GET/POST /api/system/settings
+// ============================================
+
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db/prisma";
-import { requireAuth, getUserTenantId } from "@/lib/auth/middleware";
+import prisma from "@/lib/db/prisma";
+import { requireAuth, requireSystemOwner, apiError, apiSuccess, JWTPayload } from "@/lib/auth";
+import { logAudit, getClientIP, getUserAgent } from "@/lib/audit/logger";
 
-// GET /api/system/settings - Get current tenant/system settings
-export async function GET(req: NextRequest) {
-    const auth = await requireAuth(req);
-    if (auth instanceof NextResponse) return auth;
-
-    const tenantId = getUserTenantId(req);
-    if (!tenantId) return NextResponse.json({ success: false, error: "Tenant context required" }, { status: 400 });
-
+export async function GET(request: NextRequest) {
     try {
-        const tenant = await prisma.tenant.findUnique({
-            where: { id: tenantId },
-            select: {
-                name: true,
-                logo: true,
-                email: true,
-                phone: true,
-                address: true,
-                website: true,
-                settings: true,
-            },
+        const auth = requireAuth(request);
+        if ("error" in auth) return auth.error;
+
+        const systemCheck = requireSystemOwner(auth.user);
+        if (systemCheck) return systemCheck;
+
+        const settings = await prisma.platformSettings.findUnique({
+            where: { id: "global-settings" }
         });
 
-        return NextResponse.json({ success: true, data: tenant });
-    } catch (error) {
-        return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
+        return apiSuccess(settings);
+    } catch (error: any) {
+        console.error("[SystemSettings] GET error:", error);
+        return apiError("Failed to fetch settings", 500);
     }
 }
 
-// POST /api/system/settings - Update settings
-export async function POST(req: NextRequest) {
-    const auth = await requireAuth(req);
-    if (auth instanceof NextResponse) return auth;
-
-    const tenantId = getUserTenantId(req);
-    if (!tenantId) return NextResponse.json({ success: false, error: "Tenant context required" }, { status: 400 });
-
+export async function POST(request: NextRequest) {
     try {
-        const body = await req.json();
-        const { name, logo, email, phone, address, website, settings } = body;
+        const auth = requireAuth(request);
+        if ("error" in auth) return auth.error;
 
-        const updatedTenant = await prisma.tenant.update({
-            where: { id: tenantId },
-            data: {
-                name,
-                logo,
-                email,
-                phone,
-                address,
-                website,
-                settings: settings || undefined, // Merge with existing Json if needed
+        const systemCheck = requireSystemOwner(auth.user);
+        if (systemCheck) return systemCheck;
+
+        const body = await request.json();
+
+        // Update global settings
+        const settings = await prisma.platformSettings.upsert({
+            where: { id: "global-settings" },
+            update: {
+                platformName: body.platformName,
+                logoUrl: body.logoUrl,
+                faviconUrl: body.faviconUrl,
+                primaryColor: body.primaryColor,
+                secondaryColor: body.secondaryColor,
+                supportEmail: body.supportEmail,
+                supportPhone: body.supportPhone,
+                emailFooter: body.emailFooter,
+                maintenanceMode: body.maintenanceMode,
+                allowRegistration: body.allowRegistration,
             },
+            create: {
+                id: "global-settings",
+                platformName: body.platformName || "Nexus Dental",
+                logoUrl: body.logoUrl,
+                faviconUrl: body.faviconUrl,
+                primaryColor: body.primaryColor || "#008080",
+                secondaryColor: body.secondaryColor || "#FFD700",
+                supportEmail: body.supportEmail,
+                supportPhone: body.supportPhone,
+                emailFooter: body.emailFooter,
+                maintenanceMode: body.maintenanceMode || false,
+                allowRegistration: body.allowRegistration ?? true,
+            }
         });
 
-        return NextResponse.json({ success: true, data: updatedTenant });
-    } catch (error) {
-        return NextResponse.json({ success: false, error: "Failed to update settings" }, { status: 500 });
+        // Log the change
+        await logAudit({
+            userId: (auth.user as JWTPayload).userId,
+            action: "SYSTEM_SETTINGS_UPDATE",
+            entity: "PlatformSettings",
+            entityId: "global-settings",
+            newValue: body,
+            ipAddress: getClientIP(request.headers),
+            userAgent: getUserAgent(request.headers),
+        });
+
+        return apiSuccess(settings);
+    } catch (error: any) {
+        console.error("[SystemSettings] POST error:", error);
+        return apiError("Failed to update settings", 500);
     }
 }

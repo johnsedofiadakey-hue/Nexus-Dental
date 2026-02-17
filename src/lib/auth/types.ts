@@ -5,10 +5,12 @@
 export interface JWTPayload {
     userId: string;
     tenantId: string | null;
-    role: UserRoleType;
+    role: UserRoleType; // Primary/Current role
+    roles: UserRoleType[]; // All assigned roles
     permissions: string[];
     featureFlags: string[];
     type: "STAFF" | "PATIENT" | "SYSTEM_OWNER";
+    impersonatorId?: string; // If being impersonated
 }
 
 export interface PatientJWTPayload {
@@ -63,7 +65,8 @@ export interface AuthResponse {
         email?: string;
         firstName: string;
         lastName: string;
-        role: string;
+        role: string; // Primary role
+        roles: string[]; // All roles
         tenantId?: string | null;
     };
     message?: string;

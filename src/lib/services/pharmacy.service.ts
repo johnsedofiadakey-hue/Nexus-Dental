@@ -1,5 +1,5 @@
 import prisma from "@/lib/db/prisma";
-import { PrescriptionStatus } from "@prisma/client";
+import { Prisma, PrescriptionStatus } from "@prisma/client";
 
 /**
  * Pharmacy Service
@@ -48,15 +48,16 @@ export class PharmacyService {
     /**
      * Get prescriptions for a tenant
      */
-    static async getPrescriptions(tenantId: string, status?: PrescriptionStatus) {
+    static async getPrescriptions(tenantId: string, status?: any) {
         return prisma.prescription.findMany({
             where: {
                 tenantId,
-                ...(status ? { status } : {}),
+                ...(status && status !== "ALL" ? { status } : {}),
             },
             include: {
                 patient: true,
                 doctor: true,
+                dispensedBy: true,
             },
             orderBy: { createdAt: "desc" },
         });
@@ -65,17 +66,18 @@ export class PharmacyService {
     /**
      * Fulfill a prescription and deduct from inventory
      */
-    static async fulfillPrescription(prescriptionId: string, tenantId: string) {
-        return prisma.$transaction(async (tx) => {
+    static async fulfillPrescription(prescriptionId: string, tenantId: string, dispensedById: string) {
+        return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             // 1. Get the prescription
             const prescription = await tx.prescription.findUnique({
                 where: { id: prescriptionId, tenantId },
+                include: { patient: true }
             });
 
             if (!prescription) throw new Error("Prescription not found");
             if (prescription.status !== "PENDING") throw new Error("Prescription is not pending");
 
-            const medications = prescription.medications as unknown as MedicationItem[];
+            const medications = prescription.medications as any[];
 
             // 2. Process each medication
             for (const med of medications) {
@@ -85,26 +87,41 @@ export class PharmacyService {
                         where: { id: med.inventoryId, tenantId },
                     });
 
-                    if (item) {
-                        if (item.quantity < med.quantity) {
-                            throw new Error(`Insufficient stock for ${med.name}. Available: ${item.quantity}, Requested: ${med.quantity}`);
-                        }
-
-                        await tx.inventoryItem.update({
-                            where: { id: item.id },
-                            data: { quantity: { decrement: med.quantity } },
-                        });
-
-                        // Log inventory deduction in audit
-                        // TODO: Add AuditLog entry
+                    if (!item) {
+                        throw new Error(`Inventory item ${med.name} not found`);
                     }
+
+                    if (item.quantity < (med.quantity || 1)) {
+                        throw new Error(`Insufficient stock for ${med.name}. Available: ${item.quantity}, Requested: ${med.quantity || 1}`);
+                    }
+
+                    await tx.inventoryItem.update({
+                        where: { id: item.id },
+                        data: { quantity: { decrement: med.quantity || 1 } },
+                    });
+
+                    // Log inventory transaction
+                    await tx.inventoryTransaction.create({
+                        data: {
+                            tenantId,
+                            inventoryItemId: item.id,
+                            userId: dispensedById,
+                            type: "DISPENSED",
+                            quantity: med.quantity || 1,
+                            notes: `Dispensed for Prescription #${prescription.id} (Patient: ${prescription.patient.firstName} ${prescription.patient.lastName})`,
+                        }
+                    });
                 }
             }
 
             // 3. Update prescription status
             return tx.prescription.update({
                 where: { id: prescriptionId },
-                data: { status: "FILLED" },
+                data: {
+                    status: "DISPENSED",
+                    dispensedAt: new Date(),
+                    dispensedById
+                },
             });
         });
     }

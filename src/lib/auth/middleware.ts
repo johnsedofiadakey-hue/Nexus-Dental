@@ -61,8 +61,10 @@ export function requireRole(
     user: AuthUser,
     ...roles: string[]
 ): NextResponse | null {
-    const userRole = "role" in user ? user.role : "PATIENT";
-    if (!roles.includes(userRole)) {
+    const userRoles = user.type === "PATIENT" ? ["PATIENT"] : (user as JWTPayload).roles;
+
+    // Check if the user has ANY of the required roles
+    if (!roles.some(r => userRoles.includes(r as any))) {
         return apiError("Insufficient role access", 403);
     }
     return null;

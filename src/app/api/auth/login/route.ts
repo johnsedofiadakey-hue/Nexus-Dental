@@ -12,7 +12,8 @@ import type { JWTPayload, AuthResponse, UserRoleType } from "@/lib/auth";
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { email, password } = body;
+        const email = body.email?.toLowerCase().trim();
+        const password = body.password?.trim();
 
         // Validate input
         if (!email || !password) {
@@ -24,6 +25,7 @@ export async function POST(request: NextRequest) {
             where: { email: email.toLowerCase().trim() },
             include: {
                 tenant: true,
+                roles: true,
             },
         });
 
@@ -64,10 +66,14 @@ export async function POST(request: NextRequest) {
             return apiError("Invalid email or password", 401);
         }
 
+        // Map roles to enums (prioritizing systemRole)
+        const userRoles = user.roles.map((r: { systemRole: UserRoleType | null }) => r.systemRole).filter(Boolean) as UserRoleType[];
+        const primaryRole = userRoles[0] || "RECEPTIONIST"; // Fallback to a safe default if no roles
+
         // Resolve permissions (base role + overrides)
         const permissions = await resolveUserPermissions(
             user.id,
-            user.role as UserRoleType,
+            userRoles,
             user.tenantId
         );
 
@@ -75,10 +81,11 @@ export async function POST(request: NextRequest) {
         const tokenPayload: JWTPayload = {
             userId: user.id,
             tenantId: user.tenantId,
-            role: user.role as UserRoleType,
+            role: primaryRole,
+            roles: userRoles,
             permissions,
             featureFlags: [], // TODO: Populate from tenant settings
-            type: user.role === "SYSTEM_OWNER" ? "SYSTEM_OWNER" : "STAFF",
+            type: userRoles.includes("SYSTEM_OWNER") ? "SYSTEM_OWNER" : "STAFF",
         };
 
         // Sign token
@@ -109,7 +116,8 @@ export async function POST(request: NextRequest) {
                 email: user.email,
                 firstName: user.firstName,
                 lastName: user.lastName,
-                role: user.role,
+                role: primaryRole,
+                roles: userRoles,
                 tenantId: user.tenantId,
             },
         };

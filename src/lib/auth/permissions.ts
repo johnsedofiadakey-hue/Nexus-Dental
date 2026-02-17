@@ -17,20 +17,27 @@ import { DEFAULT_ROLE_PERMISSIONS, UserRoleType } from "./types";
  */
 export async function resolveUserPermissions(
     userId: string,
-    role: UserRoleType,
+    roles: UserRoleType[],
     tenantId: string | null
 ): Promise<string[]> {
-    // Start with default role permissions
-    const basePermissions = new Set(DEFAULT_ROLE_PERMISSIONS[role] || []);
+    // Start with default role permissions (cumulative for all assigned roles)
+    const basePermissions = new Set<string>();
 
-    if (tenantId) {
+    for (const role of roles) {
+        const defaults = DEFAULT_ROLE_PERMISSIONS[role] || [];
+        for (const p of defaults) {
+            basePermissions.add(p);
+        }
+    }
+
+    if (tenantId && roles.length > 0) {
         try {
-            // Get tenant-specific role permissions from DB
+            // Get tenant-specific role permissions from DB for all roles
             const dbRolePermissions = await prisma.rolePermission.findMany({
                 where: {
                     role: {
                         tenantId,
-                        name: role,
+                        name: { in: roles as string[] },
                     },
                 },
                 include: {
@@ -44,7 +51,7 @@ export async function resolveUserPermissions(
             }
         } catch {
             // If DB lookup fails, continue with defaults
-            console.warn(`[Permissions] Failed to fetch DB permissions for role ${role}`);
+            console.warn(`[Permissions] Failed to fetch DB permissions for roles: ${roles.join(', ')}`);
         }
     }
 

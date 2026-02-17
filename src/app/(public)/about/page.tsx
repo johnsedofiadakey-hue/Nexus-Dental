@@ -1,6 +1,38 @@
-import { Shield, Users, Award, Heart } from "lucide-react";
+"use client";
+
+import { useEffect, useState } from "react";
+import { Shield, Users, Award, Heart, Loader2 } from "lucide-react";
 
 export default function AboutPage() {
+    const [loading, setLoading] = useState(true);
+    const [content, setContent] = useState({
+        aboutPage: "Nexus Dental was founded with a single mission: to redefine the dental experience. We combine cutting-edge technology with a human-centered approach to ensure your comfort and precision in every procedure.",
+        mission: "Uncompromising safety, elite expertise, and a patient-first approach to oral health.",
+        vision: "To be the leading provider of personalized dental excellence in our community."
+    });
+
+    useEffect(() => {
+        const fetchContent = async () => {
+            try {
+                const res = await fetch("/api/public/clinic/content?tenantId=global-test");
+                const data = await res.json();
+                if (data.success && data.data) {
+                    setContent({
+                        aboutPage: data.data.aboutPage || content.aboutPage,
+                        mission: data.data.mission || content.mission,
+                        vision: data.data.vision || content.vision
+                    });
+                }
+            } catch (error) {
+                console.error("Failed to load dynamic about content:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchContent();
+    }, []);
+
     return (
         <div className="flex flex-col">
             {/* Hero Section */}
@@ -14,11 +46,15 @@ export default function AboutPage() {
                             World-Class Dental Care. <br />
                             <span className="text-primary font-serif italic">Personalized</span> for You.
                         </h1>
-                        <p className="text-lg text-text-secondary leading-relaxed mb-10">
-                            Nexus Dental was founded with a single mission: to redefine the dental experience.
-                            We combine cutting-edge technology with a human-centered approach to ensure
-                            your comfort and precision in every procedure.
-                        </p>
+                        {loading ? (
+                            <div className="py-10">
+                                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                            </div>
+                        ) : (
+                            <p className="text-lg text-text-secondary leading-relaxed mb-10">
+                                {content.aboutPage}
+                            </p>
+                        )}
                     </div>
                 </div>
             </section>

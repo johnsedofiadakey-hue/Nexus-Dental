@@ -17,7 +17,6 @@ model Tenant {
   email             String?
   website           String?
   timezone          String             @default("UTC")
-  settings          Json               @default("{}")
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   actionControlLogs ActionControlLog[]
@@ -33,8 +32,41 @@ model Tenant {
   services          Service[]
   supportTickets    SupportTicket[]
   users             User[]
+  settings          TenantSettings?
+  content           TenantContent?
+  inventoryTransactions InventoryTransaction[]
 
   @@map("tenants")
+}
+
+model TenantSettings {
+  id                String   @id @default(cuid())
+  tenantId          String   @unique
+  platformName      String?  // Custom clinic name override
+  logoUrl           String?
+  faviconUrl        String?
+  primaryColor      String?
+  secondaryColor    String?
+  emailFooter       String?
+  hoursOfOperation  Json?
+  featureFlags      Json     @default("{}") // Online consultation, Pharmacy, etc.
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("tenant_settings")
+}
+
+model TenantContent {
+  id               String   @id @default(cuid())
+  tenantId         String   @unique
+  aboutPage        String?  @db.Text
+  mission          String?  @db.Text
+  vision           String?  @db.Text
+  testimonials     Json     @default("[]")
+  faqs             Json     @default("[]")
+  educationArticles Json    @default("[]")
+  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("tenant_content")
 }
 
 model User {
@@ -44,7 +76,6 @@ model User {
   passwordHash       String
   firstName          String
   lastName           String
-  role               UserRole
   status             UserStatus         @default(ACTIVE)
   phone              String?
   avatar             String?
@@ -54,18 +85,50 @@ model User {
   lastLoginAt        DateTime?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
+  roles              UserRoleMapping[]
   actionControlLogs  ActionControlLog[]
   doctorAppointments Appointment[]      @relation("DoctorAppointments")
   auditLogs          AuditLog[]
   invoicesCreated    Invoice[]          @relation("InvoiceCreator")
-  prescriptions      Prescription[]     @relation("PrescribingDoctor")
+  prescriptions           Prescription[]     @relation("PrescribingDoctor")
+  prescriptionsDispensed  Prescription[]     @relation("PrescriptionPharmacist")
+  inventoryTransactions  InventoryTransaction[]
   supportMessages    SupportMessage[]
   userOverrides      UserOverride[]
+  impersonations     ImpersonationLog[] @relation("AdminImpersonation")
+  impersonatedBy     ImpersonationLog[] @relation("ImpersonatedUser")
   tenant             Tenant?            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([email])
   @@map("users")
+}
+
+model UserRoleMapping {
+  id         String    @id @default(cuid())
+  userId     String
+  roleId     String?   // Link to custom Tenant Role
+  systemRole UserRole? // Link to hardcoded System Role enum
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role       Role?     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId, systemRole])
+  @@map("user_roles_mapping")
+}
+
+model ImpersonationLog {
+  id             String    @id @default(cuid())
+  adminId        String
+  impersonatedId String
+  reason         String?
+  startedAt      DateTime  @default(now())
+  endedAt        DateTime?
+  ipAddress      String?
+  userAgent      String?
+  admin          User      @relation("AdminImpersonation", fields: [adminId], references: [id])
+  impersonated   User      @relation("ImpersonatedUser", fields: [impersonatedId], references: [id])
+
+  @@map("impersonation_logs")
 }
 
 model Role {
@@ -77,6 +140,7 @@ model Role {
   updatedAt       DateTime         @updatedAt
   rolePermissions RolePermission[]
   tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userRoles       UserRoleMapping[]
 
   @@unique([tenantId, name])
   @@index([tenantId])
@@ -230,6 +294,7 @@ model InventoryItem {
   updatedAt             DateTime                @updatedAt
   tenant                Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   procedureInventoryMap ProcedureInventoryMap[]
+  transactions          InventoryTransaction[]
 
   @@unique([tenantId, name])
   @@index([tenantId])
@@ -280,16 +345,19 @@ model Prescription {
   patientId     String
   appointmentId String?            @unique
   doctorId      String
+  status        PrescriptionStatus @default(PENDING)
   medications   Json               @default("[]")
   instructions  String?
   issuedAt      DateTime           @default(now())
   validUntil    DateTime?
+  dispensedAt   DateTime?
+  dispensedById String?
   version       Int                @default(1)
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
-  status        PrescriptionStatus @default(PENDING)
   appointment   Appointment?       @relation(fields: [appointmentId], references: [id])
   doctor        User               @relation("PrescribingDoctor", fields: [doctorId], references: [id])
+  dispensedBy   User?              @relation("PrescriptionPharmacist", fields: [dispensedById], references: [id])
   patient       Patient            @relation(fields: [patientId], references: [id])
   tenant        Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
@@ -447,20 +515,22 @@ model Review {
   @@map("reviews")
 }
 
-model GlobalSettings {
+model PlatformSettings {
   id                String   @id @default("global-settings")
   platformName      String   @default("Nexus Dental")
   logoUrl           String?
+  faviconUrl        String?
   primaryColor      String   @default("#008080")
   secondaryColor    String   @default("#FFD700")
   supportEmail      String?
   supportPhone      String?
+  emailFooter       String?
   maintenanceMode   Boolean  @default(false)
   allowRegistration Boolean  @default(true)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  @@map("global_settings")
+  @@map("platform_settings")
 }
 
 enum TenantStatus {
@@ -572,4 +642,31 @@ enum BackupStatus {
   IN_PROGRESS
   COMPLETED
   FAILED
+}
+
+enum InventoryTransactionType {
+  RESTOCK
+  DISPENSED
+  PROCEDURE_USE
+  ADJUSTMENT
+  EXPIRED
+  REMOVED
+}
+
+model InventoryTransaction {
+  id              String                   @id @default(cuid())
+  tenantId        String
+  inventoryItemId String
+  userId          String
+  type            InventoryTransactionType
+  quantity        Float
+  notes           String?
+  timestamp       DateTime                 @default(now())
+  inventoryItem   InventoryItem            @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  user            User                     @relation(fields: [userId], references: [id])
+  tenant          Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([inventoryItemId])
+  @@map("inventory_transactions")
 }

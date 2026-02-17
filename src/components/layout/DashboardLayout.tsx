@@ -7,7 +7,7 @@ import { Toaster } from "@/components/ui/sonner";
 interface DashboardLayoutProps {
     children: React.ReactNode;
     role: "SYSTEM_OWNER" | "CLINIC_OWNER" | "ADMIN" | "DOCTOR" | "NURSE" | "RECEPTIONIST" | "INVENTORY_MANAGER" | "BILLING_STAFF" | "PATIENT";
-
+    roles?: ("SYSTEM_OWNER" | "CLINIC_OWNER" | "ADMIN" | "DOCTOR" | "NURSE" | "RECEPTIONIST" | "INVENTORY_MANAGER" | "BILLING_STAFF" | "PATIENT")[];
     title: string;
     userName: string;
     userRoleLabel: string;
@@ -16,6 +16,7 @@ interface DashboardLayoutProps {
 export function DashboardLayout({
     children,
     role,
+    roles = [],
     title,
     userName,
     userRoleLabel,
@@ -23,7 +24,7 @@ export function DashboardLayout({
     return (
         <div className="flex h-screen bg-slate-50 overflow-hidden">
             {/* Navigation Sidebar */}
-            <Sidebar role={role} />
+            <Sidebar role={role} roles={roles} />
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
