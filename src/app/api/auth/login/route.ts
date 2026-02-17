@@ -126,8 +126,18 @@ export async function POST(request: NextRequest) {
         });
 
         return res;
-    } catch (error) {
+    } catch (error: any) {
         console.error("[Auth] Login error:", error);
+
+        // Diagnostic logging to a file since terminal access is restricted
+        try {
+            const fs = require('fs');
+            const logMessage = `[${new Date().toISOString()}] Login Error: ${error?.message || "Unknown error"}\nStack: ${error?.stack}\n\n`;
+            fs.appendFileSync('auth_debug.log', logMessage);
+        } catch (logErr) {
+            console.error("Failed to write to debug log", logErr);
+        }
+
         return apiError("Internal server error", 500);
     }
 }
