@@ -42,6 +42,16 @@ const NAV_ITEMS = {
         { label: "Inventory", icon: Package, href: "/inventory" },
         { label: "Settings", icon: Settings, href: "/dashboard/settings" },
     ],
+    ADMIN: [
+        { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+        { label: "Employees", icon: Users, href: "/dashboard/staff" },
+        { label: "Appointments", icon: Calendar, href: "/appointments" },
+        { label: "Patients", icon: Users, href: "/patients" },
+        { label: "Inventory", icon: Package, href: "/inventory" },
+        { label: "Support", icon: LifeBuoy, href: "/support" },
+        { label: "Settings", icon: Settings, href: "/dashboard/settings" },
+    ],
+
     DOCTOR: [
         { label: "Clinical", icon: Stethoscope, href: "/clinical" },
         { label: "My Appointments", icon: Calendar, href: "/appointments/mine" },
@@ -78,7 +88,8 @@ const NAV_ITEMS = {
 };
 
 interface SidebarProps {
-    role: "SYSTEM_OWNER" | "CLINIC_OWNER" | "DOCTOR" | "NURSE" | "RECEPTIONIST" | "INVENTORY_MANAGER" | "BILLING_STAFF" | "PATIENT";
+    role: "SYSTEM_OWNER" | "CLINIC_OWNER" | "ADMIN" | "DOCTOR" | "NURSE" | "RECEPTIONIST" | "INVENTORY_MANAGER" | "BILLING_STAFF" | "PATIENT";
+
     className?: string;
 }
 

@@ -32,7 +32,8 @@ export default function ClinicalDashboard() {
 
     return (
         <DashboardLayout
-            role="STAFF"
+            role="DOCTOR"
+
             title="Clinical Operations"
             userName="Dr. Kwame Asante"
             userRoleLabel="Senior Dentist"

@@ -6,7 +6,8 @@ import { Toaster } from "@/components/ui/sonner";
 
 interface DashboardLayoutProps {
     children: React.ReactNode;
-    role: "SYSTEM_OWNER" | "CLINIC_OWNER" | "DOCTOR" | "NURSE" | "RECEPTIONIST" | "INVENTORY_MANAGER" | "BILLING_STAFF" | "PATIENT";
+    role: "SYSTEM_OWNER" | "CLINIC_OWNER" | "ADMIN" | "DOCTOR" | "NURSE" | "RECEPTIONIST" | "INVENTORY_MANAGER" | "BILLING_STAFF" | "PATIENT";
+
     title: string;
     userName: string;
     userRoleLabel: string;
