@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     BarChart,
     LineChart,
@@ -12,18 +12,49 @@ import {
     ArrowUpRight,
     Filter,
     Download,
-    CalendarDays
+    CalendarDays,
+    Loader2
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { Skeleton } from "@/components/ui/skeleton";
+
+interface PlatformStats {
+    activePatients: number;
+    patientGrowth: number;
+    totalAppointments: number;
+    completedAppointments: number;
+    completionRate: number;
+    totalTenants: number;
+    activeTenants: number;
+}
 
 /**
- * Global Analytics View for System Owners and Clinic Admins
+ * Global Analytics View for System Owners
  */
 export default function AnalyticsDashboard() {
     const [range, setRange] = useState("Last 30 Days");
+    const [stats, setStats] = useState<PlatformStats | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function fetchStats() {
+            try {
+                const res = await fetch("/api/analytics/platform");
+                if (res.ok) {
+                    const data = await res.json();
+                    setStats(data.platform);
+                }
+            } catch (error) {
+                console.error("Failed to fetch platform stats:", error);
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchStats();
+    }, []);
 
     return (
         <DashboardLayout
@@ -52,29 +83,71 @@ export default function AnalyticsDashboard() {
             </div>
 
             {/* Primary KPI Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                {[
-                    { label: "Gross Revenue (MRR)", value: "GH₵ 128,450", change: "+12.5%", desc: "vs last month", icon: DollarSign },
-                    { label: "Active Patients", value: "2,840", change: "+4.2%", desc: "vs last week", icon: Users },
-                    { label: "Avg. Appointment Completion", value: "94.2%", change: "+0.8%", desc: "target: 95%", icon: TrendingUp },
-                ].map((kpi, i) => (
-                    <Card key={i} className="border-none shadow-sm ring-1 ring-slate-100">
+            {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    {[1, 2, 3].map(i => (
+                        <Card key={i} className="border-none shadow-sm ring-1 ring-slate-100">
+                            <CardHeader className="pb-2">
+                                <Skeleton className="h-4 w-32" />
+                            </CardHeader>
+                            <CardContent>
+                                <Skeleton className="h-8 w-24 mb-2" />
+                                <Skeleton className="h-4 w-20" />
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+            ) : stats ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <Card className="border-none shadow-sm ring-1 ring-slate-100">
                         <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <CardTitle className="text-sm font-medium text-slate-500">{kpi.label}</CardTitle>
-                            <kpi.icon className="w-4 h-4 text-slate-400" />
+                            <CardTitle className="text-sm font-medium text-slate-500">Active Patients</CardTitle>
+                            <Users className="w-4 h-4 text-slate-400" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-3xl font-bold text-slate-900">{kpi.value}</div>
+                            <div className="text-3xl font-bold text-slate-900">{stats.activePatients.toLocaleString()}</div>
                             <div className="flex items-center gap-2 mt-2">
-                                <Badge variant="success" className="bg-emerald-50 text-emerald-700 hover:bg-emerald-50 border-none">
-                                    {kpi.change}
+                                <Badge variant={stats.patientGrowth >= 0 ? "success" : "secondary"} className="bg-emerald-50 text-emerald-700 hover:bg-emerald-50 border-none">
+                                    {stats.patientGrowth >= 0 ? '+' : ''}{stats.patientGrowth.toFixed(1)}%
                                 </Badge>
-                                <span className="text-xs text-slate-500">{kpi.desc}</span>
+                                <span className="text-xs text-slate-500">vs last week</span>
                             </div>
                         </CardContent>
                     </Card>
-                ))}
-            </div>
+
+                    <Card className="border-none shadow-sm ring-1 ring-slate-100">
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                            <CardTitle className="text-sm font-medium text-slate-500">Total Appointments</CardTitle>
+                            <Calendar className="w-4 h-4 text-slate-400" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold text-slate-900">{stats.totalAppointments.toLocaleString()}</div>
+                            <div className="flex items-center gap-2 mt-2">
+                                <span className="text-xs text-slate-500">{stats.completedAppointments} completed</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="border-none shadow-sm ring-1 ring-slate-100">
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                            <CardTitle className="text-sm font-medium text-slate-500">Completion Rate</CardTitle>
+                            <TrendingUp className="w-4 h-4 text-slate-400" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold text-slate-900">{stats.completionRate.toFixed(1)}%</div>
+                            <div className="flex items-center gap-2 mt-2">
+                                <Badge variant="success" className="bg-emerald-50 text-emerald-700 hover:bg-emerald-50 border-none">
+                                    Target: 95%
+                                </Badge>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            ) : (
+                <div className="text-center py-8">
+                    <p className="text-muted-foreground">Failed to load statistics</p>
+                </div>
+            )}
 
             {/* Charts Section Placeholder */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
