@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
 
         // Filter low-stock in-memory if requested
         const result = lowStockOnly
-            ? items.filter((item) => item.quantity <= item.threshold)
+            ? items.filter((item: any) => item.quantity <= item.threshold)
             : items;
 
         return apiSuccess({

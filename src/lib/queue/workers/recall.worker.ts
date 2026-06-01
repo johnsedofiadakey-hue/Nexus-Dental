@@ -7,6 +7,10 @@ import { Worker, Job } from "bullmq";
 import { queueRedisConnection } from "../redis";
 import prisma from "@/lib/db/prisma";
 import { notificationQueue } from "../queues";
+import {
+    sendNotification as hubtelSend,
+    recallMessage,
+} from "@/lib/sms/hubtel";
 
 interface RecallJobData {
     tenantId: string;
@@ -17,7 +21,9 @@ interface RecallJobData {
  * Recall Worker:
  * Processes automated patient recalls based on clinical history
  */
-export const recallWorker = new Worker(
+const isBuild = process.env.NODE_ENV === "production" && !process.env.REDIS_URL;
+
+export const recallWorker = isBuild ? ({} as Worker) : new Worker(
     "recall-queue",
     async (job: Job<RecallJobData>) => {
         const { tenantId, recallType } = job.data;
@@ -58,13 +64,30 @@ async function processRoutineCheckups(tenantId: string) {
         },
     });
 
+    const clinic = await prisma.tenant.findUnique({
+        where: { id: tenantId },
+        select: { name: true, phone: true },
+    });
+
     for (const patient of patientsToRecall) {
+        const message = recallMessage(
+            `${patient.firstName} ${patient.lastName}`,
+            clinic?.name ?? "our clinic",
+            clinic?.phone ?? ""
+        );
+
+        // Send recall via SMS (OTP-style, single channel)
+        if (patient.phone) {
+            await hubtelSend(patient.phone, message, "sms");
+        }
+
+        // Also queue in-app notification via BullMQ
         await notificationQueue.add(`recall-${patient.id}`, {
             tenantId,
             recipientId: patient.id,
             type: "PATIENT_RECALL",
             title: "Time for your Routine Checkup",
-            content: `Hi ${patient.firstName}, it has been over 6 months since your last visit. Maintaining oral health is key! Book your routine checkup today.`,
+            content: message,
             metadata: { recallType: "ROUTINE_CHECKUP" },
         });
     }

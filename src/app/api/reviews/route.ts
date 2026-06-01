@@ -1,55 +1,56 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db/prisma";
-import { authenticateRequest } from "@/lib/auth/middleware";
+import { NextRequest } from "next/server";
+import prisma from "@/lib/db/prisma";
+import { authenticateRequest, apiError, apiSuccess, requireAuth, isPatientUser } from "@/lib/auth";
+import type { PatientJWTPayload } from "@/lib/auth";
 
-// GET /api/reviews - Get approved reviews for a tenant
-export async function GET(req: NextRequest) {
+export async function GET(request: NextRequest) {
     try {
-        const { searchParams } = new URL(req.url);
+        const { searchParams } = new URL(request.url);
         const tenantId = searchParams.get("tenantId");
+        const all = searchParams.get("all") === "true"; // staff can see unapproved
 
-        if (!tenantId) {
-            return NextResponse.json({ success: false, error: "tenantId required" }, { status: 400 });
-        }
+        if (!tenantId) return apiError("tenantId required", 400);
+
+        const where: any = { tenantId };
+        if (!all) where.isApproved = true;
 
         const reviews = await prisma.review.findMany({
-            where: {
-                tenantId,
-                isApproved: true,
-            },
+            where,
+            include: { patient: { select: { firstName: true, lastName: true } } },
             orderBy: { createdAt: "desc" },
-            take: 10,
+            take: 50,
         });
 
-        return NextResponse.json({ success: true, data: reviews });
+        return apiSuccess({ reviews });
     } catch (error) {
-        return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
+        return apiError("Internal server error", 500);
     }
 }
 
-// POST /api/reviews - Submit a new review (pending approval)
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
     try {
-        const body = await req.json();
-        const { tenantId, patientId, authorName, rating, comment } = body;
+        const body = await request.json();
+        const { tenantId, authorName, rating, comment } = body;
 
         if (!tenantId || !authorName || !rating || !comment) {
-            return NextResponse.json({ success: false, error: "Missing required fields" }, { status: 400 });
+            return apiError("tenantId, authorName, rating, and comment are required", 400);
+        }
+
+        if (rating < 1 || rating > 5) return apiError("Rating must be 1–5", 400);
+
+        // Try to link to patient if authenticated
+        let patientId: string | null = null;
+        const user = authenticateRequest(request);
+        if (user && isPatientUser(user)) {
+            patientId = (user as PatientJWTPayload).patientId;
         }
 
         const review = await prisma.review.create({
-            data: {
-                tenantId,
-                patientId,
-                authorName,
-                rating,
-                comment,
-                isApproved: false, // Moderated by default
-            },
+            data: { tenantId, patientId, authorName, rating, comment, isApproved: false },
         });
 
-        return NextResponse.json({ success: true, data: review, message: "Review submitted for approval" });
+        return apiSuccess(review, 201);
     } catch (error) {
-        return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
+        return apiError("Internal server error", 500);
     }
 }

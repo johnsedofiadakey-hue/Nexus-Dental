@@ -67,7 +67,7 @@ export async function completeSession(
     userAgent?: string
 ): Promise<SessionCompleteResult> {
     const result = await prisma.$transaction(
-        async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
+        async (tx: any) => {
             // 1. Verify and fetch the appointment
             const appointment = await tx.appointment.findUnique({
                 where: { id: input.appointmentId },

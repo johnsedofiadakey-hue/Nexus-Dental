@@ -16,27 +16,23 @@ export async function GET(request: NextRequest) {
         }
 
         const employees = await prisma.user.findMany({
-            where: {
-                tenantId: user.tenantId,
-                role: {
-
-                    in: ["DOCTOR", "NURSE", "RECEPTIONIST", "INVENTORY_MANAGER", "BILLING_STAFF", "ADMIN", "CLINIC_OWNER"],
-                },
-            },
+            where: { tenantId: user.tenantId },
             select: {
                 id: true,
                 email: true,
                 firstName: true,
                 lastName: true,
                 phone: true,
-                role: true,
+                avatar: true,
                 status: true,
+                lastLoginAt: true,
                 createdAt: true,
+                roles: { select: { systemRole: true } },
             },
             orderBy: { createdAt: "desc" },
         });
 
-        return apiSuccess({ employees });
+        return apiSuccess({ staff: employees, employees });
     } catch (error) {
         console.error("[Staff API] Fetch error:", error);
         return apiError("Failed to fetch employees", 500);
@@ -56,7 +52,7 @@ export async function POST(request: NextRequest) {
         // Only Owners and Admins can create staff
         const staffUser = user as JWTPayload;
         const allowedCreators = ["SYSTEM_OWNER", "CLINIC_OWNER", "ADMIN"];
-        if (!allowedCreators.includes(staffUser.role)) {
+        if (!staffUser.roles.some(r => allowedCreators.includes(r))) {
             return apiError("Forbidden: You do not have permission to manage staff", 403);
         }
 
@@ -87,18 +83,21 @@ export async function POST(request: NextRequest) {
                 firstName,
                 lastName,
                 phone: phone || null,
-                role,
                 status: "ACTIVE",
                 tenantId: user.tenantId,
+                roles: {
+                    create: {
+                        systemRole: role,
+                    }
+                }
             },
-
             select: {
                 id: true,
                 email: true,
                 firstName: true,
                 lastName: true,
-                role: true,
                 status: true,
+                roles: true,
             },
         });
 
@@ -107,7 +106,6 @@ export async function POST(request: NextRequest) {
                 employee,
                 tempPassword,
             },
-            "Staff member created successfully",
             201
         );
     } catch (error) {

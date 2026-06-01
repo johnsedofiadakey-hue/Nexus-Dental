@@ -86,7 +86,7 @@ export async function overrideAppointmentStatus(
 
     // Execute the override
     const updated = await prisma.$transaction(
-        async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
+        async (tx: any) => {
             const result = await tx.appointment.update({
                 where: { id: appointmentId },
                 data: { status: newStatus as never },
@@ -210,7 +210,7 @@ export async function getOverrideHistory(
                         id: true,
                         firstName: true,
                         lastName: true,
-                        role: true,
+                        roles: true,
                     },
                 },
             },

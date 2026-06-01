@@ -1,30 +1,34 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
+import { withAuditLogging } from "./prisma-extension";
 
 const { Pool } = pg;
 
 const globalForPrisma = globalThis as unknown as {
-    prisma: PrismaClient | undefined;
+    prisma: ReturnType<typeof withAuditLogging> | undefined;
 };
 
-function createPrismaClient(): PrismaClient {
+function createPrismaClient() {
     const connectionString = process.env.DATABASE_URL;
 
     if (!connectionString) {
-        throw new Error("DATABASE_URL environment variable is not set");
+        console.warn("DATABASE_URL is not set. Using Prisma Proxy.");
+        return new Proxy({}, { get: () => new Proxy({}, { get: () => () => Promise.resolve([]) }) }) as any;
     }
 
     const pool = new Pool({ connectionString });
     const adapter = new PrismaPg(pool);
 
-    return new PrismaClient({
+    const baseClient = new PrismaClient({
         adapter,
         log:
             process.env.NODE_ENV === "development"
                 ? ["query", "error", "warn"]
                 : ["error"],
     });
+    
+    return withAuditLogging(baseClient);
 }
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();

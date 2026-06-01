@@ -7,6 +7,10 @@ import { Worker, Job } from "bullmq";
 import { queueRedisConnection } from "../redis";
 import prisma from "@/lib/db/prisma";
 import { notificationQueue } from "../queues";
+import {
+    sendNotification as hubtelSend,
+    appointmentReminder,
+} from "@/lib/sms/hubtel";
 
 interface AppointmentJobData {
     type: "REMINDER_24H" | "REMINDER_1H" | "NO_SHOW_CHECK";
@@ -18,7 +22,9 @@ interface AppointmentJobData {
  * Appointment Worker:
  * Prcesses reminders and audits appointment states
  */
-export const appointmentWorker = new Worker(
+const isBuild = process.env.NODE_ENV === "production" && !process.env.REDIS_URL;
+
+export const appointmentWorker = isBuild ? ({} as Worker) : new Worker(
     "appointment-queue",
     async (job: Job<AppointmentJobData>) => {
         const { type, appointmentId, tenantId } = job.data;
@@ -65,11 +71,42 @@ export const appointmentWorker = new Worker(
 );
 
 async function enqueueReminder(appointment: any, title: string) {
+    const dateStr = appointment.dateTime.toLocaleDateString("en-GH", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+    });
     const timeStr = appointment.dateTime.toLocaleTimeString("en-GH", {
         hour: "2-digit",
         minute: "2-digit",
     });
 
+    // Resolve patient phone for direct Hubtel delivery (SMS + WhatsApp)
+    const patient = await prisma.patient.findUnique({
+        where: { id: appointment.patientId },
+        select: { phone: true, firstName: true, lastName: true },
+    });
+
+    if (patient?.phone) {
+        const clinic = await prisma.tenant.findUnique({
+            where: { id: appointment.tenantId },
+            select: { name: true },
+        });
+
+        const message = appointmentReminder(
+            `${patient.firstName} ${patient.lastName}`,
+            dateStr,
+            timeStr,
+            clinic?.name ?? "our clinic",
+            `${appointment.doctor.firstName} ${appointment.doctor.lastName}`
+        );
+
+        // SMS + WhatsApp for appointment reminders
+        await hubtelSend(patient.phone, message, "both");
+    }
+
+    // Also queue in-app notification via BullMQ
     await notificationQueue.add(`reminder-${appointment.id}`, {
         tenantId: appointment.tenantId,
         recipientId: appointment.patientId,

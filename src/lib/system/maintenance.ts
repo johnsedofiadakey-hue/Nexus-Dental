@@ -16,28 +16,49 @@ export async function enableMaintenance(
     estimatedDuration: string,
     systemOwnerId: string
 ) {
-    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+    const tenant = await prisma.tenant.findUnique({ 
+        where: { id: tenantId },
+        include: { settings: true }
+    });
     if (!tenant) throw new Error("Tenant not found");
 
     const previousStatus = tenant.status;
+    const currentFlags = tenant.settings?.featureFlags ? (tenant.settings.featureFlags as Record<string, any>) : {};
 
     const updated = await prisma.tenant.update({
         where: { id: tenantId },
         data: {
             status: "MAINTENANCE",
-            settings: JSON.parse(JSON.stringify({
-                ...(typeof tenant.settings === "object" && tenant.settings !== null
-                    ? tenant.settings
-                    : {}),
-                maintenance: {
-                    enabled: true,
-                    reason,
-                    estimatedDuration,
-                    previousStatus,
-                    enabledAt: new Date().toISOString(),
-                    enabledBy: systemOwnerId,
-                },
-            })),
+            settings: {
+                upsert: {
+                    create: {
+                        featureFlags: {
+                            ...currentFlags,
+                            maintenance: {
+                                enabled: true,
+                                reason,
+                                estimatedDuration,
+                                previousStatus,
+                                enabledAt: new Date().toISOString(),
+                                enabledBy: systemOwnerId,
+                            }
+                        }
+                    },
+                    update: {
+                        featureFlags: {
+                            ...currentFlags,
+                            maintenance: {
+                                enabled: true,
+                                reason,
+                                estimatedDuration,
+                                previousStatus,
+                                enabledAt: new Date().toISOString(),
+                                enabledBy: systemOwnerId,
+                            }
+                        }
+                    }
+                }
+            }
         },
     });
 
@@ -61,24 +82,28 @@ export async function disableMaintenance(
     tenantId: string,
     systemOwnerId: string
 ) {
-    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+    const tenant = await prisma.tenant.findUnique({ 
+        where: { id: tenantId },
+        include: { settings: true }
+    });
     if (!tenant) throw new Error("Tenant not found");
 
-    const settings =
-        typeof tenant.settings === "object" && tenant.settings !== null
-            ? (tenant.settings as Record<string, unknown>)
-            : {};
-    const maintenanceInfo = settings.maintenance as Record<string, unknown> | undefined;
+    const currentFlags = tenant.settings?.featureFlags ? (tenant.settings.featureFlags as Record<string, any>) : {};
+    const maintenanceInfo = currentFlags.maintenance as Record<string, any> | undefined;
     const previousStatus = (maintenanceInfo?.previousStatus as string) || "ACTIVE";
 
-    // Remove maintenance info from settings
-    const { maintenance: _, ...cleanSettings } = settings;
+    // Remove maintenance info from flags
+    const { maintenance: _, ...cleanFlags } = currentFlags;
 
     const updated = await prisma.tenant.update({
         where: { id: tenantId },
         data: {
             status: previousStatus as "ACTIVE" | "FROZEN",
-            settings: JSON.parse(JSON.stringify(cleanSettings)),
+            settings: {
+                update: {
+                    featureFlags: cleanFlags
+                }
+            }
         },
     });
 
@@ -103,7 +128,7 @@ export async function isInMaintenance(
 ): Promise<{ maintenance: boolean; reason?: string; estimatedDuration?: string }> {
     const tenant = await prisma.tenant.findUnique({
         where: { id: tenantId },
-        select: { status: true, settings: true },
+        include: { settings: true },
     });
 
     if (!tenant) throw new Error("Tenant not found");
@@ -112,11 +137,8 @@ export async function isInMaintenance(
         return { maintenance: false };
     }
 
-    const settings =
-        typeof tenant.settings === "object" && tenant.settings !== null
-            ? (tenant.settings as Record<string, unknown>)
-            : {};
-    const maintenanceInfo = settings.maintenance as Record<string, unknown> | undefined;
+    const currentFlags = tenant.settings?.featureFlags ? (tenant.settings.featureFlags as Record<string, any>) : {};
+    const maintenanceInfo = currentFlags.maintenance as Record<string, any> | undefined;
 
     return {
         maintenance: true,

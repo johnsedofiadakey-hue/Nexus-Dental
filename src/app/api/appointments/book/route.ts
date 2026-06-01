@@ -8,6 +8,7 @@ import prisma from "@/lib/db/prisma";
 import { requireAuth, enforceTenantScope, apiError, apiSuccess } from "@/lib/auth";
 import { acquireSlotLock, confirmSlotLock } from "@/lib/booking";
 import { logAudit, getClientIP, getUserAgent } from "@/lib/audit/logger";
+import { appointmentQueue } from "@/lib/queue/queues";
 import type { PatientJWTPayload, JWTPayload } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
@@ -148,6 +149,16 @@ export async function POST(request: NextRequest) {
                 ipAddress: getClientIP(request.headers),
                 userAgent: getUserAgent(request.headers),
             });
+
+            // Enqueue 24h and 1h reminder jobs
+            const msUntil24h = appointment.dateTime.getTime() - Date.now() - 24 * 60 * 60 * 1000;
+            const msUntil1h  = appointment.dateTime.getTime() - Date.now() - 60 * 60 * 1000;
+            if (msUntil24h > 0) {
+                await appointmentQueue.add("reminder", { type: "REMINDER_24H", appointmentId: appointment.id, tenantId }, { delay: msUntil24h }).catch(() => {});
+            }
+            if (msUntil1h > 0) {
+                await appointmentQueue.add("reminder", { type: "REMINDER_1H", appointmentId: appointment.id, tenantId }, { delay: msUntil1h }).catch(() => {});
+            }
 
             return apiSuccess(appointment, 201);
         } catch (bookingError) {

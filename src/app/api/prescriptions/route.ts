@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
 
         // Verify role (Doctor or Admin)
         const staffUser = user as JWTPayload;
-        if (!["SYSTEM_OWNER", "CLINIC_OWNER", "DOCTOR", "ADMIN"].includes(staffUser.role)) {
+        if (!staffUser.roles.some(r => ["SYSTEM_OWNER", "CLINIC_OWNER", "DOCTOR", "ADMIN"].includes(r as any))) {
             return apiError("Forbidden: Only clinical staff can issue prescriptions", 403);
         }
 

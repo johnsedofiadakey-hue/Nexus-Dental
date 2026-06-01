@@ -118,7 +118,7 @@ export class PharmacyService {
             return tx.prescription.update({
                 where: { id: prescriptionId },
                 data: {
-                    status: "DISPENSED",
+                    status: "FILLED",
                     dispensedAt: new Date(),
                     dispensedById
                 },

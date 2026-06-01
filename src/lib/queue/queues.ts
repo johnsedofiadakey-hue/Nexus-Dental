@@ -22,11 +22,13 @@ const defaultJobOptions = {
     },
 };
 
+const isBuild = process.env.NODE_ENV === "production" && !process.env.REDIS_URL;
+
 /**
  * notification-queue:
  * Handles all outbound communication fallback chain
  */
-export const notificationQueue = new Queue("notification-queue", {
+export const notificationQueue = isBuild ? ({} as Queue) : new Queue("notification-queue", {
     connection: queueRedisConnection as any,
     defaultJobOptions,
 });
@@ -35,7 +37,7 @@ export const notificationQueue = new Queue("notification-queue", {
  * appointment-queue:
  * Handles reminders and lifecycle events
  */
-export const appointmentQueue = new Queue("appointment-queue", {
+export const appointmentQueue = isBuild ? ({} as Queue) : new Queue("appointment-queue", {
     connection: queueRedisConnection as any,
     defaultJobOptions,
 });
@@ -44,7 +46,7 @@ export const appointmentQueue = new Queue("appointment-queue", {
  * recall-queue:
  * Handles periodic patient follow-up checks
  */
-export const recallQueue = new Queue("recall-queue", {
+export const recallQueue = isBuild ? ({} as Queue) : new Queue("recall-queue", {
     connection: queueRedisConnection as any,
     defaultJobOptions,
 });

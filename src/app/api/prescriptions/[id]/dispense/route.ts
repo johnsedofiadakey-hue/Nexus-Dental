@@ -38,7 +38,7 @@ export async function POST(
             return apiError("Access denied", 403);
         }
 
-        if (prescription.status === "DISPENSED") {
+        if (prescription.status === "FILLED") {
             return apiError("Prescription already dispensed", 400);
         }
 
@@ -91,7 +91,7 @@ export async function POST(
             const updatedPrescription = await tx.prescription.update({
                 where: { id },
                 data: {
-                    status: "DISPENSED",
+                    status: "FILLED",
                     dispensedAt: new Date(),
                     dispensedById: userId,
                 }

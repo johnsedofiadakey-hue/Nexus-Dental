@@ -20,7 +20,8 @@ import {
 } from "@/lib/clinical";
 import { getClientIP, getUserAgent } from "@/lib/audit/logger";
 import type { JWTPayload } from "@/lib/auth";
-import type { OverrideAction } from "@prisma/client";
+
+type OverrideAction = "APPOINTMENT_STATUS_CHANGE" | "BUFFER_REMOVAL" | "INVENTORY_ADJUST";
 
 export async function POST(request: NextRequest) {
     try {

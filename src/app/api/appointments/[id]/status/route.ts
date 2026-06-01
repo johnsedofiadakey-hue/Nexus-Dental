@@ -66,7 +66,7 @@ export async function PATCH(
         }
 
         // Execute transition atomically
-        const updated = await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
+        const updated = await prisma.$transaction(async (tx: any) => {
             // Update appointment status
             const updatedAppointment = await tx.appointment.update({
                 where: { id },

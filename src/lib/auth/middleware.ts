@@ -34,8 +34,15 @@ export function apiSuccess<T>(data: T, status: number = 200) {
 export function authenticateRequest(
     request: NextRequest
 ): AuthUser | null {
+    // 1. Try Authorization header first (for API clients, mobile app, etc.)
     const authHeader = request.headers.get("authorization");
-    const token = extractTokenFromHeader(authHeader);
+    let token = extractTokenFromHeader(authHeader);
+
+    // 2. If no header, fallback to the HTTP-only cookie (for web app fetches)
+    if (!token) {
+        token = request.cookies.get("nexus_token")?.value || null;
+    }
+
     if (!token) return null;
     return verifyToken(token);
 }

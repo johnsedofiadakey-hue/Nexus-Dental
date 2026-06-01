@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
         // Verify role (Clinic Owner or Admin)
         const staffUser = auth.user as JWTPayload;
         const allowedRoles = ["SYSTEM_OWNER", "CLINIC_OWNER", "ADMIN"];
-        if (!allowedRoles.includes(staffUser.role)) {
+        if (!staffUser.roles.some(r => allowedRoles.includes(r))) {
             return apiError("Forbidden: Only owners/admins can edit settings", 403);
         }
 

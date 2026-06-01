@@ -8,7 +8,7 @@ import { PatientService } from "@/lib/services/patient.service";
  */
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const user = authenticateRequest(request);
@@ -16,7 +16,7 @@ export async function GET(
             return apiError("Unauthorized", 401);
         }
 
-        const patientId = params.id;
+        const patientId = (await params).id;
         const tenantId = user.tenantId;
 
         // Security Check: 

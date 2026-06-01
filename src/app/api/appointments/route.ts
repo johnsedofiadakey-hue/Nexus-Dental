@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
         } else if (isStaffUser(user)) {
             // Doctors see their own appointments by default
             const staffUser = user as JWTPayload;
-            if (staffUser.role === "DOCTOR" && !patientId) {
+            if (staffUser.roles.includes("DOCTOR") && !patientId) {
                 where.doctorId = staffUser.userId;
             }
             // Admin/receptionist can filter by doctor or patient

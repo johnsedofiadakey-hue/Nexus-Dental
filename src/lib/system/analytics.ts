@@ -77,13 +77,13 @@ export async function getTenantAnalytics(
 
     // Process categories
     const categories: Record<string, number> = {};
-    appointmentCategories.forEach((a) => {
+    appointmentCategories.forEach((a: any) => {
         const cat = a.service.category;
         categories[cat] = (categories[cat] || 0) + 1;
     });
 
     const apptCounts: Record<string, number> = {};
-    appointmentStats.forEach((s) => {
+    appointmentStats.forEach((s: any) => {
         apptCounts[s.status] = s._count.status;
     });
 
@@ -92,7 +92,7 @@ export async function getTenantAnalytics(
             totalPaid: invoiceStats._sum.totalAmount || 0,
             taxCollected: invoiceStats._sum.tax || 0,
             discountGiven: invoiceStats._sum.discount || 0,
-            dailyRevenue: dailyRevenue.map((d) => ({
+            dailyRevenue: dailyRevenue.map((d: any) => ({
                 date: new Date(d.date).toISOString().split("T")[0],
                 amount: Number(d.amount),
             })),

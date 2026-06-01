@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
             }
         }
 
-        const [logs, total, actionSummary] = await Promise.all([
+        const [logs, total, actionSummary, userSummary] = await Promise.all([
             prisma.auditLog.findMany({
                 where,
                 include: {
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
                             id: true,
                             firstName: true,
                             lastName: true,
-                            role: true,
+                            roles: true,
                             email: true,
                         },
                     },
@@ -80,14 +80,26 @@ export async function GET(request: NextRequest) {
                 orderBy: { _count: { action: "desc" } },
                 take: 10,
             }),
+            // User breakdown for the filtered set
+            prisma.auditLog.groupBy({
+                by: ["userId"],
+                where,
+                _count: { userId: true },
+                orderBy: { _count: { userId: "desc" } },
+                take: 10,
+            }),
         ]);
 
         return apiSuccess({
             logs,
             summary: {
-                topActions: actionSummary.map((a) => ({
+                topActions: actionSummary.map((a: any) => ({
                     action: a.action,
                     count: a._count.action,
+                })),
+                topUsers: userSummary.map((u: any) => ({
+                    userId: u.userId,
+                    count: u._count.userId,
                 })),
             },
             pagination: {

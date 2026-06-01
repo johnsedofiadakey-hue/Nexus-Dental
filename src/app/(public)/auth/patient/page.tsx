@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Phone, ArrowRight, MessageSquare, Mail, Github, Chrome } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+// Removed Firebase imports
 
 export default function PatientLoginPage() {
     const [step, setStep] = useState<"PHONE" | "OTP">("PHONE");
@@ -14,6 +15,8 @@ export default function PatientLoginPage() {
     const [phone, setPhone] = useState("");
     const [otpValues, setOtpValues] = useState(["", "", "", "", "", ""]);
     const [tenantId, setTenantId] = useState("airport-hills-dental"); // Default for simulation
+
+    // Removed Recaptcha useEffect
 
     const handleSendOTP = async () => {
         if (!phone) {
@@ -23,29 +26,22 @@ export default function PatientLoginPage() {
 
         setLoading(true);
         try {
-            const response = await fetch("/api/auth/patient/otp/request", {
+            const response = await fetch("/api/auth/patient/send-otp", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ phone, tenantId }),
             });
-
             const data = await response.json();
-
+            
             if (data.success) {
                 setStep("OTP");
                 toast.success("Verification code sent to your mobile");
-
-                // In development, show the OTP directly for simulation
-                if (data.data?.otp) {
-                    toast.info(`[DEV MODE] Verification Code: ${data.data.otp}`, {
-                        duration: 10000,
-                    });
-                }
             } else {
                 toast.error(data.error || "Failed to send verification code");
             }
-        } catch (error) {
-            toast.error("An error occurred. Please try again.");
+        } catch (error: any) {
+            console.error("SMS sending failed:", error);
+            toast.error(error.message || "Failed to send verification code");
         } finally {
             setLoading(false);
         }
@@ -60,25 +56,24 @@ export default function PatientLoginPage() {
 
         setLoading(true);
         try {
-            const response = await fetch("/api/auth/patient/otp/verify", {
+            const response = await fetch("/api/auth/patient/verify-otp", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ phone, tenantId, otp }),
+                body: JSON.stringify({ phone, otp, tenantId }),
             });
 
             const data = await response.json();
 
             if (data.success) {
                 toast.success("Login successful!");
-                // Clear state
                 setOtpValues(["", "", "", "", "", ""]);
-                // Redirect to portal
                 window.location.href = "/portal";
             } else {
-                toast.error(data.error || "Invalid verification code");
+                toast.error(data.error || "Authentication failed on backend");
             }
-        } catch (error) {
-            toast.error("An error occurred during verification.");
+        } catch (error: any) {
+            console.error("OTP verification failed:", error);
+            toast.error("Invalid verification code");
         } finally {
             setLoading(false);
         }
@@ -91,7 +86,6 @@ export default function PatientLoginPage() {
         newValues[index] = value.slice(-1);
         setOtpValues(newValues);
 
-        // Auto-focus next input
         if (value && index < 5) {
             const nextInput = document.getElementById(`otp-${index + 1}`);
             nextInput?.focus();
@@ -127,6 +121,8 @@ export default function PatientLoginPage() {
                     animate={{ opacity: 1, y: 0 }}
                     className="bg-bg p-8 rounded-[2rem] border border-border shadow-soft"
                 >
+                    
+                    
                     {step === "PHONE" ? (
                         <div className="space-y-6">
                             <div className="space-y-4">
@@ -147,13 +143,13 @@ export default function PatientLoginPage() {
                                         <Input
                                             value={phone}
                                             onChange={(e) => setPhone(e.target.value)}
-                                            placeholder="+233 XX XXX XXXX"
+                                            placeholder="+1 555 555 5555"
                                             className="pl-12 h-14 rounded-2xl bg-white border-none shadow-sm focus-visible:ring-primary"
                                         />
                                     </div>
+                                    <p className="text-xs text-text-muted mt-1 ml-1">Include country code (e.g. +1 for US, +233 for GH)</p>
                                 </div>
                             </div>
-
 
                             <Button
                                 onClick={handleSendOTP}
@@ -210,7 +206,10 @@ export default function PatientLoginPage() {
                             </Button>
 
                             <button
-                                onClick={() => setStep("PHONE")}
+                                onClick={() => {
+                                    setStep("PHONE");
+                                    setOtpValues(["", "", "", "", "", ""]);
+                                }}
                                 className="text-sm font-medium text-primary hover:underline"
                             >
                                 Didn&apos;t receive code? Resend

@@ -7,7 +7,7 @@ import prisma from "@/lib/db/prisma";
 
 export interface TimelineEvent {
     id: string;
-    type: "APPOINTMENT" | "PRESCRIPTION" | "INVOICE";
+    type: "APPOINTMENT" | "PRESCRIPTION" | "INVOICE" | "INTERACTION" | "BILLING";
     date: Date;
     title: string;
     description?: string;
@@ -20,11 +20,11 @@ export class PatientService {
      * Get unified timeline history for a patient
      */
     static async getTimelineHistory(patientId: string, tenantId: string): Promise<TimelineEvent[]> {
-        const [appointments, prescriptions, invoices] = await Promise.all([
+        const [appointments, prescriptions, invoices, logs] = await Promise.all([
             prisma.appointment.findMany({
                 where: { patientId, tenantId },
                 include: { service: true },
-                orderBy: { date: "desc" },
+                orderBy: { dateTime: "desc" },
             }),
             prisma.prescription.findMany({
                 where: { patientId, tenantId },
@@ -35,56 +35,63 @@ export class PatientService {
                 where: { patientId, tenantId },
                 orderBy: { createdAt: "desc" },
             }),
+            prisma.auditLog.findMany({
+                where: { entityId: patientId, tenantId },
+                include: { user: true },
+                orderBy: { timestamp: "desc" },
+            }),
         ]);
 
         const events: TimelineEvent[] = [];
 
         // Map Appointments
-        appointments.forEach((apt) => {
+        appointments.forEach((apt: any) => {
             events.push({
                 id: apt.id,
                 type: "APPOINTMENT",
-                date: apt.date,
-                title: `Dental Visit: ${apt.service?.name || "General Checkup"}`,
-                description: apt.notes || undefined,
+                date: apt.dateTime,
+                title: `${apt.service.name} with Dr. ${apt.doctor.lastName}`,
+                description: apt.notes || "",
                 status: apt.status,
-                metadata: {
-                    serviceId: apt.serviceId,
-                    doctorId: apt.doctorId,
-                },
+                metadata: { serviceId: apt.service.id, doctorId: apt.doctor.id },
+            });
+        });
+
+        // Map Audit Logs (Interactions)
+        logs.forEach((log: any) => {
+            events.push({
+                id: log.id,
+                type: "INTERACTION",
+                date: log.timestamp,
+                title: log.action,
+                description: `Action performed by ${log.user.firstName} ${log.user.lastName}`,
+                status: "COMPLETED",
+                metadata: { userId: log.user.id },
             });
         });
 
         // Map Prescriptions
-        prescriptions.forEach((rx) => {
+        prescriptions.forEach((rx: any) => {
             events.push({
                 id: rx.id,
                 type: "PRESCRIPTION",
                 date: rx.createdAt,
                 title: "Prescription Issued",
-                description: rx.instructions || undefined,
+                description: "Medications prescribed by doctor",
                 status: rx.status,
-                metadata: {
-                    doctorId: rx.doctorId,
-                    doctorName: `${rx.doctor.firstName} ${rx.doctor.lastName}`,
-                    medications: rx.medications,
-                },
+                metadata: { doctorId: rx.doctorId },
             });
         });
 
         // Map Invoices
-        invoices.forEach((inv) => {
+        invoices.forEach((inv: any) => {
             events.push({
                 id: inv.id,
-                type: "INVOICE",
+                type: "BILLING",
                 date: inv.createdAt,
-                title: "Invoice Generated",
-                description: `Amount: ${inv.currency} ${inv.totalAmount}`,
+                title: `Invoice #${inv.id.slice(-6).toUpperCase()}`,
+                description: `Amount: $${inv.totalAmount.toFixed(2)}`,
                 status: inv.status,
-                metadata: {
-                    total: inv.totalAmount,
-                    currency: inv.currency,
-                },
             });
         });
 

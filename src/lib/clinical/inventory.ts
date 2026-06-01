@@ -32,7 +32,7 @@ export async function deductInventoryForProcedure(
     serviceId: string,
     userId: string,
     appointmentId: string,
-    tx?: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]
+    tx?: any
 ): Promise<{
     deductions: InventoryDeduction[];
     lowStockAlerts: LowStockAlert[];
@@ -172,5 +172,5 @@ export async function getLowStockItems(tenantId: string) {
         orderBy: { quantity: "asc" },
     });
 
-    return allItems.filter((item) => item.quantity <= item.threshold);
+    return allItems.filter((item: any) => item.quantity <= item.threshold);
 }

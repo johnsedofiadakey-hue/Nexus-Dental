@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Mail, Lock, ArrowRight, ShieldCheck } from "lucide-react";
@@ -9,54 +9,103 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
+// Window.google is declared in src/types/google-gsi.d.ts
+
+function redirectByRole(role: string, router: ReturnType<typeof useRouter>) {
+    if (role === "SYSTEM_OWNER") router.push("/system/dashboard");
+    else if (role === "DOCTOR" || role === "NURSE") router.push("/clinical");
+    else if (role === "BILLING_STAFF") router.push("/finance");
+    else if (role === "INVENTORY_MANAGER") router.push("/inventory");
+    else router.push("/dashboard");
+}
+
 export default function StaffLoginPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
-    const [formData, setFormData] = useState({
-        email: "",
-        password: ""
-    });
+    const [googleLoading, setGoogleLoading] = useState(false);
+    const [formData, setFormData] = useState({ email: "", password: "" });
+
+    // Handle the Google credential callback
+    const handleGoogleCredential = useCallback(async (credential: string) => {
+        setGoogleLoading(true);
+        try {
+            const res = await fetch("/api/auth/google", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ idToken: credential }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                toast.success(`Welcome, ${data.data.user.firstName}`);
+                redirectByRole(data.data.user.role, router);
+            } else {
+                toast.error(data.error || "Google sign-in failed");
+            }
+        } catch {
+            toast.error("Google sign-in failed. Try again.");
+        } finally {
+            setGoogleLoading(false);
+        }
+    }, [router]);
+
+    // Load Google Identity Services script and initialize
+    useEffect(() => {
+        const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+        if (!clientId) return; // Google not configured — silently hide the button
+
+        const script = document.createElement("script");
+        script.src = "https://accounts.google.com/gsi/client";
+        script.async = true;
+        script.defer = true;
+        script.onload = () => {
+            window.google?.accounts.id.initialize({
+                client_id: clientId,
+                callback: (response) => handleGoogleCredential(response.credential),
+                cancel_on_tap_outside: true,
+            });
+
+            const btn = document.getElementById("google-signin-btn");
+            if (btn) {
+                window.google?.accounts.id.renderButton(btn, {
+                    type: "standard",
+                    shape: "rectangular",
+                    theme: "outline",
+                    text: "signin_with",
+                    size: "large",
+                    logo_alignment: "left",
+                    width: "100%",
+                });
+            }
+        };
+        document.body.appendChild(script);
+        return () => { document.body.removeChild(script); };
+    }, [handleGoogleCredential]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-
         try {
             const res = await fetch("/api/auth/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(formData),
             });
-
             const data = await res.json();
-
             if (data.success) {
                 toast.success(`Welcome back, ${data.user.firstName}`);
-                // Role-based redirection logic
-                const role = data.user.role;
-                if (role === "SYSTEM_OWNER") {
-                    router.push("/system/dashboard");
-                } else if (role === "CLINIC_OWNER" || role === "RECEPTIONIST") {
-                    router.push("/dashboard");
-                } else if (role === "DOCTOR" || role === "NURSE") {
-                    router.push("/clinical");
-                } else if (role === "FINANCE_OFFICER" || role === "BILLING_STAFF") {
-                    router.push("/finance");
-                } else if (role === "INVENTORY_MANAGER") {
-                    router.push("/inventory");
-                } else {
-                    router.push("/dashboard");
-                }
+                redirectByRole(data.user.role, router);
             } else {
-
                 toast.error(data.error || "Authentication failed");
             }
-        } catch (error) {
+        } catch {
             toast.error("An unexpected error occurred");
         } finally {
             setLoading(false);
         }
     };
+
+    const googleConfigured = !!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
     return (
         <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-6">
@@ -73,12 +122,39 @@ export default function StaffLoginPage() {
                     <p className="text-slate-500">Sign in to the clinical management system.</p>
                 </div>
 
-                {/* Auth Card */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-hero"
                 >
+                    {/* Google Sign-In */}
+                    {googleConfigured && (
+                        <>
+                            <div className="mb-6">
+                                <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 text-center">
+                                    Sign in with your work account
+                                </p>
+                                {googleLoading ? (
+                                    <div className="h-11 flex items-center justify-center rounded-2xl border border-slate-200 text-sm text-slate-500">
+                                        Signing in…
+                                    </div>
+                                ) : (
+                                    <div id="google-signin-btn" className="w-full flex justify-center" />
+                                )}
+                            </div>
+
+                            <div className="relative my-6">
+                                <div className="absolute inset-0 flex items-center">
+                                    <div className="w-full border-t border-slate-100" />
+                                </div>
+                                <div className="relative flex justify-center text-xs">
+                                    <span className="bg-white px-3 text-slate-400 font-medium">or sign in with password</span>
+                                </div>
+                            </div>
+                        </>
+                    )}
+
+                    {/* Email / Password form */}
                     <form onSubmit={handleLogin} className="space-y-6">
                         <div className="space-y-2">
                             <label className="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">Work Email</label>
@@ -89,7 +165,7 @@ export default function StaffLoginPage() {
                                     required
                                     value={formData.email}
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                    placeholder="name@nexusdental.com"
+                                    placeholder="name@yourclinic.com"
                                     className="pl-12 h-14 rounded-2xl bg-slate-50 border-none shadow-inner focus-visible:ring-secondary"
                                 />
                             </div>
@@ -123,13 +199,12 @@ export default function StaffLoginPage() {
                     <div className="mt-10 pt-6 border-t border-slate-100 flex justify-between items-center text-xs">
                         <Link href="/contact" className="text-slate-500 hover:text-secondary font-medium">Forgot password?</Link>
                         <span className="text-slate-300">|</span>
-                        <Link href="/support" className="text-slate-500 hover:text-secondary font-medium">Technical Support</Link>
+                        <Link href="/onboarding" className="text-teal-600 hover:text-teal-700 font-medium">Register your clinic →</Link>
                     </div>
                 </motion.div>
 
-                {/* Footer info */}
                 <p className="text-center text-[10px] text-slate-400 uppercase tracking-[0.2em] font-bold">
-                    Authorized Personnel Only • Secure 256-bit Encrpytion
+                    Authorized Personnel Only • Secure 256-bit Encryption
                 </p>
             </div>
         </div>

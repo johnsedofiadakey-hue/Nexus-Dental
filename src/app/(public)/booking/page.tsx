@@ -20,6 +20,7 @@ import {
     Phone,
     Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 
 // ─────────────────────────────────────────────
 // Types
@@ -31,7 +32,7 @@ interface Service {
     description: string;
     category: string;
     price: number;
-    durationMinutes: number;
+    duration: number;
 }
 
 interface Doctor {
@@ -66,49 +67,7 @@ const STEPS = [
     { id: 4, label: "Confirm", icon: CheckCircle },
 ];
 
-// Mock data for static rendering (will be replaced with API calls)
-const SERVICES: Service[] = [
-    { id: "svc-1", name: "Dental Check-up & Cleaning", description: "Comprehensive oral examination with professional cleaning", category: "GENERAL", price: 150, durationMinutes: 30 },
-    { id: "svc-2", name: "Teeth Whitening", description: "Professional in-office teeth whitening treatment", category: "COSMETIC", price: 450, durationMinutes: 60 },
-    { id: "svc-3", name: "Root Canal Treatment", description: "Endodontic therapy to save damaged teeth", category: "RESTORATIVE", price: 800, durationMinutes: 90 },
-    { id: "svc-4", name: "Dental Implant Consultation", description: "Assessment and planning for dental implants", category: "RESTORATIVE", price: 200, durationMinutes: 45 },
-    { id: "svc-5", name: "Orthodontic Assessment", description: "Complete orthodontic evaluation with treatment planning", category: "ORTHODONTICS", price: 250, durationMinutes: 45 },
-    { id: "svc-6", name: "Emergency Dental Care", description: "Urgent treatment for dental emergencies", category: "EMERGENCY", price: 300, durationMinutes: 30 },
-    { id: "svc-7", name: "Pediatric Dental Visit", description: "Gentle dental care designed for children", category: "PEDIATRIC", price: 120, durationMinutes: 30 },
-    { id: "svc-8", name: "Online Consultation", description: "Virtual dental consultation with our specialists", category: "TELECONSULT", price: 100, durationMinutes: 30 },
-];
-
-const DOCTORS: Doctor[] = [
-    { id: "doc-1", firstName: "Dr. Kwame", lastName: "Asante", specialty: "General Dentistry", avatar: null },
-    { id: "doc-2", firstName: "Dr. Ama", lastName: "Mensah", specialty: "Cosmetic Dentistry", avatar: null },
-    { id: "doc-3", firstName: "Dr. Kofi", lastName: "Boateng", specialty: "Orthodontics", avatar: null },
-    { id: "doc-4", firstName: "Dr. Abena", lastName: "Owusu", specialty: "Oral Surgery", avatar: null },
-];
-
-// Generate mock schedule
-function generateMockSchedule(date: Date): DaySchedule {
-    const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    const slots: TimeSlot[] = [];
-
-    for (let h = 8; h < 18; h++) {
-        for (const m of [0, 30]) {
-            const time = `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
-            const random = Math.random();
-            slots.push({
-                time,
-                available: random > 0.3,
-                locked: random > 0.85 && random <= 0.9,
-            });
-        }
-    }
-
-    return {
-        date: date.toISOString().split("T")[0],
-        dayOfWeek: dayNames[date.getDay()],
-        slots,
-        totalAvailable: slots.filter((s) => s.available).length,
-    };
-}
+const TENANT_ID = "airport-hills-dental"; // Hardcoded for MVP single-clinic setup
 
 // ─────────────────────────────────────────────
 // Component
@@ -120,27 +79,88 @@ export default function BookingPage() {
     const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [selectedTime, setSelectedTime] = useState<string | null>(null);
+    
+    const [services, setServices] = useState<Service[]>([]);
+    const [doctors, setDoctors] = useState<Doctor[]>([]);
     const [weekSchedule, setWeekSchedule] = useState<DaySchedule[]>([]);
+    
+    const [loadingServices, setLoadingServices] = useState(true);
+    const [loadingDoctors, setLoadingDoctors] = useState(true);
+    const [loadingSchedule, setLoadingSchedule] = useState(false);
+    
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isBooked, setIsBooked] = useState(false);
     const [notes, setNotes] = useState("");
     const [phone, setPhone] = useState("");
 
+    // Fetch Services and Doctors on mount
+    useEffect(() => {
+        async function fetchInitialData() {
+            try {
+                const [servicesRes, doctorsRes] = await Promise.all([
+                    fetch(`/api/services?tenantId=${TENANT_ID}`),
+                    fetch(`/api/appointments/doctors?tenantId=${TENANT_ID}`)
+                ]);
+                
+                const servicesData = await servicesRes.json();
+                const doctorsData = await doctorsRes.json();
+                
+                if (servicesData.success) {
+                    setServices(servicesData.data.services);
+                } else {
+                    toast.error("Failed to load services");
+                }
+                
+                if (doctorsData.success) {
+                    setDoctors(doctorsData.data.doctors);
+                } else {
+                    toast.error("Failed to load doctors");
+                }
+            } catch (error) {
+                console.error("Error loading initial data:", error);
+                toast.error("Error connecting to server");
+            } finally {
+                setLoadingServices(false);
+                setLoadingDoctors(false);
+            }
+        }
+        
+        fetchInitialData();
+    }, []);
+
     // Generate week schedule when doctor is selected
     useEffect(() => {
-        if (selectedDoctor) {
-            const schedules: DaySchedule[] = [];
-            const today = new Date();
-            for (let i = 0; i < 7; i++) {
-                const d = new Date(today);
-                d.setDate(today.getDate() + i);
-                if (d.getDay() !== 0) {
-                    schedules.push(generateMockSchedule(d));
+        if (selectedDoctor && selectedService) {
+            async function fetchSchedule() {
+                setLoadingSchedule(true);
+                setWeekSchedule([]);
+                setSelectedDate(null);
+                setSelectedTime(null);
+                
+                try {
+                    // Fetch slots for the next 7 days starting from today
+                    const today = new Date();
+                    const dateStr = today.toISOString().split("T")[0];
+                    const duration = selectedService?.duration || 30;
+                    
+                    const res = await fetch(`/api/appointments/slots?tenantId=${TENANT_ID}&doctorId=${selectedDoctor!.id}&date=${dateStr}&mode=week&duration=${duration}`);
+                    const data = await res.json();
+                    
+                    if (data.success) {
+                        setWeekSchedule(data.data.schedules);
+                    } else {
+                        toast.error(data.error || "Failed to load schedule");
+                    }
+                } catch (error) {
+                    console.error("Error fetching schedule:", error);
+                    toast.error("Error connecting to server");
+                } finally {
+                    setLoadingSchedule(false);
                 }
             }
-            setWeekSchedule(schedules);
+            fetchSchedule();
         }
-    }, [selectedDoctor]);
+    }, [selectedDoctor, selectedService]);
 
     const canProceed =
         (currentStep === 1 && selectedService) ||
@@ -157,11 +177,39 @@ export default function BookingPage() {
     };
 
     const handleSubmit = async () => {
+        if (!selectedService || !selectedDoctor || !selectedDate || !selectedTime) return;
+        
         setIsSubmitting(true);
-        // Simulate API call
-        await new Promise((r) => setTimeout(r, 2000));
-        setIsSubmitting(false);
-        setIsBooked(true);
+        
+        try {
+            const res = await fetch("/api/appointments/book", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    tenantId: TENANT_ID,
+                    serviceId: selectedService.id,
+                    doctorId: selectedDoctor.id,
+                    date: selectedDate,
+                    time: selectedTime,
+                    type: "IN_PERSON",
+                    notes: `${phone ? `Phone: ${phone}\n` : ''}${notes}`,
+                })
+            });
+            
+            const data = await res.json();
+            
+            if (data.success) {
+                toast.success("Appointment booked successfully!");
+                setIsBooked(true);
+            } else {
+                toast.error(data.error || "Failed to book appointment. Please make sure you are logged in.");
+            }
+        } catch (error) {
+            console.error("Booking error:", error);
+            toast.error("Network error. Please try again.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const formatPrice = (price: number) =>
@@ -306,54 +354,64 @@ export default function BookingPage() {
                             <h2 className="text-xl font-bold mb-4" style={{ color: "var(--color-text-primary)" }}>
                                 Choose a Service
                             </h2>
-                            <div className="grid gap-3 md:grid-cols-2">
-                                {SERVICES.map((service) => (
-                                    <button
-                                        key={service.id}
-                                        onClick={() => setSelectedService(service)}
-                                        className="text-left p-4 rounded-xl border-2 transition-all duration-200 hover:shadow-md"
-                                        style={{
-                                            background: "white",
-                                            borderColor:
-                                                selectedService?.id === service.id
-                                                    ? "var(--color-primary)"
-                                                    : "var(--color-border-light)",
-                                            boxShadow:
-                                                selectedService?.id === service.id
-                                                    ? "0 0 0 3px rgba(42,127,113,0.1)"
-                                                    : "none",
-                                        }}
-                                    >
-                                        <div className="flex justify-between items-start mb-2">
-                                            <h3 className="font-semibold" style={{ color: "var(--color-text-primary)" }}>
-                                                {service.name}
-                                            </h3>
-                                            <span
-                                                className="text-xs px-2 py-1 rounded-full font-medium"
-                                                style={{
-                                                    background: "var(--color-background-secondary)",
-                                                    color: "var(--color-primary)",
-                                                }}
-                                            >
-                                                {service.category}
-                                            </span>
-                                        </div>
-                                        <p className="text-sm mb-3" style={{ color: "var(--color-text-secondary)" }}>
-                                            {service.description}
-                                        </p>
-                                        <div className="flex items-center gap-4 text-sm">
-                                            <span className="flex items-center gap-1" style={{ color: "var(--color-primary)" }}>
-                                                <DollarSign className="w-3.5 h-3.5" />
-                                                {formatPrice(service.price)}
-                                            </span>
-                                            <span className="flex items-center gap-1" style={{ color: "var(--color-text-light)" }}>
-                                                <Clock className="w-3.5 h-3.5" />
-                                                {service.durationMinutes} min
-                                            </span>
-                                        </div>
-                                    </button>
-                                ))}
-                            </div>
+                            {loadingServices ? (
+                                <div className="flex justify-center py-12">
+                                    <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
+                                </div>
+                            ) : services.length === 0 ? (
+                                <div className="text-center py-12 text-muted-foreground bg-white rounded-xl shadow-sm border border-slate-200">
+                                    No services available at this time.
+                                </div>
+                            ) : (
+                                <div className="grid gap-3 md:grid-cols-2">
+                                    {services.map((service) => (
+                                        <button
+                                            key={service.id}
+                                            onClick={() => setSelectedService(service)}
+                                            className="text-left p-4 rounded-xl border-2 transition-all duration-200 hover:shadow-md"
+                                            style={{
+                                                background: "white",
+                                                borderColor:
+                                                    selectedService?.id === service.id
+                                                        ? "var(--color-primary)"
+                                                        : "var(--color-border-light)",
+                                                boxShadow:
+                                                    selectedService?.id === service.id
+                                                        ? "0 0 0 3px rgba(42,127,113,0.1)"
+                                                        : "none",
+                                            }}
+                                        >
+                                            <div className="flex justify-between items-start mb-2">
+                                                <h3 className="font-semibold" style={{ color: "var(--color-text-primary)" }}>
+                                                    {service.name}
+                                                </h3>
+                                                <span
+                                                    className="text-xs px-2 py-1 rounded-full font-medium"
+                                                    style={{
+                                                        background: "var(--color-background-secondary)",
+                                                        color: "var(--color-primary)",
+                                                    }}
+                                                >
+                                                    {service.category}
+                                                </span>
+                                            </div>
+                                            <p className="text-sm mb-3" style={{ color: "var(--color-text-secondary)" }}>
+                                                {service.description}
+                                            </p>
+                                            <div className="flex items-center gap-4 text-sm">
+                                                <span className="flex items-center gap-1" style={{ color: "var(--color-primary)" }}>
+                                                    <DollarSign className="w-3.5 h-3.5" />
+                                                    {formatPrice(service.price)}
+                                                </span>
+                                                <span className="flex items-center gap-1" style={{ color: "var(--color-text-light)" }}>
+                                                    <Clock className="w-3.5 h-3.5" />
+                                                    {service.duration} min
+                                                </span>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </motion.div>
                     )}
 
@@ -369,53 +427,63 @@ export default function BookingPage() {
                             <h2 className="text-xl font-bold mb-4" style={{ color: "var(--color-text-primary)" }}>
                                 Choose Your Doctor
                             </h2>
-                            <div className="grid gap-3 md:grid-cols-2">
-                                {DOCTORS.map((doctor) => (
-                                    <button
-                                        key={doctor.id}
-                                        onClick={() => setSelectedDoctor(doctor)}
-                                        className="text-left p-5 rounded-xl border-2 transition-all duration-200 hover:shadow-md"
-                                        style={{
-                                            background: "white",
-                                            borderColor:
-                                                selectedDoctor?.id === doctor.id
-                                                    ? "var(--color-primary)"
-                                                    : "var(--color-border-light)",
-                                            boxShadow:
-                                                selectedDoctor?.id === doctor.id
-                                                    ? "0 0 0 3px rgba(42,127,113,0.1)"
-                                                    : "none",
-                                        }}
-                                    >
-                                        <div className="flex items-center gap-4">
-                                            <div
-                                                className="w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold text-white shrink-0"
-                                                style={{ background: "var(--color-primary)" }}
-                                            >
-                                                {doctor.firstName.charAt(0)}{doctor.lastName.charAt(0)}
-                                            </div>
-                                            <div>
-                                                <h3 className="font-semibold" style={{ color: "var(--color-text-primary)" }}>
-                                                    {doctor.firstName} {doctor.lastName}
-                                                </h3>
-                                                <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-                                                    {doctor.specialty}
-                                                </p>
-                                                <div className="flex items-center gap-1 mt-1">
-                                                    {[...Array(5)].map((_, i) => (
-                                                        <svg key={i} className="w-3.5 h-3.5" fill="var(--color-accent)" viewBox="0 0 20 20">
-                                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                                        </svg>
-                                                    ))}
-                                                    <span className="text-xs ml-1" style={{ color: "var(--color-text-light)" }}>
-                                                        4.9
-                                                    </span>
+                            {loadingDoctors ? (
+                                <div className="flex justify-center py-12">
+                                    <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
+                                </div>
+                            ) : doctors.length === 0 ? (
+                                <div className="text-center py-12 text-muted-foreground bg-white rounded-xl shadow-sm border border-slate-200">
+                                    No doctors available at this time.
+                                </div>
+                            ) : (
+                                <div className="grid gap-3 md:grid-cols-2">
+                                    {doctors.map((doctor) => (
+                                        <button
+                                            key={doctor.id}
+                                            onClick={() => setSelectedDoctor(doctor)}
+                                            className="text-left p-5 rounded-xl border-2 transition-all duration-200 hover:shadow-md"
+                                            style={{
+                                                background: "white",
+                                                borderColor:
+                                                    selectedDoctor?.id === doctor.id
+                                                        ? "var(--color-primary)"
+                                                        : "var(--color-border-light)",
+                                                boxShadow:
+                                                    selectedDoctor?.id === doctor.id
+                                                        ? "0 0 0 3px rgba(42,127,113,0.1)"
+                                                        : "none",
+                                            }}
+                                        >
+                                            <div className="flex items-center gap-4">
+                                                <div
+                                                    className="w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold text-white shrink-0"
+                                                    style={{ background: "var(--color-primary)" }}
+                                                >
+                                                    {doctor.firstName.charAt(0)}{doctor.lastName.charAt(0)}
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-semibold" style={{ color: "var(--color-text-primary)" }}>
+                                                        {doctor.firstName} {doctor.lastName}
+                                                    </h3>
+                                                    <p className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
+                                                        {doctor.specialty}
+                                                    </p>
+                                                    <div className="flex items-center gap-1 mt-1">
+                                                        {[...Array(5)].map((_, i) => (
+                                                            <svg key={i} className="w-3.5 h-3.5" fill="var(--color-accent)" viewBox="0 0 20 20">
+                                                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                                            </svg>
+                                                        ))}
+                                                        <span className="text-xs ml-1" style={{ color: "var(--color-text-light)" }}>
+                                                            4.9
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </button>
-                                ))}
-                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </motion.div>
                     )}
 
@@ -432,95 +500,107 @@ export default function BookingPage() {
                                 Select Date & Time
                             </h2>
 
-                            {/* Date Selector */}
-                            <div className="flex gap-2 overflow-x-auto pb-3 mb-6 scrollbar-hide">
-                                {weekSchedule.map((day) => (
-                                    <button
-                                        key={day.date}
-                                        onClick={() => {
-                                            setSelectedDate(day.date);
-                                            setSelectedTime(null);
-                                        }}
-                                        className="shrink-0 px-4 py-3 rounded-xl border-2 text-center transition-all min-w-[90px]"
-                                        style={{
-                                            background: selectedDate === day.date ? "var(--color-primary)" : "white",
-                                            borderColor: selectedDate === day.date ? "var(--color-primary)" : "var(--color-border-light)",
-                                            color: selectedDate === day.date ? "white" : "var(--color-text-primary)",
-                                        }}
-                                    >
-                                        <div className="text-xs font-medium opacity-80">
-                                            {day.dayOfWeek.slice(0, 3)}
-                                        </div>
-                                        <div className="text-lg font-bold">
-                                            {new Date(day.date + "T00:00:00").getDate()}
-                                        </div>
-                                        <div className="text-xs opacity-70">
-                                            {day.totalAvailable} slots
-                                        </div>
-                                    </button>
-                                ))}
-                            </div>
-
-                            {/* Time Grid */}
-                            {selectedDate && (
-                                <div>
-                                    <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: "var(--color-text-secondary)" }}>
-                                        <Clock className="w-4 h-4" />
-                                        Available Times
-                                    </h3>
-                                    <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
-                                        {weekSchedule
-                                            .find((d) => d.date === selectedDate)
-                                            ?.slots.map((slot) => (
-                                                <button
-                                                    key={slot.time}
-                                                    disabled={!slot.available}
-                                                    onClick={() => setSelectedTime(slot.time)}
-                                                    className="py-2.5 px-3 rounded-lg text-sm font-medium transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                                                    style={{
-                                                        background:
-                                                            selectedTime === slot.time
-                                                                ? "var(--color-primary)"
-                                                                : slot.locked
-                                                                    ? "var(--color-warning)"
-                                                                    : "white",
-                                                        color:
-                                                            selectedTime === slot.time
-                                                                ? "white"
-                                                                : slot.locked
-                                                                    ? "white"
-                                                                    : slot.available
-                                                                        ? "var(--color-text-primary)"
-                                                                        : "var(--color-text-light)",
-                                                        border: `1px solid ${selectedTime === slot.time
-                                                                ? "var(--color-primary)"
-                                                                : "var(--color-border-light)"
-                                                            }`,
-                                                    }}
-                                                >
-                                                    {slot.time}
-                                                </button>
-                                            ))}
-                                    </div>
-                                    <div className="flex items-center gap-4 mt-4 text-xs" style={{ color: "var(--color-text-light)" }}>
-                                        <span className="flex items-center gap-1">
-                                            <span className="w-3 h-3 rounded-sm bg-white border" style={{ borderColor: "var(--color-border-light)" }} />
-                                            Available
-                                        </span>
-                                        <span className="flex items-center gap-1">
-                                            <span className="w-3 h-3 rounded-sm" style={{ background: "var(--color-primary)" }} />
-                                            Selected
-                                        </span>
-                                        <span className="flex items-center gap-1">
-                                            <span className="w-3 h-3 rounded-sm" style={{ background: "var(--color-warning)" }} />
-                                            Being booked
-                                        </span>
-                                        <span className="flex items-center gap-1">
-                                            <span className="w-3 h-3 rounded-sm opacity-30" style={{ background: "var(--color-border-light)" }} />
-                                            Unavailable
-                                        </span>
-                                    </div>
+                            {loadingSchedule ? (
+                                <div className="flex justify-center py-12">
+                                    <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
                                 </div>
+                            ) : weekSchedule.length === 0 ? (
+                                <div className="text-center py-12 text-muted-foreground bg-white rounded-xl shadow-sm border border-slate-200">
+                                    No available schedule found.
+                                </div>
+                            ) : (
+                                <>
+                                    {/* Date Selector */}
+                                    <div className="flex gap-2 overflow-x-auto pb-3 mb-6 scrollbar-hide">
+                                        {weekSchedule.map((day) => (
+                                            <button
+                                                key={day.date}
+                                                onClick={() => {
+                                                    setSelectedDate(day.date);
+                                                    setSelectedTime(null);
+                                                }}
+                                                className="shrink-0 px-4 py-3 rounded-xl border-2 text-center transition-all min-w-[90px]"
+                                                style={{
+                                                    background: selectedDate === day.date ? "var(--color-primary)" : "white",
+                                                    borderColor: selectedDate === day.date ? "var(--color-primary)" : "var(--color-border-light)",
+                                                    color: selectedDate === day.date ? "white" : "var(--color-text-primary)",
+                                                }}
+                                            >
+                                                <div className="text-xs font-medium opacity-80">
+                                                    {day.dayOfWeek.slice(0, 3)}
+                                                </div>
+                                                <div className="text-lg font-bold">
+                                                    {new Date(day.date + "T00:00:00").getDate()}
+                                                </div>
+                                                <div className="text-xs opacity-70">
+                                                    {day.totalAvailable} slots
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {/* Time Grid */}
+                                    {selectedDate && (
+                                        <div>
+                                            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: "var(--color-text-secondary)" }}>
+                                                <Clock className="w-4 h-4" />
+                                                Available Times
+                                            </h3>
+                                            <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
+                                                {weekSchedule
+                                                    .find((d) => d.date === selectedDate)
+                                                    ?.slots.map((slot) => (
+                                                        <button
+                                                            key={slot.time}
+                                                            disabled={!slot.available}
+                                                            onClick={() => setSelectedTime(slot.time)}
+                                                            className="py-2.5 px-3 rounded-lg text-sm font-medium transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                                                            style={{
+                                                                background:
+                                                                    selectedTime === slot.time
+                                                                        ? "var(--color-primary)"
+                                                                        : slot.locked
+                                                                            ? "var(--color-warning)"
+                                                                            : "white",
+                                                                color:
+                                                                    selectedTime === slot.time
+                                                                        ? "white"
+                                                                        : slot.locked
+                                                                            ? "white"
+                                                                            : slot.available
+                                                                                ? "var(--color-text-primary)"
+                                                                                : "var(--color-text-light)",
+                                                                border: `1px solid ${selectedTime === slot.time
+                                                                        ? "var(--color-primary)"
+                                                                        : "var(--color-border-light)"
+                                                                    }`,
+                                                            }}
+                                                        >
+                                                            {slot.time}
+                                                        </button>
+                                                    ))}
+                                            </div>
+                                            <div className="flex items-center gap-4 mt-4 text-xs" style={{ color: "var(--color-text-light)" }}>
+                                                <span className="flex items-center gap-1">
+                                                    <span className="w-3 h-3 rounded-sm bg-white border" style={{ borderColor: "var(--color-border-light)" }} />
+                                                    Available
+                                                </span>
+                                                <span className="flex items-center gap-1">
+                                                    <span className="w-3 h-3 rounded-sm" style={{ background: "var(--color-primary)" }} />
+                                                    Selected
+                                                </span>
+                                                <span className="flex items-center gap-1">
+                                                    <span className="w-3 h-3 rounded-sm" style={{ background: "var(--color-warning)" }} />
+                                                    Being booked
+                                                </span>
+                                                <span className="flex items-center gap-1">
+                                                    <span className="w-3 h-3 rounded-sm opacity-30" style={{ background: "var(--color-border-light)" }} />
+                                                    Unavailable
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
                             )}
                         </motion.div>
                     )}
@@ -573,7 +653,7 @@ export default function BookingPage() {
                                             <Clock className="w-5 h-5 mt-0.5 shrink-0" style={{ color: "var(--color-primary)" }} />
                                             <div>
                                                 <p className="text-sm" style={{ color: "var(--color-text-light)" }}>Duration</p>
-                                                <p className="font-medium" style={{ color: "var(--color-text-primary)" }}>{selectedService?.durationMinutes} minutes</p>
+                                                <p className="font-medium" style={{ color: "var(--color-text-primary)" }}>{selectedService?.duration} minutes</p>
                                             </div>
                                         </div>
                                         <div className="flex items-start gap-3">

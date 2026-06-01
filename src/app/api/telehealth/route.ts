@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
         if (permCheck) return permCheck;
 
         const staffUser = user as JWTPayload;
-        if (staffUser.role !== "DOCTOR") {
+        if (!staffUser.roles.includes("DOCTOR")) {
             return apiError("Only doctors can manage telehealth sessions", 403);
         }
 

@@ -5,6 +5,10 @@
 
 import prisma from "@/lib/db/prisma";
 import type { NotificationChannel, NotificationStatus } from "@prisma/client";
+import {
+    sendSMS as hubtelSMS,
+    sendWhatsApp as hubtelWhatsApp,
+} from "@/lib/sms/hubtel";
 
 export interface NotificationPayload {
     tenantId: string;
@@ -122,34 +126,55 @@ export async function sendNotification(
 }
 
 /**
+ * Resolve the recipient's phone number from their patient record.
+ * Returns null if the patient cannot be found or has no phone.
+ */
+async function resolvePhone(recipientId: string): Promise<string | null> {
+    try {
+        const patient = await prisma.patient.findUnique({
+            where: { id: recipientId },
+            select: { phone: true },
+        });
+        return patient?.phone ?? null;
+    } catch {
+        return null;
+    }
+}
+
+/**
  * Deliver notification via a specific channel.
  *
- * In production, these would integrate with:
- * - WhatsApp: Meta Business API / Twilio
- * - SMS: Twilio / Africa's Talking
- * - Email: Resend / SendGrid
- * - Push: Firebase Cloud Messaging
- *
- * Currently returns true to simulate successful delivery.
+ * SMS + WhatsApp are routed through the Hubtel service.
+ * Email and Push remain stubbed until dedicated providers are wired in.
  */
 async function deliverViaChannel(
     channel: NotificationChannel,
     payload: NotificationPayload
 ): Promise<boolean> {
     switch (channel) {
-        case "WHATSAPP":
-            // TODO: Integrate with WhatsApp Business API
-            console.log(
-                `[Notification] WhatsApp → ${payload.recipientId}: ${payload.title}`
-            );
+        case "WHATSAPP": {
+            const phone = await resolvePhone(payload.recipientId);
+            if (!phone) {
+                console.warn(
+                    `[Notification] WhatsApp: no phone for recipient ${payload.recipientId}`
+                );
+                return false;
+            }
+            await hubtelWhatsApp(phone, payload.content);
             return true;
+        }
 
-        case "SMS":
-            // TODO: Integrate with SMS provider (Twilio / Africa's Talking)
-            console.log(
-                `[Notification] SMS → ${payload.recipientId}: ${payload.title}`
-            );
+        case "SMS": {
+            const phone = await resolvePhone(payload.recipientId);
+            if (!phone) {
+                console.warn(
+                    `[Notification] SMS: no phone for recipient ${payload.recipientId}`
+                );
+                return false;
+            }
+            await hubtelSMS(phone, payload.content);
             return true;
+        }
 
         case "EMAIL":
             // TODO: Integrate with email provider (Resend / SendGrid)

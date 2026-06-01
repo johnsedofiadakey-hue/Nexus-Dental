@@ -97,13 +97,13 @@ export default function TenantsPage() {
         }
     };
 
-    const handleStatusChange = async (id: string, action: string, reason: string = "Standard administrative action") => {
+    const handleStatusChange = async (id: string, action: string, reason: string = "Standard administrative action", status?: string) => {
         setActionLoading(true);
         try {
             const res = await fetch(`/api/system/tenants/${id}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action, reason }),
+                body: JSON.stringify({ action, reason, status }),
             });
             const data = await res.json();
             if (data.success) {

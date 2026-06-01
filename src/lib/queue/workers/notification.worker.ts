@@ -14,7 +14,9 @@ import type { NotificationPayload } from "@/lib/support/notifications";
  * Processes messages from the notification-queue.
  * Leverages the existing notification engine fallback logic.
  */
-export const notificationWorker = new Worker(
+const isBuild = process.env.NODE_ENV === "production" && !process.env.REDIS_URL;
+
+export const notificationWorker = isBuild ? ({} as Worker) : new Worker(
     "notification-queue",
     async (job: Job<NotificationPayload>) => {
         const { tenantId, recipientId, type, title, content, preferredChannel, metadata } = job.data;

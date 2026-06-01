@@ -36,24 +36,25 @@ export async function getPlatformStats(): Promise<PlatformStats> {
             tenants,
             patients,
             appointments,
-            completedAppointments,
+            invoices,
         ] = await Promise.all([
             prisma.tenant.findMany({ select: { id: true, status: true } }),
             prisma.patient.findMany({ select: { id: true } }),
             prisma.appointment.findMany({ select: { id: true, status: true } }),
-            prisma.appointment.count({ where: { status: "COMPLETED" } }),
+            prisma.invoice.findMany({ select: { totalAmount: true } }),
         ]);
 
         const totalTenants = tenants.length;
-        const activeTenants = tenants.filter(t => t.status === "ACTIVE").length;
+        const activeTenants = tenants.filter((t: any) => t.status === "ACTIVE").length;
         const activePatients = patients.length;
         const totalAppointments = appointments.length;
+        const completedAppointments = appointments.filter((a: any) => a.status === "COMPLETED").length;
         const completionRate = totalAppointments > 0
             ? (completedAppointments / totalAppointments) * 100
             : 0;
 
         // TODO: Calculate real revenue from payments table when implemented
-        const totalRevenue = 0;
+        const totalRevenue = invoices.reduce((sum: number, i: any) => sum + i.totalAmount, 0);
         const monthlyRevenue = 0;
         const revenueGrowth = 0;
         const patientGrowth = 0; // Would need historical data
@@ -105,7 +106,7 @@ export async function getTenantStats(tenantId?: string): Promise<TenantStats[]> 
             },
         });
 
-        return tenants.map(tenant => ({
+        return tenants.map((tenant: any) => ({
             tenantId: tenant.id,
             tenantName: tenant.name,
             totalPatients: tenant._count.patients,

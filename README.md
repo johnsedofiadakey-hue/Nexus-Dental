@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Nexus Dental MVP
 
-## Getting Started
+Nexus Dental is a multi-tenant dental clinic SaaS. This repository contains the Next.js application, including the public marketing site, patient OTP portal, and staff dashboard.
 
-First, run the development server:
+## Prerequisites
+- Node.js (v18 or higher)
+- PostgreSQL
+- Redis
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Setup Instructions
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. **Clone the repository**
+   ```bash
+   git clone <repo-url>
+   cd Nexus-Dental
+   ```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+2. **Install Dependencies**
+   ```bash
+   npm install
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3. **Environment Configuration**
+   Copy the example environment file and update the values as needed.
+   ```bash
+   cp .env.example .env
+   ```
 
-## Learn More
+4. **Database Setup & Seed**
+   Make sure PostgreSQL is running and matches the `DATABASE_URL` in your `.env`. Then run:
+   ```bash
+   npm run db:setup
+   ```
+   This will run `prisma generate`, `prisma db push`, and the MVP seed script to populate the default tenant, users, and services.
 
-To learn more about Next.js, take a look at the following resources:
+5. **Run the Development Server**
+   ```bash
+   npm run dev
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Default Seed Credentials
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+After running `npm run db:setup`, the following accounts are available:
+- **System Owner:** `dev@nexusdental.com` / `dev123`
+- **Clinic Owner (Admin):** `admin@nexusdental.com` / `admin123`
+- **Receptionist:** `sarah@airporthills.com` / `staff123`
+- **Doctor:** `dr.smith@airporthills.com` / `doctor123`
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Architecture
+- **Framework:** Next.js (App Router)
+- **Database:** PostgreSQL with Prisma ORM
+- **Styling:** Tailwind CSS + Radix UI
+- **Auth:** Custom JWT-based authentication (HTTP-only cookies + Bearer tokens)
+- **State/Caching:** React Query (Client) & Redis (Server/Queue)

@@ -128,6 +128,10 @@ export const PERMISSIONS = {
     SETTINGS_VIEW: "settings:view",
     SETTINGS_UPDATE: "settings:update",
 
+    // Services
+    SERVICES_VIEW: "services:view",
+    SERVICES_MANAGE: "services:manage",
+
     // Audit
     AUDIT_VIEW: "audit:view",
 
