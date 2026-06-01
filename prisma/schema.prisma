@@ -74,6 +74,8 @@ model TenantContent {
   aboutPage         String? @db.Text
   mission           String? @db.Text
   vision            String? @db.Text
+  logoUrl           String?
+  brandColor        String? @default("#0d9488")
   testimonials      Json    @default("[]")
   faqs              Json    @default("[]")
   educationArticles Json    @default("[]")

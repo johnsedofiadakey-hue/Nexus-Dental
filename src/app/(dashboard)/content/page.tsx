@@ -43,6 +43,7 @@ interface FeatureFlags {
 export default function ContentManagerPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [uploadingLogo, setUploadingLogo] = useState(false);
     const [activeTab, setActiveTab] = useState<"general" | "settings" | "faqs" | "testimonials" | "education">("general");
     const [userContext, setUserContext] = useState<any>(null);
 
@@ -50,6 +51,8 @@ export default function ContentManagerPage() {
         aboutPage: "",
         mission: "",
         vision: "",
+        logoUrl: "",
+        brandColor: "#0d9488",
         faqs: [] as FAQ[],
         testimonials: [] as Testimonial[],
         educationArticles: [] as Article[]
@@ -83,6 +86,8 @@ export default function ContentManagerPage() {
                         aboutPage: contentData.data.aboutPage || "",
                         mission: contentData.data.mission || "",
                         vision: contentData.data.vision || "",
+                        logoUrl: contentData.data.logoUrl || "",
+                        brandColor: contentData.data.brandColor || "#0d9488",
                         faqs: contentData.data.faqs || [],
                         testimonials: contentData.data.testimonials || [],
                         educationArticles: contentData.data.educationArticles || []
@@ -161,6 +166,48 @@ export default function ContentManagerPage() {
             newTestimonials[index] = { ...newTestimonials[index], [field]: value };
             return { ...prev, testimonials: newTestimonials };
         });
+    };
+
+    // Article Handlers
+    const addArticle = () => setContent(prev => ({ ...prev, educationArticles: [...prev.educationArticles, { title: "", category: "", content: "" }] }));
+    const removeArticle = (index: number) => setContent(prev => ({ ...prev, educationArticles: prev.educationArticles.filter((_, i) => i !== index) }));
+    const updateArticle = (index: number, field: keyof Article, value: string) => {
+        setContent(prev => {
+            const newArticles = [...prev.educationArticles];
+            newArticles[index] = { ...newArticles[index], [field]: value };
+            return { ...prev, educationArticles: newArticles };
+        });
+    };
+
+    const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploadingLogo(true);
+        try {
+            const res = await fetch("/api/upload/url", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ filename: file.name, contentType: file.type, folder: "logos" })
+            });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.error);
+
+            const uploadRes = await fetch(data.data.uploadUrl, {
+                method: "PUT",
+                headers: { "Content-Type": file.type },
+                body: file
+            });
+            
+            if (!uploadRes.ok) throw new Error("Upload failed");
+
+            setContent(prev => ({ ...prev, logoUrl: data.data.publicUrl }));
+            toast.success("Logo uploaded successfully");
+        } catch (error) {
+            toast.error("Failed to upload logo");
+        } finally {
+            setUploadingLogo(false);
+        }
     };
 
     const toggleFeature = (feature: keyof FeatureFlags) => {
@@ -247,17 +294,78 @@ export default function ContentManagerPage() {
                                 <Card className="shadow-sm border-slate-200">
                                     <CardHeader>
                                         <CardTitle>Clinic Branding</CardTitle>
-                                        <CardDescription>Custom name shown in patients' portal</CardDescription>
+                                        <CardDescription>Customize your clinic's public appearance</CardDescription>
                                     </CardHeader>
-                                    <CardContent className="space-y-4">
+                                    <CardContent className="space-y-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="clinicName">Display Name Override</Label>
+                                                <Input
+                                                    id="clinicName"
+                                                    placeholder="e.g. Nexus Premium Dental"
+                                                    value={settings.platformName}
+                                                    onChange={(e) => setSettings(prev => ({ ...prev, platformName: e.target.value }))}
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="brandColor">Primary Brand Color</Label>
+                                                <div className="flex gap-4">
+                                                    <Input
+                                                        id="brandColor"
+                                                        type="color"
+                                                        value={content.brandColor}
+                                                        onChange={(e) => setContent(prev => ({ ...prev, brandColor: e.target.value }))}
+                                                        className="w-16 h-10 p-1 cursor-pointer"
+                                                    />
+                                                    <Input
+                                                        type="text"
+                                                        value={content.brandColor}
+                                                        onChange={(e) => setContent(prev => ({ ...prev, brandColor: e.target.value }))}
+                                                        className="flex-1"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
                                         <div className="space-y-2">
-                                            <Label htmlFor="clinicName">Display Name Override</Label>
-                                            <Input
-                                                id="clinicName"
-                                                placeholder="e.g. Nexus Premium Dental"
-                                                value={settings.platformName}
-                                                onChange={(e) => setSettings(prev => ({ ...prev, platformName: e.target.value }))}
-                                            />
+                                            <Label>Clinic Logo</Label>
+                                            <div className="flex items-center gap-6">
+                                                {content.logoUrl ? (
+                                                    <div className="w-24 h-24 rounded-lg border bg-white p-2 shadow-sm flex items-center justify-center">
+                                                        <img src={content.logoUrl} alt="Clinic Logo" className="max-w-full max-h-full object-contain" />
+                                                    </div>
+                                                ) : (
+                                                    <div className="w-24 h-24 rounded-lg border-2 border-dashed bg-slate-50 flex flex-col items-center justify-center text-slate-400">
+                                                        <Globe className="w-8 h-8 opacity-20" />
+                                                        <span className="text-xs mt-1">No Logo</span>
+                                                    </div>
+                                                )}
+                                                <div className="space-y-2">
+                                                    <div className="flex gap-2">
+                                                        <Input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            id="logo-upload"
+                                                            className="hidden"
+                                                            onChange={handleLogoUpload}
+                                                        />
+                                                        <Button
+                                                            variant="outline"
+                                                            disabled={uploadingLogo}
+                                                            onClick={() => document.getElementById("logo-upload")?.click()}
+                                                        >
+                                                            {uploadingLogo ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+                                                            {content.logoUrl ? "Change Logo" : "Upload Logo"}
+                                                        </Button>
+                                                        {content.logoUrl && (
+                                                            <Button variant="ghost" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => setContent(prev => ({ ...prev, logoUrl: "" }))}>
+                                                                Remove
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground">Recommended size: 512x512px (PNG or JPG max 2MB)</p>
+                                                </div>
+                                            </div>
                                         </div>
                                     </CardContent>
                                 </Card>
@@ -458,15 +566,68 @@ export default function ContentManagerPage() {
                         )}
 
                         {activeTab === "education" && (
-                            <Card className="border-dashed py-20 bg-slate-50/20 text-center">
-                                <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-500">
-                                    <FileText className="w-8 h-8" />
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h3 className="text-xl font-bold text-slate-800">Patient Education Hub</h3>
+                                        <p className="text-sm text-slate-500 mt-1">Publish articles and care instructions for your patients.</p>
+                                    </div>
+                                    <Button variant="outline" size="sm" onClick={addArticle} className="gap-2 border-teal-200 text-teal-600 hover:bg-teal-50">
+                                        <Plus className="w-4 h-4" /> Add Article
+                                    </Button>
                                 </div>
-                                <h3 className="text-xl font-bold text-slate-800">Coming Soon: Patient Education Hub</h3>
-                                <p className="text-muted-foreground max-w-sm mx-auto mt-2">
-                                    Write and publish articles on dental hygiene, procedure aftercare, and more for your patients.
-                                </p>
-                            </Card>
+                                {content.educationArticles.length === 0 ? (
+                                    <Card className="border-dashed py-16 text-center bg-slate-50/50">
+                                        <div className="w-16 h-16 bg-teal-50 rounded-full flex items-center justify-center mx-auto mb-4 text-teal-500">
+                                            <FileText className="w-8 h-8" />
+                                        </div>
+                                        <p className="text-muted-foreground max-w-sm mx-auto">No articles published yet. Click "Add Article" to create your first one.</p>
+                                    </Card>
+                                ) : (
+                                    <div className="space-y-6">
+                                        {content.educationArticles.map((article, index) => (
+                                            <Card key={index} className="shadow-sm border-slate-200">
+                                                <CardContent className="p-6 space-y-4 relative">
+                                                    <button
+                                                        onClick={() => removeArticle(index)}
+                                                        className="absolute top-6 right-6 text-slate-300 hover:text-red-500 transition-colors"
+                                                    >
+                                                        <Trash2 className="w-5 h-5" />
+                                                    </button>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pr-10">
+                                                        <div className="space-y-2">
+                                                            <Label>Article Title</Label>
+                                                            <Input
+                                                                placeholder="e.g. Post-Extraction Care Instructions"
+                                                                value={article.title}
+                                                                onChange={(e) => updateArticle(index, "title", e.target.value)}
+                                                                className="font-semibold"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label>Category</Label>
+                                                            <Input
+                                                                placeholder="e.g. Aftercare, Prevention, Cosmetic..."
+                                                                value={article.category}
+                                                                onChange={(e) => updateArticle(index, "category", e.target.value)}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label>Article Content (Markdown Supported)</Label>
+                                                        <Textarea
+                                                            placeholder="Write your educational content here..."
+                                                            value={article.content}
+                                                            onChange={(e) => updateArticle(index, "content", e.target.value)}
+                                                            className="min-h-[150px] font-mono text-sm leading-relaxed"
+                                                        />
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         )}
                     </div>
                 </div>
