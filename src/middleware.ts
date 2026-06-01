@@ -24,6 +24,10 @@ const PUBLIC_API_ROUTES = [
     "/api/auth/login",
     "/api/auth/patient/otp/request",
     "/api/auth/patient/otp/verify",
+    "/api/appointments/doctors",
+    "/api/appointments/slots",
+    "/api/services",
+    "/api/public",
 ];
 
 // Static file extensions to skip
