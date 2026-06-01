@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Phone, ArrowRight, MessageSquare, Mail, Github, Chrome } from "lucide-react";
+import { Phone, ArrowRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -160,23 +160,7 @@ export default function PatientLoginPage() {
                                 {!loading && <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />}
                             </Button>
 
-                            <div className="relative py-4">
-                                <div className="absolute inset-0 flex items-center">
-                                    <span className="w-full border-t border-slate-200" />
-                                </div>
-                                <div className="relative flex justify-center text-xs uppercase">
-                                    <span className="bg-bg px-4 text-text-muted font-bold tracking-widest">Or social login</span>
-                                </div>
-                            </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <Button variant="outline" className="h-14 rounded-2xl bg-white border-none shadow-sm hover:bg-slate-50 transition-all">
-                                    <Chrome className="mr-2 h-5 w-5 text-red-500" /> Google
-                                </Button>
-                                <Button variant="outline" className="h-14 rounded-2xl bg-white border-none shadow-sm hover:bg-slate-50 transition-all">
-                                    <Github className="mr-2 h-5 w-5" /> Apple
-                                </Button>
-                            </div>
                         </div>
                     ) : (
                         <div className="space-y-6 text-center">

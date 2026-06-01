@@ -157,7 +157,7 @@ export default function Footer() {
                     <div className="flex flex-wrap items-center gap-6">
                         <Link href="/auth/staff" className="text-secondary/60 hover:text-secondary text-sm font-medium flex items-center gap-2 transition-all group no-underline">
                             <div className="h-1.5 w-1.5 rounded-full bg-secondary/30 group-hover:bg-primary transition-colors" />
-                            Staff Access
+                            Admin / Staff Login
                         </Link>
                     </div>
                 </div>

@@ -65,7 +65,7 @@ export default function Navbar() {
                     {/* Desktop Actions */}
                     <div className="hidden lg:flex items-center gap-4">
                         <Link href="/auth/patient" className="text-sm font-semibold text-secondary hover:text-primary transition-colors no-underline px-4">
-                            Sign In
+                            Patient Portal
                         </Link>
                         <a
                             href="tel:+1234567890"
