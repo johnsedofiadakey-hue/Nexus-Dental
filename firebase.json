@@ -9,8 +9,5 @@
       "firebase-debug.*.log",
       "functions"
     ]
-  },
-  "dataconnect": {
-    "source": "dataconnect"
   }
 }
