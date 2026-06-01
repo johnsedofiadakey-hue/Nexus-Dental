@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DM_Serif_Display, Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { QueryProvider } from "@/components/providers/QueryProvider";
 
 const dmSerif = DM_Serif_Display({
   weight: "400",
@@ -44,8 +45,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${dmSerif.variable} ${inter.variable}`}>
       <body className="antialiased font-body">
-        {children}
-        <Toaster position="top-right" richColors closeButton />
+        <QueryProvider>
+          {children}
+          <Toaster position="top-right" richColors closeButton />
+        </QueryProvider>
       </body>
     </html>
   );

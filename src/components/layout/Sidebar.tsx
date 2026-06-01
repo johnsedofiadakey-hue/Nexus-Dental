@@ -27,7 +27,7 @@ const NAV_ITEMS: Record<UserRoleType, { label: string; icon: React.ElementType; 
         { label: "Staff",          icon: Users,           href: "/dashboard/staff" },
         { label: "Appointments",   icon: Calendar,        href: "/appointments" },
         { label: "Patients",       icon: Users,           href: "/patients" },
-        { label: "Services",       icon: ClipboardList,   href: "/services" },
+        { label: "Services",       icon: ClipboardList,   href: "/clinic-services" },
         { label: "Inventory",      icon: Package,         href: "/inventory" },
         { label: "Pharmacy",       icon: Pill,            href: "/pharmacy" },
         { label: "Finance",        icon: DollarSign,      href: "/finance" },
