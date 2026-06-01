@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { requireAuth, apiError, apiSuccess } from "@/lib/auth";
-import { generatePresignedUploadUrl } from "@/lib/storage/s3";
+import { generatePresignedUploadUrl } from "@/lib/storage/firebase";
 import { v4 as uuidv4 } from "uuid";
 
 export async function POST(request: NextRequest) {
