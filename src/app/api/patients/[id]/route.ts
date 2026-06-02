@@ -8,7 +8,6 @@ import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
 import {
     requireAuth,
-    enforceTenantScope,
     requirePermission,
     PERMISSIONS,
     apiError,
@@ -64,9 +63,6 @@ export async function GET(
             return apiError("Patient not found", 404);
         }
 
-        const tenantCheck = enforceTenantScope(user, patient.tenantId);
-        if (tenantCheck) return tenantCheck;
-
         return apiSuccess(patient);
     } catch (error) {
         console.error("[Patient] Detail error:", error);
@@ -93,9 +89,6 @@ export async function PATCH(
         if (!patient) {
             return apiError("Patient not found", 404);
         }
-
-        const tenantCheck = enforceTenantScope(user, patient.tenantId);
-        if (tenantCheck) return tenantCheck;
 
         const body = await request.json();
         const allowedFields = [

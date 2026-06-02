@@ -67,8 +67,6 @@ const STEPS = [
     { id: 4, label: "Confirm", icon: CheckCircle },
 ];
 
-const TENANT_ID = "airport-hills-dental"; // Hardcoded for MVP single-clinic setup
-
 // ─────────────────────────────────────────────
 // Component
 // ─────────────────────────────────────────────
@@ -98,8 +96,8 @@ export default function BookingPage() {
         async function fetchInitialData() {
             try {
                 const [servicesRes, doctorsRes] = await Promise.all([
-                    fetch(`/api/services?tenantId=${TENANT_ID}`),
-                    fetch(`/api/appointments/doctors?tenantId=${TENANT_ID}`)
+                    fetch(`/api/services`),
+                    fetch(`/api/appointments/doctors`)
                 ]);
                 
                 const servicesData = await servicesRes.json();
@@ -143,7 +141,7 @@ export default function BookingPage() {
                     const dateStr = today.toISOString().split("T")[0];
                     const duration = selectedService?.duration || 30;
                     
-                    const res = await fetch(`/api/appointments/slots?tenantId=${TENANT_ID}&doctorId=${selectedDoctor!.id}&date=${dateStr}&mode=week&duration=${duration}`);
+                    const res = await fetch(`/api/appointments/slots?doctorId=${selectedDoctor!.id}&date=${dateStr}&mode=week&duration=${duration}`);
                     const data = await res.json();
                     
                     if (data.success) {
@@ -186,7 +184,6 @@ export default function BookingPage() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    tenantId: TENANT_ID,
                     serviceId: selectedService.id,
                     doctorId: selectedDoctor.id,
                     date: selectedDate,
@@ -802,3 +799,4 @@ export default function BookingPage() {
         </div>
     );
 }
+

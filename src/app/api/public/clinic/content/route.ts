@@ -6,18 +6,14 @@
 import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { apiError, apiSuccess } from "@/lib/auth";
+import { getClinicId } from "@/lib/clinic";
 
 /**
  * GET: Fetch public clinic content by tenantId
  */
 export async function GET(request: NextRequest) {
     try {
-        const { searchParams } = new URL(request.url);
-        const tenantId = searchParams.get("tenantId");
-
-        if (!tenantId) {
-            return apiError("tenantId is required", 400);
-        }
+        const tenantId = getClinicId();
 
         const content = await prisma.tenantContent.findUnique({
             where: { tenantId },

@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
-import { requireAuth, enforceTenantScope, apiError, apiSuccess } from "@/lib/auth";
+import { requireAuth, apiError, apiSuccess } from "@/lib/auth";
 
 // PATCH /api/invoices/[id]/claim — update insurance claim fields on an invoice
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -12,9 +12,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
         const invoice = await prisma.invoice.findUnique({ where: { id } });
         if (!invoice) return apiError("Invoice not found", 404);
-
-        const tenantCheck = enforceTenantScope(user, invoice.tenantId);
-        if (tenantCheck) return tenantCheck;
 
         const body = await request.json();
         const {

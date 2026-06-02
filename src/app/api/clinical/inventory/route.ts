@@ -8,13 +8,13 @@ import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
 import {
     requireAuth,
-    enforceTenantScope,
     requirePermission,
     PERMISSIONS,
     apiError,
     apiSuccess,
 } from "@/lib/auth";
 import type { JWTPayload } from "@/lib/auth";
+import { getClinicId } from "@/lib/clinic";
 
 export async function GET(request: NextRequest) {
     try {
@@ -26,16 +26,11 @@ export async function GET(request: NextRequest) {
         if (permCheck) return permCheck;
 
         const { searchParams } = new URL(request.url);
-        const tenantId = searchParams.get("tenantId");
+        const tenantId = getClinicId();
         const lowStockOnly = searchParams.get("lowStock") === "true";
         const search = searchParams.get("search");
         const page = parseInt(searchParams.get("page") || "1");
         const limit = parseInt(searchParams.get("limit") || "50");
-
-        if (!tenantId) return apiError("tenantId is required", 400);
-
-        const tenantCheck = enforceTenantScope(user, tenantId);
-        if (tenantCheck) return tenantCheck;
 
         const where: Record<string, unknown> = { tenantId };
 
@@ -87,14 +82,12 @@ export async function POST(request: NextRequest) {
 
         const staffUser = user as JWTPayload;
         const body = await request.json();
-        const { tenantId, name, sku, quantity, threshold, unit, cost, supplier, expiresAt } = body;
+        const { name, sku, quantity, threshold, unit, cost, supplier, expiresAt } = body;
+        const tenantId = getClinicId();
 
-        if (!tenantId || !name) {
-            return apiError("tenantId and name are required", 400);
+        if (!name) {
+            return apiError("name is required", 400);
         }
-
-        const tenantCheck = enforceTenantScope(user, tenantId);
-        if (tenantCheck) return tenantCheck;
 
         const item = await prisma.inventoryItem.create({
             data: {

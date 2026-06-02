@@ -8,12 +8,12 @@ import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
 import {
     requireAuth,
-    enforceTenantScope,
     requirePermission,
     PERMISSIONS,
     apiError,
     apiSuccess,
 } from "@/lib/auth";
+import { getClinicId } from "@/lib/clinic";
 import type { JWTPayload } from "@/lib/auth";
 
 export async function PATCH(
@@ -30,12 +30,9 @@ export async function PATCH(
 
         const { id } = await params;
         const body = await request.json();
-        const { tenantId, ...fields } = body;
-
-        if (!tenantId) return apiError("tenantId is required", 400);
-
-        const tenantCheck = enforceTenantScope(user, tenantId);
-        if (tenantCheck) return tenantCheck;
+        const tenantId = getClinicId();
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { tenantId: _ignored, ...fields } = body;
 
         const existing = await prisma.supplier.findFirst({ where: { id, tenantId } });
         if (!existing) return apiError("Supplier not found", 404);
@@ -89,13 +86,7 @@ export async function DELETE(
         if (permCheck) return permCheck;
 
         const { id } = await params;
-        const { searchParams } = new URL(request.url);
-        const tenantId = searchParams.get("tenantId");
-
-        if (!tenantId) return apiError("tenantId is required", 400);
-
-        const tenantCheck = enforceTenantScope(user, tenantId);
-        if (tenantCheck) return tenantCheck;
+        const tenantId = getClinicId();
 
         const existing = await prisma.supplier.findFirst({ where: { id, tenantId } });
         if (!existing) return apiError("Supplier not found", 404);

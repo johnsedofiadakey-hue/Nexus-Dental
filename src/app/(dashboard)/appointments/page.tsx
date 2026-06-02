@@ -47,8 +47,8 @@ function formatDate(dateStr: string) {
     return new Date(dateStr).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
 
-async function fetchAppointments(tenantId: string, status: string, search: string, page: number) {
-    const params = new URLSearchParams({ tenantId, page: String(page), limit: "20" });
+async function fetchAppointments(status: string, search: string, page: number) {
+    const params = new URLSearchParams({ page: String(page), limit: "20" });
     if (status !== "ALL") params.set("status", status);
     const res = await fetch(`/api/appointments?${params}`, { credentials: "include" });
     if (!res.ok) throw new Error("Failed to fetch appointments");
@@ -75,9 +75,9 @@ export default function AppointmentsPage() {
     const queryClient = useQueryClient();
 
     const { data, isLoading, isError, refetch } = useQuery({
-        queryKey: ["appointments", user?.tenantId, status, page],
-        queryFn: () => fetchAppointments(user!.tenantId!, status, search, page),
-        enabled: !!user?.tenantId,
+        queryKey: ["appointments", status, page],
+        queryFn: () => fetchAppointments(status, search, page),
+        enabled: !!user,
     });
 
     const statusMutation = useMutation({

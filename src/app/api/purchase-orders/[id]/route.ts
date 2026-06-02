@@ -7,12 +7,12 @@ import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
 import {
     requireAuth,
-    enforceTenantScope,
     requirePermission,
     PERMISSIONS,
     apiError,
     apiSuccess,
 } from "@/lib/auth";
+import { getClinicId } from "@/lib/clinic";
 import type { JWTPayload } from "@/lib/auth";
 
 interface POItem {
@@ -36,12 +36,8 @@ export async function PATCH(
 
         const { id } = await params;
         const body = await request.json();
-        const { tenantId, status, notes, expectedAt } = body;
-
-        if (!tenantId) return apiError("tenantId is required", 400);
-
-        const tenantCheck = enforceTenantScope(user, tenantId);
-        if (tenantCheck) return tenantCheck;
+        const tenantId = getClinicId();
+        const { status, notes, expectedAt } = body;
 
         const existing = await prisma.purchaseOrder.findFirst({ where: { id, tenantId } });
         if (!existing) return apiError("Purchase order not found", 404);

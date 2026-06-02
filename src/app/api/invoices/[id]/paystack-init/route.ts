@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
-import { requireAuth, enforceTenantScope, apiError, apiSuccess } from "@/lib/auth";
+import { requireAuth, apiError, apiSuccess } from "@/lib/auth";
 import { initializePayment } from "@/lib/payments/paystack";
 import { randomUUID } from "crypto";
 
@@ -26,9 +26,6 @@ export async function POST(
         });
 
         if (!invoice) return apiError("Invoice not found", 404);
-
-        const tenantCheck = enforceTenantScope(user, invoice.tenantId);
-        if (tenantCheck) return tenantCheck;
 
         if (invoice.status === "PAID") {
             return apiError("Invoice is already paid", 400);

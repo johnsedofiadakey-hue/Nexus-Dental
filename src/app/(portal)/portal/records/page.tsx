@@ -41,7 +41,7 @@ function AppointmentCard({ data }: { data: any }) {
                     </div>
                     <div>
                         <p className="font-bold text-slate-900">
-                            {data.service?.name ?? data.serviceType ?? "Appointment"}
+                            {data.service?.name ?? "Appointment"}
                         </p>
                         {data.doctor && (
                             <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
@@ -159,7 +159,7 @@ export default function RecordsPage() {
     const timeline: TimelineItem[] = [
         ...appointments.map((a) => ({
             kind: "appointment" as const,
-            date: a.date ?? a.scheduledAt ?? a.createdAt,
+            date: a.dateTime ?? a.date ?? a.createdAt,
             data: a,
         })),
         ...prescriptions.map((p) => ({

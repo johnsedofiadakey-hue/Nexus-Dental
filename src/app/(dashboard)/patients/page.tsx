@@ -35,8 +35,8 @@ function formatDate(dateStr?: string) {
     return new Date(dateStr).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
 
-async function fetchPatients(tenantId: string, search: string, page: number) {
-    const params = new URLSearchParams({ tenantId, page: String(page), limit: "20" });
+async function fetchPatients(search: string, page: number) {
+    const params = new URLSearchParams({ page: String(page), limit: "20" });
     if (search) params.set("search", search);
     const res = await fetch(`/api/patients?${params}`, { credentials: "include" });
     if (!res.ok) throw new Error("Failed to fetch patients");
@@ -51,9 +51,9 @@ export default function PatientsPage() {
     const debouncedSearch = useDebounce(search, 350);
 
     const { data, isLoading, isError, refetch } = useQuery({
-        queryKey: ["patients", user?.tenantId, debouncedSearch, page],
-        queryFn: () => fetchPatients(user!.tenantId!, debouncedSearch, page),
-        enabled: !!user?.tenantId,
+        queryKey: ["patients", debouncedSearch, page],
+        queryFn: () => fetchPatients(debouncedSearch, page),
+        enabled: !!user,
     });
 
     const patients = data?.patients ?? [];

@@ -6,18 +6,19 @@
 import { NextRequest } from "next/server";
 import { apiError, apiSuccess } from "@/lib/auth";
 import { getAvailableSlots, getWeekAvailability } from "@/lib/booking";
+import { getClinicId } from "@/lib/clinic";
 
 export async function GET(request: NextRequest) {
     try {
+        const tenantId = getClinicId();
         const { searchParams } = new URL(request.url);
-        const tenantId = searchParams.get("tenantId");
         const doctorId = searchParams.get("doctorId");
         const date = searchParams.get("date");
         const mode = searchParams.get("mode") || "day"; // "day" | "week"
         const duration = parseInt(searchParams.get("duration") || "30");
 
-        if (!tenantId || !doctorId || !date) {
-            return apiError("tenantId, doctorId, and date are required", 400);
+        if (!doctorId || !date) {
+            return apiError("doctorId and date are required", 400);
         }
 
         // Validate date format

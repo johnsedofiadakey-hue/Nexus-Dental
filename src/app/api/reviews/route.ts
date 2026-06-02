@@ -1,15 +1,14 @@
 import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
-import { authenticateRequest, apiError, apiSuccess, requireAuth, isPatientUser } from "@/lib/auth";
+import { authenticateRequest, apiError, apiSuccess, isPatientUser } from "@/lib/auth";
 import type { PatientJWTPayload } from "@/lib/auth";
+import { getClinicId } from "@/lib/clinic";
 
 export async function GET(request: NextRequest) {
     try {
+        const tenantId = getClinicId();
         const { searchParams } = new URL(request.url);
-        const tenantId = searchParams.get("tenantId");
         const all = searchParams.get("all") === "true"; // staff can see unapproved
-
-        if (!tenantId) return apiError("tenantId required", 400);
 
         const where: any = { tenantId };
         if (!all) where.isApproved = true;
@@ -29,11 +28,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
+        const tenantId = getClinicId();
         const body = await request.json();
-        const { tenantId, authorName, rating, comment } = body;
+        const { authorName, rating, comment } = body;
 
-        if (!tenantId || !authorName || !rating || !comment) {
-            return apiError("tenantId, authorName, rating, and comment are required", 400);
+        if (!authorName || !rating || !comment) {
+            return apiError("authorName, rating, and comment are required", 400);
         }
 
         if (rating < 1 || rating > 5) return apiError("Rating must be 1–5", 400);

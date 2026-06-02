@@ -1,16 +1,15 @@
 import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
-import { requireAuth, enforceTenantScope, requirePermission, PERMISSIONS, apiError, apiSuccess } from "@/lib/auth";
+import { requireAuth, requirePermission, PERMISSIONS, apiError, apiSuccess } from "@/lib/auth";
+import { getClinicId } from "@/lib/clinic";
 import type { JWTPayload } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
     try {
+        const tenantId = getClinicId();
         const { searchParams } = new URL(request.url);
-        const tenantId = searchParams.get("tenantId");
         const category = searchParams.get("category");
         const includeInactive = searchParams.get("includeInactive") === "true";
-
-        if (!tenantId) return apiError("tenantId is required", 400);
 
         const where: Record<string, unknown> = { tenantId };
         if (!includeInactive) where.isActive = true;
@@ -50,14 +49,12 @@ export async function POST(request: NextRequest) {
 
         const staffUser = user as JWTPayload;
         const body = await request.json();
-        const { tenantId, name, description, category, price, duration } = body;
+        const tenantId = getClinicId();
+        const { name, description, category, price, duration } = body;
 
-        if (!tenantId || !name || !category || price === undefined || !duration) {
-            return apiError("tenantId, name, category, price, and duration are required", 400);
+        if (!name || !category || price === undefined || !duration) {
+            return apiError("name, category, price, and duration are required", 400);
         }
-
-        const tenantCheck = enforceTenantScope(user, tenantId);
-        if (tenantCheck) return tenantCheck;
 
         const service = await prisma.service.create({
             data: {

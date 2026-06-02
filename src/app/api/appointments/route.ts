@@ -7,13 +7,13 @@ import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
 import {
     requireAuth,
-    enforceTenantScope,
     isPatientUser,
     isStaffUser,
     apiError,
     apiSuccess,
 } from "@/lib/auth";
 import type { JWTPayload, PatientJWTPayload } from "@/lib/auth";
+import { getClinicId } from "@/lib/clinic";
 
 export async function GET(request: NextRequest) {
     try {
@@ -21,8 +21,8 @@ export async function GET(request: NextRequest) {
         if ("error" in authResult) return authResult.error;
         const { user } = authResult;
 
+        const tenantId = getClinicId();
         const { searchParams } = new URL(request.url);
-        const tenantId = searchParams.get("tenantId");
         const status = searchParams.get("status");
         const doctorId = searchParams.get("doctorId");
         const patientId = searchParams.get("patientId");
@@ -30,14 +30,6 @@ export async function GET(request: NextRequest) {
         const dateTo = searchParams.get("dateTo");
         const page = parseInt(searchParams.get("page") || "1");
         const limit = parseInt(searchParams.get("limit") || "20");
-
-        if (!tenantId) {
-            return apiError("tenantId is required", 400);
-        }
-
-        // Enforce tenant scope
-        const tenantCheck = enforceTenantScope(user, tenantId);
-        if (tenantCheck) return tenantCheck;
 
         // Build where clause
         const where: Record<string, unknown> = { tenantId };

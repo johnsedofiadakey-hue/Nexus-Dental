@@ -80,7 +80,7 @@ export default function PatientPortal() {
         enabled: !!user?.id,
     });
 
-    const appointments: any[] = appointmentsData?.data ?? appointmentsData ?? [];
+    const appointments: any[] = appointmentsData?.data?.appointments ?? appointmentsData?.data ?? appointmentsData ?? [];
     const nextAppointment = appointments[0] ?? null;
 
     const history = historyData?.data ?? historyData ?? {};
@@ -110,7 +110,7 @@ export default function PatientPortal() {
                     )}
                     <p className="text-teal-50 opacity-90 text-lg mb-6">
                         {nextAppointment
-                            ? `You have an upcoming appointment on ${formatAppointmentDate(nextAppointment.date ?? nextAppointment.scheduledAt)}. Remember to arrive 15 minutes early.`
+                            ? `You have an upcoming appointment on ${formatAppointmentDate(nextAppointment.dateTime ?? nextAppointment.date)}. Remember to arrive 15 minutes early.`
                             : "You have no upcoming appointments. Book one to stay on top of your dental health."}
                     </p>
                     <div className="flex flex-wrap gap-4">
@@ -181,8 +181,8 @@ export default function PatientPortal() {
                                 <div className="bg-teal-50 px-6 py-3 flex items-center justify-between border-b border-teal-100">
                                     <div className="flex items-center gap-2 text-teal-700 font-bold text-xs uppercase tracking-widest">
                                         <Clock className="w-3.5 h-3.5" />
-                                        {formatAppointmentDate(nextAppointment.date ?? nextAppointment.scheduledAt)}
-                                        {nextAppointment.time ? ` • ${nextAppointment.time}` : ""}
+                                        {formatAppointmentDate(nextAppointment.dateTime ?? nextAppointment.date)}
+                                        {nextAppointment.dateTime ? ` • ${new Date(nextAppointment.dateTime).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}` : ""}
                                     </div>
                                     <Badge className={`shadow-sm border ${statusColor(nextAppointment.status)}`}>
                                         {nextAppointment.status}
@@ -203,7 +203,7 @@ export default function PatientPortal() {
                                                         : "Doctor TBD"}
                                                 </h4>
                                                 <p className="text-slate-500 text-sm">
-                                                    {nextAppointment.doctor?.specialization ?? "Dental Specialist"}
+                                                    {nextAppointment.doctor?.specialty ?? "Dental Specialist"}
                                                 </p>
                                             </div>
                                         </div>
@@ -226,12 +226,14 @@ export default function PatientPortal() {
                                                         <p className="font-semibold text-slate-800">{nextAppointment.notes}</p>
                                                     </div>
                                                 )}
-                                                {nextAppointment.time && (
+                                                {nextAppointment.dateTime && (
                                                     <div className="space-y-1">
                                                         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
                                                             <Clock className="w-3 h-3" /> Time
                                                         </p>
-                                                        <p className="font-semibold text-slate-800">{nextAppointment.time}</p>
+                                                        <p className="font-semibold text-slate-800">
+                                                            {new Date(nextAppointment.dateTime).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
+                                                        </p>
                                                     </div>
                                                 )}
                                             </div>
@@ -274,10 +276,10 @@ export default function PatientPortal() {
                                             </div>
                                             <div>
                                                 <h4 className="font-bold text-slate-900">
-                                                    {appt.service?.name ?? appt.serviceType ?? "Appointment"}
+                                                    {appt.service?.name ?? "Appointment"}
                                                 </h4>
                                                 <p className="text-sm text-slate-500">
-                                                    {appt.date ? new Date(appt.date ?? appt.scheduledAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—"}
+                                                    {appt.dateTime ? new Date(appt.dateTime).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—"}
                                                     {appt.doctor ? ` • Dr. ${appt.doctor.firstName} ${appt.doctor.lastName}` : ""}
                                                 </p>
                                             </div>

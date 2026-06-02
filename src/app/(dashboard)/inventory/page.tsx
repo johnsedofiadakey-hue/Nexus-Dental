@@ -26,8 +26,8 @@ interface InventoryItem {
     expiryDate?: string;
 }
 
-async function fetchInventory(tenantId: string, search: string, page: number) {
-    const params = new URLSearchParams({ tenantId, page: String(page), limit: "20" });
+async function fetchInventory(search: string, page: number) {
+    const params = new URLSearchParams({ page: String(page), limit: "20" });
     if (search) params.set("search", search);
     const res = await fetch(`/api/clinical/inventory?${params}`, { credentials: "include" });
     if (!res.ok) throw new Error("Failed to fetch inventory");
@@ -42,9 +42,9 @@ export default function InventoryPage() {
     const debouncedSearch = useDebounce(search, 350);
 
     const { data, isLoading, isError, refetch } = useQuery({
-        queryKey: ["inventory", user?.tenantId, debouncedSearch, page],
-        queryFn: () => fetchInventory(user!.tenantId!, debouncedSearch, page),
-        enabled: !!user?.tenantId,
+        queryKey: ["inventory", debouncedSearch, page],
+        queryFn: () => fetchInventory(debouncedSearch, page),
+        enabled: !!user,
     });
 
     const items = data?.items ?? [];

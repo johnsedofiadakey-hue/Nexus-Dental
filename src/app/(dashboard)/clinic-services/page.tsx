@@ -112,9 +112,9 @@ const EMPTY_FORM: ServiceFormData = {
 
 // ─── API helpers ─────────────────────────────────────────────────────────────
 
-async function fetchServices(tenantId: string): Promise<Service[]> {
+async function fetchServices(): Promise<Service[]> {
   const res = await fetch(
-    `/api/services?tenantId=${tenantId}&includeInactive=true`,
+    `/api/services?includeInactive=true`,
     { credentials: "include" }
   );
   if (!res.ok) throw new Error("Failed to load services");
@@ -123,7 +123,6 @@ async function fetchServices(tenantId: string): Promise<Service[]> {
 }
 
 async function createService(
-  tenantId: string,
   body: Omit<ServiceFormData, "category"> & { category: ServiceCategory }
 ): Promise<Service> {
   const res = await fetch("/api/services", {
@@ -131,7 +130,6 @@ async function createService(
     credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      tenantId,
       name: body.name.trim(),
       description: body.description.trim() || undefined,
       category: body.category,
@@ -542,8 +540,6 @@ export default function ServicesPage() {
   const [editService, setEditService] = useState<Service | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
-  const tenantId = user?.tenantId ?? "";
-
   // ── Queries ──────────────────────────────────────────────────────────────
 
   const {
@@ -552,20 +548,20 @@ export default function ServicesPage() {
     isError,
     error,
   } = useQuery<Service[], Error>({
-    queryKey: ["services", tenantId],
-    queryFn: () => fetchServices(tenantId),
-    enabled: !!tenantId,
+    queryKey: ["services"],
+    queryFn: () => fetchServices(),
+    enabled: !!user,
     staleTime: 30_000,
   });
 
   // ── Mutations ─────────────────────────────────────────────────────────────
 
   const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: ["services", tenantId] });
+    queryClient.invalidateQueries({ queryKey: ["services"] });
 
   const createMutation = useMutation({
     mutationFn: (form: ServiceFormData) =>
-      createService(tenantId, {
+      createService({
         ...form,
         category: form.category as ServiceCategory,
       }),

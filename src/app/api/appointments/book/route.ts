@@ -5,7 +5,8 @@
 
 import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
-import { requireAuth, enforceTenantScope, apiError, apiSuccess } from "@/lib/auth";
+import { requireAuth, apiError, apiSuccess } from "@/lib/auth";
+import { getClinicId } from "@/lib/clinic";
 import { acquireSlotLock, confirmSlotLock } from "@/lib/booking";
 import { logAudit, getClientIP, getUserAgent } from "@/lib/audit/logger";
 import { appointmentQueue } from "@/lib/queue/queues";
@@ -18,9 +19,9 @@ export async function POST(request: NextRequest) {
         if ("error" in authResult) return authResult.error;
         const { user } = authResult;
 
+        const tenantId = getClinicId();
         const body = await request.json();
         const {
-            tenantId,
             serviceId,
             doctorId,
             date,       // "2026-02-20"
@@ -30,13 +31,9 @@ export async function POST(request: NextRequest) {
         } = body;
 
         // Validate required fields
-        if (!tenantId || !serviceId || !doctorId || !date || !time) {
-            return apiError("tenantId, serviceId, doctorId, date, and time are required", 400);
+        if (!serviceId || !doctorId || !date || !time) {
+            return apiError("serviceId, doctorId, date, and time are required", 400);
         }
-
-        // Enforce tenant scope
-        const tenantCheck = enforceTenantScope(user, tenantId);
-        if (tenantCheck) return tenantCheck;
 
         // Determine patient ID
         let patientId: string;
@@ -94,7 +91,7 @@ export async function POST(request: NextRequest) {
                             fromStatus: "SCHEDULED",
                             toStatus: "SCHEDULED",
                             triggeredBy: user.type === "PATIENT"
-                                ? (user as PatientJWTPayload).patientId
+                                ? "PATIENT_SELF"
                                 : (user as JWTPayload).userId,
                             reason: "Appointment booked",
                         },
@@ -131,11 +128,11 @@ export async function POST(request: NextRequest) {
             // Step 3: Confirm the slot lock
             await confirmSlotLock(tenantId, doctorId, date, time, lockId);
 
-            // Audit log
+            // Audit log — pass null userId for patient-initiated bookings (no User FK)
             await logAudit({
                 tenantId,
                 userId: user.type === "PATIENT"
-                    ? (user as PatientJWTPayload).patientId
+                    ? null
                     : (user as JWTPayload).userId,
                 action: "APPOINTMENT_BOOKED",
                 entity: "Appointment",

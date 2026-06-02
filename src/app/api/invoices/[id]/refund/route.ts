@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
-import { requireAuth, enforceTenantScope, apiError, apiSuccess } from "@/lib/auth";
+import { requireAuth, apiError, apiSuccess } from "@/lib/auth";
 import { refundPayment } from "@/lib/payments/paystack";
 
 // POST /api/invoices/[id]/refund
@@ -18,9 +18,6 @@ export async function POST(
 
         const invoice = await prisma.invoice.findUnique({ where: { id } });
         if (!invoice) return apiError("Invoice not found", 404);
-
-        const tenantCheck = enforceTenantScope(user, invoice.tenantId);
-        if (tenantCheck) return tenantCheck;
 
         if (invoice.status !== "PAID") {
             return apiError("Only paid invoices can be refunded", 400);

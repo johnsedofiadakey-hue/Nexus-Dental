@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
-import { requireAuth, enforceTenantScope, requirePermission, PERMISSIONS, apiError, apiSuccess } from "@/lib/auth";
+import { requireAuth, requirePermission, PERMISSIONS, apiError, apiSuccess } from "@/lib/auth";
+import { getClinicId } from "@/lib/clinic";
 import type { JWTPayload } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
@@ -9,17 +10,12 @@ export async function GET(request: NextRequest) {
         if ("error" in authResult) return authResult.error;
         const { user } = authResult;
 
+        const tenantId = getClinicId();
         const { searchParams } = new URL(request.url);
-        const tenantId = searchParams.get("tenantId");
         const status = searchParams.get("status");
         const patientId = searchParams.get("patientId");
         const page = parseInt(searchParams.get("page") || "1");
         const limit = parseInt(searchParams.get("limit") || "20");
-
-        if (!tenantId) return apiError("tenantId is required", 400);
-
-        const tenantCheck = enforceTenantScope(user, tenantId);
-        if (tenantCheck) return tenantCheck;
 
         const where: Record<string, unknown> = { tenantId };
         if (status && status !== "ALL") where.status = status;
@@ -55,14 +51,12 @@ export async function POST(request: NextRequest) {
 
         const staffUser = user as JWTPayload;
         const body = await request.json();
-        const { tenantId, patientId, appointmentId, items, discount = 0, notes } = body;
+        const tenantId = getClinicId();
+        const { patientId, appointmentId, items, discount = 0, notes } = body;
 
-        if (!tenantId || !patientId || !appointmentId || !items?.length) {
-            return apiError("tenantId, patientId, appointmentId, and items are required", 400);
+        if (!patientId || !appointmentId || !items?.length) {
+            return apiError("patientId, appointmentId, and items are required", 400);
         }
-
-        const tenantCheck = enforceTenantScope(user, tenantId);
-        if (tenantCheck) return tenantCheck;
 
         const amount = items.reduce((sum: number, item: any) => sum + item.quantity * item.unitPrice, 0);
         const totalAmount = Math.max(0, amount - discount);

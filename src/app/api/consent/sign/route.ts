@@ -8,10 +8,10 @@ import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
 import {
   requireAuth,
-  enforceTenantScope,
   apiError,
   apiSuccess,
 } from "@/lib/auth";
+import { getClinicId } from "@/lib/clinic";
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,15 +28,12 @@ export async function POST(request: NextRequest) {
       ipAddress?: string;
     };
 
-    const { templateId, patientId, tenantId, appointmentId, signatureData, ipAddress } = body;
+    const tenantId = getClinicId();
+    const { templateId, patientId, appointmentId, signatureData, ipAddress } = body;
 
     if (!templateId) return apiError("templateId is required", 400);
     if (!patientId) return apiError("patientId is required", 400);
-    if (!tenantId) return apiError("tenantId is required", 400);
     if (!signatureData) return apiError("signatureData is required", 400);
-
-    const tenantCheck = enforceTenantScope(user, tenantId);
-    if (tenantCheck) return tenantCheck;
 
     // Verify template exists and is accessible by this tenant
     const template = await prisma.consentTemplate.findFirst({

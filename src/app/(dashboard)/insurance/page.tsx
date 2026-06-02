@@ -166,14 +166,14 @@ export default function InsurancePage() {
     const [editingId, setEditingId] = useState<string | null>(null);
 
     const { data, isLoading } = useQuery({
-        queryKey: ["insurance-claims", user?.tenantId],
+        queryKey: ["insurance-claims"],
         queryFn: async () => {
-            const res = await fetch(`/api/invoices?tenantId=${user!.tenantId}&limit=100`, { credentials: "include" });
+            const res = await fetch(`/api/invoices?limit=100`, { credentials: "include" });
             if (!res.ok) throw new Error("Failed");
             const json = await res.json();
             return json.data.invoices as InvoiceWithClaim[];
         },
-        enabled: !!user?.tenantId,
+        enabled: !!user,
     });
 
     const claimMutation = useMutation({

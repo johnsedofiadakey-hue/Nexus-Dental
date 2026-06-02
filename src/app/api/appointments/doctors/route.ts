@@ -6,16 +6,13 @@
 import { NextRequest } from "next/server";
 import { apiError, apiSuccess } from "@/lib/auth";
 import { getAvailableDoctors } from "@/lib/booking";
+import { getClinicId } from "@/lib/clinic";
 
 export async function GET(request: NextRequest) {
     try {
+        const tenantId = getClinicId();
         const { searchParams } = new URL(request.url);
-        const tenantId = searchParams.get("tenantId");
         const specialty = searchParams.get("specialty");
-
-        if (!tenantId) {
-            return apiError("tenantId is required", 400);
-        }
 
         const doctors = await getAvailableDoctors(
             tenantId,

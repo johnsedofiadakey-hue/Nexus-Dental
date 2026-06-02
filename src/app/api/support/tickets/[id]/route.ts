@@ -8,7 +8,6 @@ import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
 import {
     requireAuth,
-    enforceTenantScope,
     requirePermission,
     PERMISSIONS,
     apiError,
@@ -43,9 +42,6 @@ export async function GET(
         });
 
         if (!ticket) return apiError("Ticket not found", 404);
-
-        const tenantCheck = enforceTenantScope(user, ticket.tenantId);
-        if (tenantCheck) return tenantCheck;
 
         // Patients can only view their own tickets
         if (
@@ -89,9 +85,6 @@ export async function PATCH(
 
         const ticket = await prisma.supportTicket.findUnique({ where: { id } });
         if (!ticket) return apiError("Ticket not found", 404);
-
-        const tenantCheck = enforceTenantScope(user, ticket.tenantId);
-        if (tenantCheck) return tenantCheck;
 
         const data: Record<string, unknown> = {};
         if (status) data.status = status;

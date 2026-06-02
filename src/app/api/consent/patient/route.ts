@@ -7,10 +7,10 @@ import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
 import {
   requireAuth,
-  enforceTenantScope,
   apiError,
   apiSuccess,
 } from "@/lib/auth";
+import { getClinicId } from "@/lib/clinic";
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,15 +18,11 @@ export async function GET(request: NextRequest) {
     if ("error" in authResult) return authResult.error;
     const { user } = authResult;
 
+    const tenantId = getClinicId();
     const { searchParams } = new URL(request.url);
     const patientId = searchParams.get("patientId");
-    const tenantId = searchParams.get("tenantId");
 
     if (!patientId) return apiError("patientId is required", 400);
-    if (!tenantId) return apiError("tenantId is required", 400);
-
-    const tenantCheck = enforceTenantScope(user, tenantId);
-    if (tenantCheck) return tenantCheck;
 
     const consents = await prisma.patientConsent.findMany({
       where: { patientId, tenantId },

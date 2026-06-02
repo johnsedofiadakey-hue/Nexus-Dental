@@ -1,7 +1,8 @@
 import { NextRequest } from "next/server";
 import { randomUUID } from "crypto";
 import prisma from "@/lib/db/prisma";
-import { requireAuth, enforceTenantScope, apiError, apiSuccess } from "@/lib/auth";
+import { requireAuth, apiError, apiSuccess } from "@/lib/auth";
+import { getClinicId } from "@/lib/clinic";
 import { sendEmail, staffInviteEmailHtml } from "@/lib/email/sender";
 import type { JWTPayload } from "@/lib/auth";
 import type { UserRole } from "@prisma/client";
@@ -24,19 +25,17 @@ export async function POST(request: NextRequest) {
             return apiError("Only clinic owners and admins can invite staff", 403);
         }
 
+        const tenantId = getClinicId();
         const body = await request.json();
-        const { email, role, tenantId } = body as { email: string; role: UserRole; tenantId: string };
+        const { email, role } = body as { email: string; role: UserRole };
 
-        if (!email || !role || !tenantId) {
-            return apiError("email, role, and tenantId are required", 400);
+        if (!email || !role) {
+            return apiError("email and role are required", 400);
         }
 
         if (!ALLOWED_ROLES.includes(role)) {
             return apiError(`Role must be one of: ${ALLOWED_ROLES.join(", ")}`, 400);
         }
-
-        const tenantCheck = enforceTenantScope(user, tenantId);
-        if (tenantCheck) return tenantCheck;
 
         // Don't invite someone who already has an account
         const existingUser = await prisma.user.findUnique({ where: { email } });
@@ -100,12 +99,7 @@ export async function GET(request: NextRequest) {
         if ("error" in authResult) return authResult.error;
         const { user } = authResult;
 
-        const { searchParams } = new URL(request.url);
-        const tenantId = searchParams.get("tenantId");
-        if (!tenantId) return apiError("tenantId is required", 400);
-
-        const tenantCheck = enforceTenantScope(user, tenantId);
-        if (tenantCheck) return tenantCheck;
+        const tenantId = getClinicId();
 
         const invites = await prisma.staffInvite.findMany({
             where: { tenantId, acceptedAt: null },
@@ -132,9 +126,6 @@ export async function DELETE(request: NextRequest) {
 
         const invite = await prisma.staffInvite.findUnique({ where: { id } });
         if (!invite) return apiError("Invite not found", 404);
-
-        const tenantCheck = enforceTenantScope(user, invite.tenantId);
-        if (tenantCheck) return tenantCheck;
 
         await prisma.staffInvite.delete({ where: { id } });
         return apiSuccess({ revoked: true });

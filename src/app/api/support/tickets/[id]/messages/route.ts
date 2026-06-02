@@ -7,7 +7,6 @@ import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
 import {
     requireAuth,
-    enforceTenantScope,
     apiError,
     apiSuccess,
 } from "@/lib/auth";
@@ -39,9 +38,6 @@ export async function POST(
         });
 
         if (!ticket) return apiError("Ticket not found", 404);
-
-        const tenantCheck = enforceTenantScope(user, ticket.tenantId);
-        if (tenantCheck) return tenantCheck;
 
         // Determine sender
         let senderId: string;

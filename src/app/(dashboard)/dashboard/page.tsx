@@ -33,14 +33,13 @@ async function fetchClinicStats(): Promise<ClinicStats> {
     return json.data.clinic;
 }
 
-async function fetchTodayAppointments(tenantId: string): Promise<Appointment[]> {
+async function fetchTodayAppointments(): Promise<Appointment[]> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     const params = new URLSearchParams({
-        tenantId,
         dateFrom: today.toISOString(),
         dateTo: tomorrow.toISOString(),
         limit: "5",
@@ -77,9 +76,9 @@ export default function ClinicDashboard() {
     });
 
     const { data: todayAppts = [], isLoading: apptsLoading } = useQuery({
-        queryKey: ["today-appointments", user?.tenantId],
-        queryFn: () => fetchTodayAppointments(user!.tenantId!),
-        enabled: !!user?.tenantId,
+        queryKey: ["today-appointments"],
+        queryFn: () => fetchTodayAppointments(),
+        enabled: !!user,
     });
 
     const statCards = [

@@ -8,10 +8,10 @@ import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
 import {
     requireAuth,
-    enforceTenantScope,
     apiError,
     apiSuccess,
 } from "@/lib/auth";
+import { getClinicId } from "@/lib/clinic";
 import { triageTicket } from "@/lib/support";
 import { logAudit } from "@/lib/audit/logger";
 import type { JWTPayload, PatientJWTPayload } from "@/lib/auth";
@@ -22,18 +22,13 @@ export async function GET(request: NextRequest) {
         if ("error" in authResult) return authResult.error;
         const { user } = authResult;
 
+        const tenantId = getClinicId();
         const { searchParams } = new URL(request.url);
-        const tenantId = searchParams.get("tenantId");
         const status = searchParams.get("status");
         const severity = searchParams.get("severity");
         const assignedTo = searchParams.get("assignedTo");
         const page = parseInt(searchParams.get("page") || "1");
         const limit = parseInt(searchParams.get("limit") || "20");
-
-        if (!tenantId) return apiError("tenantId is required", 400);
-
-        const tenantCheck = enforceTenantScope(user, tenantId);
-        if (tenantCheck) return tenantCheck;
 
         const where: Record<string, unknown> = { tenantId };
 
@@ -82,14 +77,12 @@ export async function POST(request: NextRequest) {
         const { user } = authResult;
 
         const body = await request.json();
-        const { tenantId, subject, description, issueType, patientId: bodyPatientId } = body;
+        const tenantId = getClinicId();
+        const { subject, description, issueType, patientId: bodyPatientId } = body;
 
-        if (!tenantId || !subject || !description) {
-            return apiError("tenantId, subject, and description are required", 400);
+        if (!subject || !description) {
+            return apiError("subject and description are required", 400);
         }
-
-        const tenantCheck = enforceTenantScope(user, tenantId);
-        if (tenantCheck) return tenantCheck;
 
         // Determine patient ID
         let patientId: string;

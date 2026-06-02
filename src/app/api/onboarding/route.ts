@@ -2,9 +2,15 @@ import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { hashPassword, signToken, apiError, apiSuccess } from "@/lib/auth";
 
-// POST /api/onboarding — self-serve clinic registration (public, no auth required)
+// POST /api/onboarding — One-time clinic setup. Only works if no clinic exists yet.
 export async function POST(request: NextRequest) {
     try {
+        // Single-clinic guard: refuse if a clinic already exists
+        const existingClinic = await prisma.tenant.findFirst();
+        if (existingClinic) {
+            return apiError("Clinic already configured. This endpoint is disabled.", 409);
+        }
+
         const body = await request.json();
         const {
             clinicName,
@@ -31,18 +37,6 @@ export async function POST(request: NextRequest) {
         // Validate slug: lowercase alphanumeric + hyphens
         if (!/^[a-z0-9-]+$/.test(slug)) {
             return apiError("Slug may only contain lowercase letters, numbers, and hyphens", 400);
-        }
-
-        // Check for duplicate slug
-        const existingTenant = await prisma.tenant.findUnique({ where: { slug } });
-        if (existingTenant) {
-            return apiError("This clinic URL is already taken. Try a different slug.", 409);
-        }
-
-        // Check for duplicate owner email
-        const existingUser = await prisma.user.findUnique({ where: { email: ownerEmail } });
-        if (existingUser) {
-            return apiError("An account with this email already exists.", 409);
         }
 
         const passwordHash = await hashPassword(password);

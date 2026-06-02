@@ -8,10 +8,10 @@ import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
 import {
   requireAuth,
-  enforceTenantScope,
   apiError,
   apiSuccess,
 } from "@/lib/auth";
+import { getClinicId } from "@/lib/clinic";
 
 export async function GET(
   request: NextRequest,
@@ -23,13 +23,7 @@ export async function GET(
     const { user } = authResult;
 
     const { id } = await params;
-    const { searchParams } = new URL(request.url);
-    const tenantId = searchParams.get("tenantId");
-
-    if (!tenantId) return apiError("tenantId is required", 400);
-
-    const tenantCheck = enforceTenantScope(user, tenantId);
-    if (tenantCheck) return tenantCheck;
+    const tenantId = getClinicId();
 
     // Try as a ConsentTemplate first
     const template = await prisma.consentTemplate.findFirst({
@@ -71,13 +65,7 @@ export async function DELETE(
     const { user } = authResult;
 
     const { id } = await params;
-    const { searchParams } = new URL(request.url);
-    const tenantId = searchParams.get("tenantId");
-
-    if (!tenantId) return apiError("tenantId is required", 400);
-
-    const tenantCheck = enforceTenantScope(user, tenantId);
-    if (tenantCheck) return tenantCheck;
+    const tenantId = getClinicId();
 
     const template = await prisma.consentTemplate.findUnique({
       where: { id },

@@ -8,12 +8,12 @@ import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
 import {
     requireAuth,
-    enforceTenantScope,
     requirePermission,
     PERMISSIONS,
     apiError,
     apiSuccess,
 } from "@/lib/auth";
+import { getClinicId } from "@/lib/clinic";
 import type { JWTPayload } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
@@ -25,14 +25,9 @@ export async function GET(request: NextRequest) {
         const permCheck = requirePermission(user, PERMISSIONS.INVENTORY_VIEW);
         if (permCheck) return permCheck;
 
+        const tenantId = getClinicId();
         const { searchParams } = new URL(request.url);
-        const tenantId = searchParams.get("tenantId");
         const status = searchParams.get("status") ?? undefined;
-
-        if (!tenantId) return apiError("tenantId is required", 400);
-
-        const tenantCheck = enforceTenantScope(user, tenantId);
-        if (tenantCheck) return tenantCheck;
 
         const where: Record<string, unknown> = { tenantId };
         if (status) where.status = status;
@@ -64,14 +59,12 @@ export async function POST(request: NextRequest) {
 
         const staffUser = user as JWTPayload;
         const body = await request.json();
-        const { tenantId, supplierId, items, notes, expectedAt } = body;
+        const tenantId = getClinicId();
+        const { supplierId, items, notes, expectedAt } = body;
 
-        if (!tenantId || !supplierId || !Array.isArray(items) || items.length === 0) {
-            return apiError("tenantId, supplierId, and items are required", 400);
+        if (!supplierId || !Array.isArray(items) || items.length === 0) {
+            return apiError("supplierId and items are required", 400);
         }
-
-        const tenantCheck = enforceTenantScope(user, tenantId);
-        if (tenantCheck) return tenantCheck;
 
         // Auto-generate orderNo: PO-YYYY-NNN
         const year = new Date().getFullYear();

@@ -44,8 +44,8 @@ function formatDate(d: string) {
 }
 function initials(f: string, l: string) { return `${f[0] ?? ""}${l[0] ?? ""}`.toUpperCase(); }
 
-async function fetchInvoices(tenantId: string, status: string, page: number) {
-    const params = new URLSearchParams({ tenantId, page: String(page), limit: "20" });
+async function fetchInvoices(status: string, page: number) {
+    const params = new URLSearchParams({ page: String(page), limit: "20" });
     if (status !== "ALL") params.set("status", status);
     const res = await fetch(`/api/invoices?${params}`, { credentials: "include" });
     if (!res.ok) throw new Error("Failed to fetch invoices");
@@ -80,9 +80,9 @@ export default function InvoicesPage() {
     const qc = useQueryClient();
 
     const { data, isLoading, isError, refetch } = useQuery({
-        queryKey: ["invoices", user?.tenantId, status, page],
-        queryFn: () => fetchInvoices(user!.tenantId!, status, page),
-        enabled: !!user?.tenantId,
+        queryKey: ["invoices", status, page],
+        queryFn: () => fetchInvoices(status, page),
+        enabled: !!user,
     });
 
     const payMutation = useMutation({

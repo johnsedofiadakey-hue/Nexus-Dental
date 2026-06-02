@@ -82,13 +82,12 @@ async function apiFetch(url: string, init?: RequestInit) {
 // ─── Supplier Modal ───────────────────────────────────────────────────────────
 
 interface SupplierModalProps {
-    tenantId: string;
     existing?: Supplier;
     onClose: () => void;
     onSaved: () => void;
 }
 
-function SupplierModal({ tenantId, existing, onClose, onSaved }: SupplierModalProps) {
+function SupplierModal({ existing, onClose, onSaved }: SupplierModalProps) {
     const [form, setForm] = useState({
         name: existing?.name ?? "",
         contactPerson: existing?.contactPerson ?? "",
@@ -111,7 +110,6 @@ function SupplierModal({ tenantId, existing, onClose, onSaved }: SupplierModalPr
         setLoading(true);
         try {
             const body = {
-                tenantId,
                 name: form.name.trim(),
                 contactPerson: form.contactPerson || undefined,
                 email: form.email || undefined,
@@ -214,7 +212,6 @@ function SupplierModal({ tenantId, existing, onClose, onSaved }: SupplierModalPr
 // ─── PO Modal ─────────────────────────────────────────────────────────────────
 
 interface POModalProps {
-    tenantId: string;
     suppliers: Supplier[];
     onClose: () => void;
     onSaved: () => void;
@@ -222,7 +219,7 @@ interface POModalProps {
 
 const emptyItem = (): POItem => ({ name: "", qty: 1, unitPrice: 0, unit: "units" });
 
-function POModal({ tenantId, suppliers, onClose, onSaved }: POModalProps) {
+function POModal({ suppliers, onClose, onSaved }: POModalProps) {
     const [supplierId, setSupplierId] = useState("");
     const [notes, setNotes] = useState("");
     const [expectedAt, setExpectedAt] = useState("");
@@ -245,7 +242,6 @@ function POModal({ tenantId, suppliers, onClose, onSaved }: POModalProps) {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    tenantId,
                     supplierId,
                     items,
                     notes: notes || undefined,
@@ -383,30 +379,28 @@ export default function SuppliersPage() {
     const [showPOModal, setShowPOModal] = useState(false);
     const [poFilter, setPOFilter] = useState<POFilterStatus>("ALL");
 
-    const tenantId = user?.tenantId ?? "";
-
     // ── Suppliers ──
     const suppliersQuery = useQuery<Supplier[]>({
-        queryKey: ["suppliers", tenantId],
-        queryFn: () => apiFetch(`/api/suppliers?tenantId=${tenantId}`),
-        enabled: !!tenantId,
+        queryKey: ["suppliers"],
+        queryFn: () => apiFetch(`/api/suppliers`),
+        enabled: !!user,
     });
 
     const deactivateMutation = useMutation({
         mutationFn: (id: string) =>
-            apiFetch(`/api/suppliers/${id}?tenantId=${tenantId}`, { method: "DELETE" }),
+            apiFetch(`/api/suppliers/${id}`, { method: "DELETE" }),
         onSuccess: () => {
             toast.success("Supplier deactivated");
-            qc.invalidateQueries({ queryKey: ["suppliers", tenantId] });
+            qc.invalidateQueries({ queryKey: ["suppliers"] });
         },
         onError: (err: unknown) => toast.error(err instanceof Error ? err.message : "Failed"),
     });
 
     // ── Purchase Orders ──
     const posQuery = useQuery<PurchaseOrder[]>({
-        queryKey: ["purchase-orders", tenantId],
-        queryFn: () => apiFetch(`/api/purchase-orders?tenantId=${tenantId}`),
-        enabled: !!tenantId,
+        queryKey: ["purchase-orders"],
+        queryFn: () => apiFetch(`/api/purchase-orders`),
+        enabled: !!user,
     });
 
     const markReceivedMutation = useMutation({
@@ -414,11 +408,11 @@ export default function SuppliersPage() {
             apiFetch(`/api/purchase-orders/${id}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ tenantId, status: "RECEIVED" }),
+                body: JSON.stringify({ status: "RECEIVED" }),
             }),
         onSuccess: () => {
             toast.success("Purchase order marked as received & inventory updated");
-            qc.invalidateQueries({ queryKey: ["purchase-orders", tenantId] });
+            qc.invalidateQueries({ queryKey: ["purchase-orders"] });
         },
         onError: (err: unknown) => toast.error(err instanceof Error ? err.message : "Failed"),
     });
@@ -686,20 +680,18 @@ export default function SuppliersPage() {
             )}
 
             {/* Modals */}
-            {showSupplierModal && tenantId && (
+            {showSupplierModal && (
                 <SupplierModal
-                    tenantId={tenantId}
                     existing={editingSupplier}
                     onClose={() => { setShowSupplierModal(false); setEditingSupplier(undefined); }}
-                    onSaved={() => qc.invalidateQueries({ queryKey: ["suppliers", tenantId] })}
+                    onSaved={() => qc.invalidateQueries({ queryKey: ["suppliers"] })}
                 />
             )}
-            {showPOModal && tenantId && (
+            {showPOModal && (
                 <POModal
-                    tenantId={tenantId}
                     suppliers={suppliers}
                     onClose={() => setShowPOModal(false)}
-                    onSaved={() => qc.invalidateQueries({ queryKey: ["purchase-orders", tenantId] })}
+                    onSaved={() => qc.invalidateQueries({ queryKey: ["purchase-orders"] })}
                 />
             )}
         </DashboardLayout>

@@ -6,7 +6,7 @@ import prisma from "@/lib/db/prisma";
 
 interface AuditLogEntry {
     tenantId?: string | null;
-    userId: string;
+    userId: string | null;
     action: string;
     entity: string;
     entityId: string;
@@ -25,7 +25,7 @@ export async function logAudit(entry: AuditLogEntry): Promise<void> {
         await prisma.auditLog.create({
             data: {
                 tenantId: entry.tenantId ?? undefined,
-                userId: entry.userId,
+                userId: entry.userId ?? undefined,
                 action: entry.action,
                 entity: entry.entity,
                 entityId: entry.entityId,

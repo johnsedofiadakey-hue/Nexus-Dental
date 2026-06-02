@@ -7,10 +7,10 @@
 import { NextRequest } from "next/server";
 import {
     requireAuth,
-    enforceTenantScope,
     apiError,
     apiSuccess,
 } from "@/lib/auth";
+import { getClinicId } from "@/lib/clinic";
 import { sendNotification, getNotificationHistory } from "@/lib/support";
 import type { JWTPayload, PatientJWTPayload } from "@/lib/auth";
 import type { NotificationChannel, NotificationStatus } from "@prisma/client";
@@ -21,18 +21,13 @@ export async function GET(request: NextRequest) {
         if ("error" in authResult) return authResult.error;
         const { user } = authResult;
 
+        const tenantId = getClinicId();
         const { searchParams } = new URL(request.url);
-        const tenantId = searchParams.get("tenantId");
         const type = searchParams.get("type");
         const status = searchParams.get("status") as NotificationStatus | null;
         const channel = searchParams.get("channel") as NotificationChannel | null;
         const page = parseInt(searchParams.get("page") || "1");
         const limit = parseInt(searchParams.get("limit") || "20");
-
-        if (!tenantId) return apiError("tenantId is required", 400);
-
-        const tenantCheck = enforceTenantScope(user, tenantId);
-        if (tenantCheck) return tenantCheck;
 
         // Patients only see their own notifications
         const recipientId =
@@ -67,18 +62,16 @@ export async function POST(request: NextRequest) {
 
         const staffUser = user as JWTPayload;
         const body = await request.json();
-        const { tenantId, recipientId, type, title, content, preferredChannel } =
+        const tenantId = getClinicId();
+        const { recipientId, type, title, content, preferredChannel } =
             body;
 
-        if (!tenantId || !recipientId || !type || !title || !content) {
+        if (!recipientId || !type || !title || !content) {
             return apiError(
-                "tenantId, recipientId, type, title, and content are required",
+                "recipientId, type, title, and content are required",
                 400
             );
         }
-
-        const tenantCheck = enforceTenantScope(user, tenantId);
-        if (tenantCheck) return tenantCheck;
 
         const result = await sendNotification({
             tenantId,

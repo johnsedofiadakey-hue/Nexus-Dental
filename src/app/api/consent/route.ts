@@ -10,10 +10,10 @@ import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
 import {
   requireAuth,
-  enforceTenantScope,
   apiError,
   apiSuccess,
 } from "@/lib/auth";
+import { getClinicId } from "@/lib/clinic";
 
 // ── GET /api/consent ─────────────────────────────────────────────────────────
 export async function GET(request: NextRequest) {
@@ -22,13 +22,7 @@ export async function GET(request: NextRequest) {
     if ("error" in authResult) return authResult.error;
     const { user } = authResult;
 
-    const { searchParams } = new URL(request.url);
-    const tenantId = searchParams.get("tenantId");
-
-    if (!tenantId) return apiError("tenantId is required", 400);
-
-    const tenantCheck = enforceTenantScope(user, tenantId);
-    if (tenantCheck) return tenantCheck;
+    const tenantId = getClinicId();
 
     // Return global templates (tenantId IS NULL) + tenant-specific ones
     const templates = await prisma.consentTemplate.findMany({
@@ -71,15 +65,12 @@ export async function POST(request: NextRequest) {
       content?: string;
     };
 
-    const { tenantId, title, category, content } = body;
+    const tenantId = getClinicId();
+    const { title, category, content } = body;
 
-    if (!tenantId) return apiError("tenantId is required", 400);
     if (!title) return apiError("title is required", 400);
     if (!category) return apiError("category is required", 400);
     if (!content) return apiError("content is required", 400);
-
-    const tenantCheck = enforceTenantScope(user, tenantId);
-    if (tenantCheck) return tenantCheck;
 
     const template = await prisma.consentTemplate.create({
       data: {

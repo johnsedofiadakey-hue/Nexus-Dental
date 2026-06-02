@@ -34,8 +34,8 @@ function formatDate(d: string) {
     return new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
 
-async function fetchReviews(tenantId: string) {
-    const res = await fetch(`/api/reviews?tenantId=${tenantId}&all=true`, { credentials: "include" });
+async function fetchReviews() {
+    const res = await fetch(`/api/reviews?all=true`, { credentials: "include" });
     if (!res.ok) throw new Error("Failed");
     return (await res.json()).data.reviews as Review[];
 }
@@ -56,9 +56,9 @@ export default function ReviewsPage() {
     const qc = useQueryClient();
 
     const { data: reviews = [], isLoading, isError } = useQuery({
-        queryKey: ["reviews", user?.tenantId],
-        queryFn: () => fetchReviews(user!.tenantId!),
-        enabled: !!user?.tenantId,
+        queryKey: ["reviews"],
+        queryFn: () => fetchReviews(),
+        enabled: !!user,
     });
 
     const moderateMutation = useMutation({

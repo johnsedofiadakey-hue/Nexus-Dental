@@ -7,12 +7,12 @@
 import { NextRequest } from "next/server";
 import {
     requireAuth,
-    enforceTenantScope,
     requirePermission,
     PERMISSIONS,
     apiError,
     apiSuccess,
 } from "@/lib/auth";
+import { getClinicId } from "@/lib/clinic";
 import {
     overrideAppointmentStatus,
     overrideBuffer,
@@ -31,17 +31,15 @@ export async function POST(request: NextRequest) {
 
         const staffUser = user as JWTPayload;
         const body = await request.json();
-        const { tenantId, action, entityId, newStatus, reason } = body;
+        const { action, entityId, newStatus, reason } = body;
+        const tenantId = getClinicId();
 
-        if (!tenantId || !action || !entityId || !reason) {
+        if (!action || !entityId || !reason) {
             return apiError(
-                "tenantId, action, entityId, and reason are required",
+                "action, entityId, and reason are required",
                 400
             );
         }
-
-        const tenantCheck = enforceTenantScope(user, tenantId);
-        if (tenantCheck) return tenantCheck;
 
         const ip = getClientIP(request.headers);
         const ua = getUserAgent(request.headers);
@@ -122,7 +120,7 @@ export async function GET(request: NextRequest) {
         if (permCheck) return permCheck;
 
         const { searchParams } = new URL(request.url);
-        const tenantId = searchParams.get("tenantId");
+        const tenantId = getClinicId();
         const action = searchParams.get("action") as OverrideAction | null;
         const userId = searchParams.get("userId");
         const entity = searchParams.get("entity");
@@ -130,11 +128,6 @@ export async function GET(request: NextRequest) {
         const dateTo = searchParams.get("dateTo");
         const page = parseInt(searchParams.get("page") || "1");
         const limit = parseInt(searchParams.get("limit") || "20");
-
-        if (!tenantId) return apiError("tenantId is required", 400);
-
-        const tenantCheck = enforceTenantScope(user, tenantId);
-        if (tenantCheck) return tenantCheck;
 
         const result = await getOverrideHistory(tenantId, {
             action: action || undefined,

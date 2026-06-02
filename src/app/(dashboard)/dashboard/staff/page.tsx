@@ -66,7 +66,7 @@ function formatDate(d: string) {
 
 function isExpired(d: string) { return new Date(d) < new Date(); }
 
-function InviteModal({ tenantId, onClose }: { tenantId: string; onClose: () => void }) {
+function InviteModal({ onClose }: { onClose: () => void }) {
     const qc = useQueryClient();
     const [email, setEmail] = useState("");
     const [role, setRole] = useState("DOCTOR");
@@ -77,7 +77,7 @@ function InviteModal({ tenantId, onClose }: { tenantId: string; onClose: () => v
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
-                body: JSON.stringify({ email: email.trim().toLowerCase(), role, tenantId }),
+                body: JSON.stringify({ email: email.trim().toLowerCase(), role }),
             });
             const json = await res.json();
             if (!res.ok) throw new Error(json.error || "Failed to send invite");
@@ -147,26 +147,24 @@ export default function StaffManagementPage() {
     const [showInviteModal, setShowInviteModal] = useState(false);
     const [tab, setTab] = useState<"active" | "invites">("active");
 
-    const tenantId = currentUser?.tenantId;
-
     const { data: staffData, isLoading: loadingStaff } = useQuery({
-        queryKey: ["staff", tenantId],
+        queryKey: ["staff"],
         queryFn: async () => {
-            const res = await fetch(`/api/staff?tenantId=${tenantId}`, { credentials: "include" });
+            const res = await fetch(`/api/staff`, { credentials: "include" });
             if (!res.ok) throw new Error("Failed");
             return (await res.json()).data as { staff: StaffMember[] };
         },
-        enabled: !!tenantId,
+        enabled: !!currentUser,
     });
 
     const { data: inviteData, isLoading: loadingInvites } = useQuery({
-        queryKey: ["pending-invites", tenantId],
+        queryKey: ["pending-invites"],
         queryFn: async () => {
-            const res = await fetch(`/api/staff/invite?tenantId=${tenantId}`, { credentials: "include" });
+            const res = await fetch(`/api/staff/invite`, { credentials: "include" });
             if (!res.ok) throw new Error("Failed");
             return (await res.json()).data as { invites: PendingInvite[] };
         },
-        enabled: !!tenantId,
+        enabled: !!currentUser,
     });
 
     const revokeInvite = useMutation({
@@ -187,8 +185,8 @@ export default function StaffManagementPage() {
 
     return (
         <DashboardLayout title="Staff Management">
-            {showInviteModal && tenantId && (
-                <InviteModal tenantId={tenantId} onClose={() => setShowInviteModal(false)} />
+            {showInviteModal && (
+                <InviteModal onClose={() => setShowInviteModal(false)} />
             )}
 
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">

@@ -77,8 +77,8 @@ async function fetchExpenses(month: number, year: number): Promise<ExpensesRespo
   return json.data as ExpensesResponse;
 }
 
-async function fetchRevenue(tenantId: string): Promise<number> {
-  const res = await fetch(`/api/analytics/clinic?tenantId=${tenantId}`, {
+async function fetchRevenue(): Promise<number> {
+  const res = await fetch(`/api/analytics/clinic`, {
     credentials: "include",
   });
   if (!res.ok) return 0;
@@ -278,9 +278,9 @@ export default function ExpensesPage() {
   });
 
   const { data: revenue } = useQuery<number>({
-    queryKey: ["revenue", user?.tenantId],
-    queryFn: () => fetchRevenue(user!.tenantId!),
-    enabled: !!user?.tenantId,
+    queryKey: ["revenue"],
+    queryFn: () => fetchRevenue(),
+    enabled: !!user,
   });
 
   const expenses = data?.expenses ?? [];

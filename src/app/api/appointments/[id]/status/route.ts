@@ -7,7 +7,6 @@ import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
 import {
     requireAuth,
-    enforceTenantScope,
     requirePermission,
     PERMISSIONS,
     VALID_APPOINTMENT_TRANSITIONS,
@@ -49,10 +48,6 @@ export async function PATCH(
         if (!appointment) {
             return apiError("Appointment not found", 404);
         }
-
-        // Enforce tenant scope
-        const tenantCheck = enforceTenantScope(user, appointment.tenantId);
-        if (tenantCheck) return tenantCheck;
 
         // Validate state transition
         const currentStatus = appointment.status;
