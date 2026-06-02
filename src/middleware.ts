@@ -46,7 +46,7 @@ const STATIC_EXTENSIONS = [
     ".ttf",
 ];
 
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     // Skip static files and Next.js internals
