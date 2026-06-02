@@ -225,7 +225,7 @@ export async function getAvailableDoctors(
 ) {
     const where: Record<string, unknown> = {
         tenantId,
-        role: "DOCTOR",
+        roles: { some: { systemRole: "DOCTOR" } },
         status: "ACTIVE",
     };
 
