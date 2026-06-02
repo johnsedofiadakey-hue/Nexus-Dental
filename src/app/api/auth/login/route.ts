@@ -20,6 +20,7 @@ export async function POST(request: NextRequest) {
             return apiError("Email and password are required", 400);
         }
 
+
         // Find user by email
         const user = await prisma.user.findUnique({
             where: { email: email.toLowerCase().trim() },
@@ -135,17 +136,8 @@ export async function POST(request: NextRequest) {
 
         return res;
     } catch (error: any) {
-        console.error("[Auth] Login error:", error);
-
-        // Diagnostic logging to a file since terminal access is restricted
-        try {
-            const fs = require('fs');
-            const logMessage = `[${new Date().toISOString()}] Login Error: ${error?.message || "Unknown error"}\nStack: ${error?.stack}\n\n`;
-            fs.appendFileSync('auth_debug.log', logMessage);
-        } catch (logErr) {
-            console.error("Failed to write to debug log", logErr);
-        }
-
+        const fs = require('fs');
+        fs.appendFileSync('/tmp/nexus-login-error.log', `[${new Date().toISOString()}] ${error?.message}\n${error?.stack}\n\n`);
         return apiError("Internal server error", 500);
     }
 }

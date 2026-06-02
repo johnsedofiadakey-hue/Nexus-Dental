@@ -1,0 +1,99 @@
+runConfig:
+  runtime: nodejs20
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 512
+  minInstances: 0
+  maxInstances: 2
+
+env:
+  - variable: NODE_ENV
+    value: production
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_API_URL
+    value: https://nexusdental.web.app
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_APP_URL
+    value: https://nexusdental.web.app
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_GOOGLE_CLIENT_ID
+    value: 871183265953-i9ctm5b8jck6er4ah22c9cs24g55i4fq.apps.googleusercontent.com
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: AIzaSyCpFe20EmaY_2xQNoX7V97PCyzBoXtZfK4
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: nexusdentalsystem.firebaseapp.com
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: nexusdentalsystem
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: "1:871183265953:web:fb0e52c47d8d599e9600e0"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY
+    value: pk_live_0824b60f0c0e7b10be0d8e4e0c74d229596e836c
+    availability:
+      - BUILD
+      - RUNTIME
+
+  # ─── Secrets (stored in Google Cloud Secret Manager) ───────────
+  - variable: DATABASE_URL
+    secret: DATABASE_URL
+
+  - variable: JWT_SECRET
+    secret: JWT_SECRET
+
+  - variable: CLINIC_ID
+    secret: CLINIC_ID
+
+  - variable: REDIS_URL
+    secret: REDIS_URL
+
+  - variable: FIREBASE_STORAGE_BUCKET
+    secret: FIREBASE_STORAGE_BUCKET
+
+  - variable: RESEND_API_KEY
+    secret: RESEND_API_KEY
+
+  - variable: EMAIL_FROM
+    secret: EMAIL_FROM
+
+  - variable: PAYSTACK_SECRET_KEY
+    secret: PAYSTACK_SECRET_KEY
+
+  - variable: HUBTEL_CLIENT_ID
+    secret: HUBTEL_CLIENT_ID
+
+  - variable: HUBTEL_CLIENT_SECRET
+    secret: HUBTEL_CLIENT_SECRET
+
+  - variable: HUBTEL_SENDER_ID
+    secret: HUBTEL_SENDER_ID
+
+  - variable: HUBTEL_WHATSAPP_NUMBER
+    secret: HUBTEL_WHATSAPP_NUMBER

@@ -15,7 +15,7 @@ export function withAuditLogging(client: any) {
               
               // In a real app, you would extract userId from async local storage (Next.js server context)
               // Here we do a best effort or leave userId as "system" if not provided in args
-              const userId = "system"; 
+              const userId = null;
               const tenantId = args.data?.tenantId || (result && result.tenantId) || null;
               const entityId = result?.id || "multiple";
 
