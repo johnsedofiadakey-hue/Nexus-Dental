@@ -27,11 +27,12 @@ export async function GET(request: NextRequest) {
         }
 
         if (mode === "week") {
+            const daysToFetch = parseInt(searchParams.get("days") || "7");
             const schedules = await getWeekAvailability(
                 tenantId,
                 doctorId,
                 date,
-                7,
+                daysToFetch,
                 duration
             );
             return apiSuccess({ schedules });

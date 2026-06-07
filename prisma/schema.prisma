@@ -255,6 +255,7 @@ model Service {
   createdAt             DateTime                @default(now())
   updatedAt             DateTime                @updatedAt
   appointments          Appointment[]
+  additionalAppointments Appointment[]         @relation("AppointmentAdditionalServices")
   procedureInventoryMap ProcedureInventoryMap[]
   tenant                Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
@@ -285,6 +286,7 @@ model Appointment {
   doctor             User                    @relation("DoctorAppointments", fields: [doctorId], references: [id])
   patient            Patient                 @relation(fields: [patientId], references: [id])
   service            Service                 @relation(fields: [serviceId], references: [id])
+  additionalServices Service[]               @relation("AppointmentAdditionalServices")
   tenant             Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   invoice            Invoice?
   prescription       Prescription?
