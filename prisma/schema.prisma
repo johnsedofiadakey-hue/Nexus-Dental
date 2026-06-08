@@ -480,7 +480,7 @@ model Notification {
 model AuditLog {
   id        String   @id @default(cuid())
   tenantId  String?
-  userId    String
+  userId    String?
   action    String
   entity    String
   entityId  String
@@ -490,7 +490,7 @@ model AuditLog {
   userAgent String?
   timestamp DateTime @default(now())
   tenant    Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Restrict)
-  user      User     @relation(fields: [userId], references: [id])
+  user      User?    @relation(fields: [userId], references: [id])
 
   @@index([tenantId])
   @@index([userId])

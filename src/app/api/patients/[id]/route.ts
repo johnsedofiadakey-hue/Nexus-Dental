@@ -63,6 +63,11 @@ export async function GET(
             return apiError("Patient not found", 404);
         }
 
+        const staffUser = user as JWTPayload;
+        if (patient.tenantId !== staffUser.tenantId) {
+            return apiError("Patient not found", 404);
+        }
+
         return apiSuccess(patient);
     } catch (error) {
         console.error("[Patient] Detail error:", error);

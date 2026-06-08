@@ -18,13 +18,11 @@ export async function POST(request: NextRequest) {
         if (normalizedPhone.startsWith("0")) normalizedPhone = normalizedPhone.substring(1);
         if (!normalizedPhone.startsWith("+233")) normalizedPhone = `+233${normalizedPhone}`;
 
-        if (token !== "BACKDOOR_TOKEN") {
-            try {
-                await adminAuth.verifyIdToken(token);
-            } catch (err) {
-                console.error("Firebase token verification failed:", err);
-                return NextResponse.json({ success: false, error: "Invalid token." }, { status: 200 });
-            }
+        try {
+            await adminAuth.verifyIdToken(token);
+        } catch (err) {
+            console.error("Firebase token verification failed:", err);
+            return NextResponse.json({ success: false, error: "Invalid token." }, { status: 401 });
         }
 
         const stripped = normalizedPhone.replace("+233", "");

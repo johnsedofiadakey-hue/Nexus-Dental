@@ -136,8 +136,7 @@ export async function POST(request: NextRequest) {
 
         return res;
     } catch (error: any) {
-        const fs = require('fs');
-        fs.appendFileSync('/tmp/nexus-login-error.log', `[${new Date().toISOString()}] ${error?.message}\n${error?.stack}\n\n`);
+        console.error("[Login Error]", error);
         return apiError("Internal server error", 500);
     }
 }

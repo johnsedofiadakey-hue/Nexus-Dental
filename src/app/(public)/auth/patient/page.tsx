@@ -82,22 +82,19 @@ export default function PatientLoginPage() {
         const otp = otpValues.join("");
         if (otp.length !== 6) { toast.error("Enter the 6-digit code."); return; }
 
-        if (!confirmationResult && otp !== "123456") {
+        if (!confirmationResult) {
             toast.error("Please request a new code.");
             return;
         }
 
         setLoading(true);
         try {
-            let idToken = "BACKDOOR_TOKEN";
             let formattedPhone = phone.trim();
             if (formattedPhone.startsWith("0")) formattedPhone = formattedPhone.substring(1);
             if (!formattedPhone.startsWith("+233")) formattedPhone = `+233${formattedPhone}`;
 
-            if (otp !== "123456") {
-                const result = await confirmationResult!.confirm(otp);
-                idToken = await result.user.getIdToken();
-            }
+            const result = await confirmationResult.confirm(otp);
+            const idToken = await result.user.getIdToken();
 
             const res = await fetch("/api/auth/patient/otp/verify", {
                 method: "POST",
