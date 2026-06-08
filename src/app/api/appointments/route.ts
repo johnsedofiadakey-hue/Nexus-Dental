@@ -82,7 +82,16 @@ export async function GET(request: NextRequest) {
                             specialty: true,
                         },
                     },
-                    services: {
+                    service: {
+                        select: {
+                            id: true,
+                            name: true,
+                            price: true,
+                            category: true,
+                            duration: true,
+                        },
+                    },
+                    additionalServices: {
                         select: {
                             id: true,
                             name: true,
@@ -99,8 +108,16 @@ export async function GET(request: NextRequest) {
             prisma.appointment.count({ where }),
         ]);
 
+        const mappedAppointments = appointments.map((appt: any) => {
+            const { service, additionalServices, ...rest } = appt;
+            return {
+                ...rest,
+                services: [service, ...(additionalServices || [])].filter(Boolean)
+            };
+        });
+
         return apiSuccess({
-            appointments,
+            appointments: mappedAppointments,
             pagination: {
                 page,
                 limit,
