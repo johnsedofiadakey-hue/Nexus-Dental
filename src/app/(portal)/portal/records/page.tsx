@@ -21,6 +21,8 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useCurrentUser } from "@/lib/hooks/use-current-user";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 const fmtDate = (d: string) => new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 
 type TimelineItem =
@@ -191,7 +193,14 @@ function InvoiceCard({ data }: { data: any }) {
 }
 
 export default function RecordsPage() {
+    const router = useRouter();
     const { data: user, isLoading: userLoading } = useCurrentUser();
+
+    useEffect(() => {
+        if (!userLoading && user && user.type !== "PATIENT") {
+            router.push("/dashboard");
+        }
+    }, [user, userLoading, router]);
 
     const { data: historyData, isLoading, isError } = useQuery({
         queryKey: ["patient-history", user?.id],

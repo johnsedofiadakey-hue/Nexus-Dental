@@ -17,6 +17,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useCurrentUser } from "@/lib/hooks/use-current-user";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 const fmtDate = (d: string) => new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 
 function StatusBadge({ status }: { status: string }) {
@@ -181,7 +183,14 @@ function PrescriptionCard({ rx }: { rx: any }) {
 }
 
 export default function PrescriptionsPage() {
+    const router = useRouter();
     const { data: user, isLoading: userLoading } = useCurrentUser();
+
+    useEffect(() => {
+        if (!userLoading && user && user.type !== "PATIENT") {
+            router.push("/dashboard");
+        }
+    }, [user, userLoading, router]);
 
     const { data: historyData, isLoading, isError } = useQuery({
         queryKey: ["patient-history", user?.id],

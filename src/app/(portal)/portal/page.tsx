@@ -23,6 +23,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useCurrentUser } from "@/lib/hooks/use-current-user";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 function formatAppointmentDate(dateStr: string): string {
     const d = new Date(dateStr);
     const now = new Date();
@@ -53,7 +55,14 @@ function statusColor(status: string) {
 }
 
 export default function PatientPortal() {
+    const router = useRouter();
     const { data: user, isLoading: userLoading } = useCurrentUser();
+
+    useEffect(() => {
+        if (!userLoading && user && user.type !== "PATIENT") {
+            router.push("/dashboard");
+        }
+    }, [user, userLoading, router]);
 
     const today = new Date().toISOString().split("T")[0];
 
