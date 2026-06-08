@@ -23,7 +23,7 @@ interface Appointment {
     notes?: string;
     patient: { id: string; firstName: string; lastName: string; phone: string };
     doctor: { id: string; firstName: string; lastName: string; specialty?: string };
-    service: { id: string; name: string; price: number; duration: number };
+    services: { id: string; name: string; price: number; duration: number }[];
 }
 
 const STATUS_CONFIG: Record<AppointmentStatus, { label: string; className: string }> = {
@@ -210,8 +210,12 @@ export default function AppointmentsPage() {
                                                 )}
                                             </td>
                                             <td className="px-6 py-4">
-                                                <p className="text-sm text-slate-800">{appt.service.name}</p>
-                                                <p className="text-xs text-slate-400">{appt.service.duration} min</p>
+                                                <p className="text-sm text-slate-800">
+                                                    {appt.services.map(s => s.name).join(", ")}
+                                                </p>
+                                                <p className="text-xs text-slate-400">
+                                                    {appt.services.reduce((total, s) => total + s.duration, 0)} min total
+                                                </p>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <p className="text-sm font-semibold text-slate-900">{formatTime(appt.dateTime)}</p>

@@ -27,7 +27,7 @@ interface Invoice {
     items: any[];
     patient: { id: string; firstName: string; lastName: string; phone: string };
     createdBy: { firstName: string; lastName: string };
-    appointment: { id: string; dateTime: string; service: { name: string } };
+    appointment: { id: string; dateTime: string; services: { name: string }[] };
 }
 
 const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
@@ -210,7 +210,7 @@ export default function InvoicesPage() {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 text-sm text-slate-700">
-                                                {inv.appointment?.service?.name ?? "—"}
+                                                {inv.appointment?.services?.[0]?.name ?? "—"}
                                                 {inv.discount > 0 && <p className="text-xs text-slate-400">Discount: GH₵ {inv.discount}</p>}
                                             </td>
                                             <td className="px-6 py-4 text-sm text-slate-600">

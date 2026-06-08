@@ -124,11 +124,11 @@ interface Appointment {
     lastName: string;
     specialty: string;
   };
-  service: {
+  services: {
+    id: string;
     name: string;
-    price: number;
     duration: number;
-  };
+  }[];
 }
 
 interface Medication {
@@ -308,7 +308,7 @@ function AppointmentCard({
   onNoShow: () => void;
   isLoading: boolean;
 }) {
-  const { patient, service, status, dateTime } = appointment;
+  const { patient, services, status, dateTime } = appointment;
   const isActionable =
     status === "SCHEDULED" || status === "CONFIRMED" || status === "IN_PROGRESS";
 
@@ -345,10 +345,10 @@ function AppointmentCard({
 
               <div className="flex items-center gap-1.5 text-sm text-slate-600">
                 <Stethoscope className="w-3.5 h-3.5 text-teal-500 shrink-0" />
-                <span className="truncate">{service.name}</span>
+                <span className="truncate">{services.map(s => s.name).join(", ")}</span>
                 <span className="text-slate-400">·</span>
                 <span className="text-slate-500 whitespace-nowrap">
-                  {service.duration} min
+                  {services.reduce((total, s) => total + s.duration, 0)} min
                 </span>
               </div>
             </div>
@@ -493,7 +493,7 @@ function CompleteSessionModal({
           {appointment && (
             <p className="text-sm text-slate-500 mt-1">
               {appointment.patient.firstName} {appointment.patient.lastName} ·{" "}
-              {appointment.service.name}
+              {appointment.services.map(s => s.name).join(", ")}
             </p>
           )}
         </DialogHeader>
@@ -1003,7 +1003,7 @@ export default function DoctorDashboardPage() {
                               {a.patient.phone}
                             </p>
                             <p className="text-xs text-teal-600 mt-0.5">
-                              {formatTime(a.dateTime)} · {a.service.name}
+                              {formatTime(a.dateTime)} · {a.services?.map(s => s.name).join(", ") ?? "Appointment"}
                             </p>
                             <Badge
                               className={`text-[10px] mt-1 border ${STATUS_COLORS[a.status]}`}
@@ -1127,7 +1127,7 @@ export default function DoctorDashboardPage() {
                           {a.patient.firstName} {a.patient.lastName}
                         </p>
                         <p className="text-xs text-slate-500 truncate">
-                          {a.service.name}
+                          {a.services?.map(s => s.name).join(", ") ?? "Appointment"}
                         </p>
                       </div>
                     </div>

@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
                 include: {
                     patient: { select: { id: true, firstName: true, lastName: true, phone: true } },
                     createdBy: { select: { id: true, firstName: true, lastName: true } },
-                    appointment: { select: { id: true, dateTime: true, service: { select: { name: true } } } },
+                    appointment: { select: { id: true, dateTime: true, services: { select: { name: true } } } },
                 },
                 orderBy: { createdAt: "desc" },
                 skip: (page - 1) * limit,

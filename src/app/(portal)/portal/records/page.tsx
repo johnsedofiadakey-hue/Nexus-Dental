@@ -41,7 +41,7 @@ function AppointmentCard({ data }: { data: any }) {
                     </div>
                     <div>
                         <p className="font-bold text-slate-900">
-                            {data.service?.name ?? "Appointment"}
+                            {data.services?.[0]?.name ?? "Appointment"}
                         </p>
                         {data.doctor && (
                             <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">

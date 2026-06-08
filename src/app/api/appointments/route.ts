@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
                             specialty: true,
                         },
                     },
-                    service: {
+                    services: {
                         select: {
                             id: true,
                             name: true,

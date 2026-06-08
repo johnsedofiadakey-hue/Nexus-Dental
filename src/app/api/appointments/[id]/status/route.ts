@@ -78,8 +78,8 @@ export async function PATCH(
                     doctor: {
                         select: { id: true, firstName: true, lastName: true },
                     },
-                    service: {
-                        select: { id: true, name: true },
+                    services: {
+                        select: { name: true, duration: true },
                     },
                 },
             });

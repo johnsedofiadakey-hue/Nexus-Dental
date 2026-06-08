@@ -23,7 +23,7 @@ interface Appointment {
     dateTime: string;
     status: string;
     patient: { firstName: string; lastName: string };
-    service: { name: string };
+    services: { name: string }[];
 }
 
 async function fetchClinicStats(): Promise<ClinicStats> {
@@ -183,7 +183,7 @@ export default function ClinicDashboard() {
                                                 <p className="font-semibold text-slate-900">
                                                     {appt.patient.firstName} {appt.patient.lastName}
                                                 </p>
-                                                <p className="text-xs text-slate-500">{appt.service.name} • {formatTime(appt.dateTime)}</p>
+                                                <p className="text-xs text-slate-500">{appt.services.map(s => s.name).join(", ")} • {formatTime(appt.dateTime)}</p>
                                             </div>
                                         </div>
                                         <Badge className={`border-none font-bold ${STATUS_BADGE[appt.status] ?? "bg-slate-100 text-slate-600"}`}>

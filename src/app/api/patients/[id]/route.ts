@@ -36,7 +36,7 @@ export async function GET(
                         doctor: {
                             select: { id: true, firstName: true, lastName: true },
                         },
-                        service: {
+                        services: {
                             select: { id: true, name: true, category: true },
                         },
                     },

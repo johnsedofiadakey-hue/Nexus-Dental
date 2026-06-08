@@ -25,7 +25,7 @@ interface Appointment {
     status: string;
     patient: { id: string; firstName: string; lastName: string; phone: string };
     doctor: { firstName: string; lastName: string };
-    service: { name: string; duration: number };
+    services: { name: string; duration: number }[];
 }
 
 function formatTime(dateStr: string) {
@@ -204,7 +204,7 @@ export default function ClinicalDashboard() {
                                                     {appt.patient.firstName} {appt.patient.lastName}
                                                 </h4>
                                                 <p className="text-sm text-slate-500">
-                                                    {appt.service.name} • {appt.service.duration}min
+                                                    {appt.services.map(s => s.name).join(", ")} • {appt.services.reduce((total, s) => total + s.duration, 0)}min
                                                 </p>
                                             </div>
                                         </div>

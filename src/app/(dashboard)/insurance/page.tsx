@@ -30,7 +30,7 @@ interface InvoiceWithClaim {
     insuranceClaimNotes?: string;
     insuranceClaimDate?: string;
     patient: { id: string; firstName: string; lastName: string; phone: string };
-    appointment: { id: string; dateTime: string; service?: { name: string } | null };
+    appointment: { id: string; dateTime: string; services?: { name: string }[] | null };
 }
 
 type ClaimStatus = "PENDING" | "SUBMITTED" | "APPROVED" | "REJECTED" | "PARTIAL";
@@ -330,7 +330,7 @@ export default function InsurancePage() {
                                         <div>
                                             <p className="font-semibold text-slate-900">{patientName}</p>
                                             <p className="text-xs text-slate-400">
-                                                {invoice.appointment?.service?.name || "Appointment"} · {formatDate(invoice.createdAt)}
+                                                {invoice.appointment?.services?.[0]?.name || "Appointment"} · {formatDate(invoice.createdAt)}
                                             </p>
                                             <div className="flex items-center gap-2 mt-1">
                                                 {invoice.insuranceProvider && (

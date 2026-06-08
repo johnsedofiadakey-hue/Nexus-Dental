@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
                     orderBy: { dateTime: 'desc' },
                     include: {
                         doctor: { select: { firstName: true, lastName: true } },
-                        service: { select: { name: true } },
+                        services: { select: { name: true } },
                         additionalServices: { select: { name: true } },
                     }
                 }

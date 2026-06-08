@@ -215,7 +215,7 @@ export default function PatientPortal() {
                                                         <Stethoscope className="w-3 h-3" /> Service
                                                     </p>
                                                     <p className="font-semibold text-slate-800">
-                                                        {nextAppointment.service?.name ?? nextAppointment.serviceType ?? "General Consultation"}
+                                                        {nextAppointment.services?.[0]?.name ?? nextAppointment.serviceType ?? "General Consultation"}
                                                     </p>
                                                 </div>
                                                 {nextAppointment.notes && (
@@ -276,7 +276,7 @@ export default function PatientPortal() {
                                             </div>
                                             <div>
                                                 <h4 className="font-bold text-slate-900">
-                                                    {appt.service?.name ?? "Appointment"}
+                                                    {appt.services?.[0]?.name ?? "Appointment"}
                                                 </h4>
                                                 <p className="text-sm text-slate-500">
                                                     {appt.dateTime ? new Date(appt.dateTime).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—"}
