@@ -16,6 +16,7 @@ const quickLinks = [
     { label: "Book Appointment", href: "/booking" },
     { label: "Online Consultation", href: "/consultation" },
     { label: "Contact", href: "/contact" },
+    { label: "Staff Portal", href: "/auth/staff" },
 ];
 
 const services = [
@@ -155,10 +156,7 @@ export default function Footer() {
                         © {new Date().getFullYear()} Nexus Dental. All rights reserved.
                     </p>
                     <div className="flex flex-wrap items-center gap-6">
-                        <Link href="/auth/staff" className="text-slate-400 hover:text-white text-sm font-medium flex items-center gap-2 transition-all group no-underline">
-                            <div className="h-1.5 w-1.5 rounded-full bg-slate-600 group-hover:bg-primary transition-colors" />
-                            Admin / Staff Login
-                        </Link>
+                        {/* Links removed from here, Staff Portal moved to Quick Links */}
                     </div>
                 </div>
             </div>
