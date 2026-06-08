@@ -309,7 +309,14 @@ export default function BookingPage() {
                                 </div>
                                 <div>
                                     <label className="text-sm font-medium mb-1 block">Phone Number *</label>
-                                    <input type="tel" value={phone} onChange={e=>setPhone(e.target.value)} className="w-full border p-3 rounded-xl" placeholder="+233..." />
+                                    <div className="relative flex items-center">
+                                        <div className="absolute left-3 z-10 flex items-center gap-2">
+                                            <span className="text-lg">🇬🇭</span>
+                                            <span className="text-sm font-semibold text-slate-600">+233</span>
+                                            <div className="h-4 w-[1px] bg-slate-300 mx-1"></div>
+                                        </div>
+                                        <input type="tel" value={phone} onChange={e=>setPhone(e.target.value)} className="w-full border pl-[95px] pr-3 py-3 rounded-xl text-lg tracking-wide focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="24 000 0000" />
+                                    </div>
                                 </div>
                                 <div>
                                     <label className="text-sm font-medium mb-1 block">Notes (Optional)</label>

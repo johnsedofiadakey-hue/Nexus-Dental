@@ -127,15 +127,19 @@ export default function PatientLoginPage() {
                                     <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
                                         Phone Number
                                     </label>
-                                    <div className="relative">
-                                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                    <div className="relative flex items-center">
+                                        <div className="absolute left-4 z-10 flex items-center gap-2">
+                                            <span className="text-lg">🇬🇭</span>
+                                            <span className="text-sm font-semibold text-slate-600">+233</span>
+                                            <div className="h-4 w-[1px] bg-slate-300 mx-1"></div>
+                                        </div>
                                         <Input
                                             type="tel"
                                             value={phone}
                                             onChange={(e) => setPhone(e.target.value)}
                                             onKeyDown={(e) => e.key === "Enter" && handleSendOTP()}
-                                            placeholder="+233 24 000 0000"
-                                            className="pl-12 h-14 rounded-2xl bg-slate-50 border-none shadow-inner focus-visible:ring-teal-500"
+                                            placeholder="24 000 0000"
+                                            className="pl-[100px] h-14 rounded-2xl bg-slate-50 border-none shadow-inner focus-visible:ring-teal-500 text-lg tracking-wide"
                                         />
                                     </div>
                                     <p className="text-xs text-slate-400 ml-1">

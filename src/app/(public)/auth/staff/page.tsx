@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Mail, Lock, ArrowRight, ShieldCheck } from "lucide-react";
@@ -8,8 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-
-// Window.google is declared in src/types/google-gsi.d.ts
 
 function redirectByRole(role: string, router: ReturnType<typeof useRouter>) {
     if (role === "SYSTEM_OWNER") router.push("/system/dashboard");
@@ -22,65 +20,7 @@ function redirectByRole(role: string, router: ReturnType<typeof useRouter>) {
 export default function StaffLoginPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
-    const [googleLoading, setGoogleLoading] = useState(false);
     const [formData, setFormData] = useState({ email: "", password: "" });
-
-    // Handle the Google credential callback
-    const handleGoogleCredential = useCallback(async (credential: string) => {
-        setGoogleLoading(true);
-        try {
-            const res = await fetch("/api/auth/google", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify({ idToken: credential }),
-            });
-            const data = await res.json();
-            if (data.success) {
-                toast.success(`Welcome, ${data.data.user.firstName}`);
-                redirectByRole(data.data.user.role, router);
-            } else {
-                toast.error(data.error || "Google sign-in failed");
-            }
-        } catch {
-            toast.error("Google sign-in failed. Try again.");
-        } finally {
-            setGoogleLoading(false);
-        }
-    }, [router]);
-
-    // Load Google Identity Services script and initialize
-    useEffect(() => {
-        const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-        if (!clientId) return; // Google not configured — silently hide the button
-
-        const script = document.createElement("script");
-        script.src = "https://accounts.google.com/gsi/client";
-        script.async = true;
-        script.defer = true;
-        script.onload = () => {
-            window.google?.accounts.id.initialize({
-                client_id: clientId,
-                callback: (response) => handleGoogleCredential(response.credential),
-                cancel_on_tap_outside: true,
-            });
-
-            const btn = document.getElementById("google-signin-btn");
-            if (btn) {
-                window.google?.accounts.id.renderButton(btn, {
-                    type: "standard",
-                    shape: "rectangular",
-                    theme: "outline",
-                    text: "signin_with",
-                    size: "large",
-                    logo_alignment: "left",
-                    width: "100%",
-                });
-            }
-        };
-        document.body.appendChild(script);
-        return () => { document.body.removeChild(script); };
-    }, [handleGoogleCredential]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -105,8 +45,6 @@ export default function StaffLoginPage() {
         }
     };
 
-    const googleConfigured = !!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-
     return (
         <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-6">
             <div className="w-full max-w-md space-y-8">
@@ -127,33 +65,6 @@ export default function StaffLoginPage() {
                     animate={{ opacity: 1, y: 0 }}
                     className="bg-white p-10 rounded-[2.5rem] border border-slate-200 shadow-hero"
                 >
-                    {/* Google Sign-In */}
-                    {googleConfigured && (
-                        <>
-                            <div className="mb-6">
-                                <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 text-center">
-                                    Sign in with your work account
-                                </p>
-                                {googleLoading ? (
-                                    <div className="h-11 flex items-center justify-center rounded-2xl border border-slate-200 text-sm text-slate-500">
-                                        Signing in…
-                                    </div>
-                                ) : (
-                                    <div id="google-signin-btn" className="w-full flex justify-center" />
-                                )}
-                            </div>
-
-                            <div className="relative my-6">
-                                <div className="absolute inset-0 flex items-center">
-                                    <div className="w-full border-t border-slate-100" />
-                                </div>
-                                <div className="relative flex justify-center text-xs">
-                                    <span className="bg-white px-3 text-slate-400 font-medium">or sign in with password</span>
-                                </div>
-                            </div>
-                        </>
-                    )}
-
                     {/* Email / Password form */}
                     <form onSubmit={handleLogin} className="space-y-6">
                         <div className="space-y-2">
