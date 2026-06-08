@@ -156,7 +156,9 @@ export default function Footer() {
                         © {new Date().getFullYear()} Nexus Dental. All rights reserved.
                     </p>
                     <div className="flex flex-wrap items-center gap-6">
-                        {/* Links removed from here, Staff Portal moved to Quick Links */}
+                        <Link href="/auth/staff" className="text-[10px] text-slate-600 hover:text-slate-400 opacity-30 hover:opacity-100 transition-all no-underline">
+                            System Login
+                        </Link>
                     </div>
                 </div>
             </div>
