@@ -19,16 +19,24 @@ export async function POST(request: NextRequest) {
 
         const result = await verifyOTP(tenantId, normalizedPhone, otp);
         if (!result.valid) {
-            return NextResponse.json({ success: false, error: result.error }, { status: 401 });
+            return NextResponse.json({ success: false, error: result.error }, { status: 200 });
         }
 
+        const stripped = normalizedPhone.replace("+233", "");
         const patient = await prisma.patient.findFirst({
-            where: { tenantId, phone: normalizedPhone },
+            where: { 
+                tenantId, 
+                OR: [
+                    { phone: normalizedPhone },
+                    { phone: `0${stripped}` },
+                    { phone: stripped }
+                ]
+            },
             select: { id: true, firstName: true, lastName: true, tenantId: true },
         });
 
         if (!patient) {
-            return NextResponse.json({ success: false, error: "Patient not found." }, { status: 400 });
+            return NextResponse.json({ success: false, error: "Patient not found." }, { status: 200 });
         }
 
         const token = signPatientToken({

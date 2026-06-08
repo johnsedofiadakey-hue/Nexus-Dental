@@ -18,8 +18,16 @@ export async function POST(request: NextRequest) {
         if (normalizedPhone.startsWith("0")) normalizedPhone = normalizedPhone.substring(1);
         if (!normalizedPhone.startsWith("+233")) normalizedPhone = `+233${normalizedPhone}`;
 
+        const stripped = normalizedPhone.replace("+233", "");
         const patient = await prisma.patient.findFirst({
-            where: { tenantId, phone: normalizedPhone },
+            where: { 
+                tenantId, 
+                OR: [
+                    { phone: normalizedPhone },
+                    { phone: `0${stripped}` },
+                    { phone: stripped }
+                ]
+            },
             select: { id: true, firstName: true },
         });
 
@@ -27,7 +35,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({
                 success: false,
                 error: "No account found with this phone number. Please book an appointment first.",
-            }, { status: 400 });
+            }, { status: 200 });
         }
 
         const otp = generateOTP();
