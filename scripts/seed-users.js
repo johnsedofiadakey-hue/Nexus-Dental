@@ -152,6 +152,86 @@ async function main() {
     });
     console.log('Created Tenant Settings and Content.');
 
+    // 8. Create Dummy Patients
+    const hashedPatientPassword = await bcrypt.hash('patient123', 10);
+    const patient1 = await prisma.patient.create({
+      data: {
+        id: 'patient-1',
+        tenantId: tenant.id,
+        email: 'john.doe@example.com',
+        passwordHash: hashedPatientPassword,
+        firstName: 'John',
+        lastName: 'Doe',
+        phone: '+233241111111',
+        dob: new Date('1990-05-15'),
+        gender: 'MALE',
+      }
+    });
+    const patient2 = await prisma.patient.create({
+      data: {
+        id: 'patient-2',
+        tenantId: tenant.id,
+        email: 'jane.smith@example.com',
+        passwordHash: hashedPatientPassword,
+        firstName: 'Jane',
+        lastName: 'Smith',
+        phone: '+233242222222',
+        dob: new Date('1985-10-22'),
+        gender: 'FEMALE',
+      }
+    });
+    console.log('Created Dummy Patients: John Doe, Jane Smith');
+
+    // 9. Create Inventory Items
+    await prisma.inventoryItem.create({
+      data: {
+        id: 'inv-1',
+        tenantId: tenant.id,
+        name: 'Amoxicillin 500mg',
+        sku: 'AMX-500',
+        category: 'MEDICATION',
+        quantity: 100,
+        unit: 'capsules',
+        threshold: 20,
+        isActive: true,
+      }
+    });
+    await prisma.inventoryItem.create({
+      data: {
+        id: 'inv-2',
+        tenantId: tenant.id,
+        name: 'Dental Syringe',
+        sku: 'SYR-100',
+        category: 'EQUIPMENT',
+        quantity: 50,
+        unit: 'pieces',
+        threshold: 10,
+        isActive: true,
+      }
+    });
+    console.log('Created Inventory Items.');
+
+    // 10. Create Support Ticket
+    await prisma.supportTicket.create({
+      data: {
+        id: 'ticket-1',
+        tenantId: tenant.id,
+        patientId: patient1.id,
+        subject: 'Inquiry about teeth whitening',
+        category: 'INQUIRY',
+        status: 'OPEN',
+        priority: 'NORMAL',
+        messages: {
+          create: {
+            senderId: patient1.id,
+            senderRole: 'PATIENT',
+            content: 'Hello, I would like to know how much the teeth whitening procedure costs and how long it takes.',
+          }
+        }
+      }
+    });
+    console.log('Created Support Ticket.');
+
     console.log('\n✅ Seed complete! Default credentials:');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('System Owner:  dev@nexusdental.com     / dev123');

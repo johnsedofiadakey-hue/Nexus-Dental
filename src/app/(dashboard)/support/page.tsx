@@ -1,80 +1,85 @@
 "use client";
 
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LifeBuoy, Mail, Phone, MessageSquare } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { MessageSquare, AlertCircle, Clock } from "lucide-react";
 
-export default function SupportPage() {
+export default function SupportDashboard() {
+    const [tickets, setTickets] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function fetchTickets() {
+            try {
+                const res = await fetch("/api/support/tickets");
+                if (res.ok) {
+                    const data = await res.json();
+                    setTickets(data.data?.tickets || []);
+                }
+            } catch (error) {
+                console.error("Failed to fetch tickets", error);
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchTickets();
+    }, []);
+
     return (
-        <DashboardLayout title="Support & Help">
-            <div className="max-w-4xl mx-auto space-y-8">
-                <div>
-                    <h2 className="text-3xl font-bold text-slate-900 mb-2">How can we help?</h2>
-                    <p className="text-slate-500 text-lg">Choose a support channel below to get assistance.</p>
+        <DashboardLayout title="Support Tickets">
+            <div className="p-8 max-w-6xl mx-auto">
+                <div className="mb-8">
+                    <h1 className="text-3xl font-bold">Support Center</h1>
+                    <p className="text-slate-500">Manage patient inquiries and issues.</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Card className="hover:shadow-md border-none ring-1 ring-slate-100 transition-all">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-xl">
-                                <MessageSquare className="w-5 h-5 text-teal-600" />
-                                Live Chat Support
-                            </CardTitle>
-                            <CardDescription>Get immediate assistance from our team.</CardDescription>
-                        </CardHeader>
+                {loading ? (
+                    <p>Loading tickets...</p>
+                ) : tickets.length === 0 ? (
+                    <Card className="text-center py-12">
                         <CardContent>
-                            <Button className="w-full bg-teal-600 hover:bg-teal-700 text-white rounded-xl h-12 text-base font-semibold">
-                                Start a Conversation
-                            </Button>
+                            <MessageSquare className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                            <h3 className="text-lg font-semibold mb-2">No active tickets</h3>
+                            <p className="text-slate-500">Patient inquiries will appear here.</p>
                         </CardContent>
                     </Card>
-
-                    <Card className="hover:shadow-md border-none ring-1 ring-slate-100 transition-all">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-xl">
-                                <Mail className="w-5 h-5 text-blue-600" />
-                                Email Support
-                            </CardTitle>
-                            <CardDescription>Send us an email and we'll reply within 24 hours.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Button variant="outline" className="w-full rounded-xl h-12 text-base font-semibold hover:bg-slate-50">
-                                support@nexusdental.test
-                            </Button>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="hover:shadow-md border-none ring-1 ring-slate-100 transition-all">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-xl">
-                                <Phone className="w-5 h-5 text-amber-600" />
-                                Phone Support
-                            </CardTitle>
-                            <CardDescription>Call our support line for urgent matters.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Button variant="outline" className="w-full rounded-xl h-12 text-base font-semibold hover:bg-slate-50">
-                                +233 24 000 0000
-                            </Button>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="hover:shadow-md border-none ring-1 ring-slate-100 transition-all bg-gradient-to-br from-slate-900 to-slate-800 text-white">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-xl text-white">
-                                <LifeBuoy className="w-5 h-5 text-teal-400" />
-                                Knowledge Base
-                            </CardTitle>
-                            <CardDescription className="text-slate-300">Browse tutorials and FAQs.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Button variant="secondary" className="w-full rounded-xl h-12 text-base font-semibold bg-white text-slate-900 hover:bg-slate-100">
-                                Visit Help Center
-                            </Button>
-                        </CardContent>
-                    </Card>
-                </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {tickets.map(ticket => (
+                            <Card key={ticket.id} className="hover:shadow-md transition-shadow cursor-pointer border-l-4" style={{
+                                borderLeftColor: ticket.severity === 'HIGH' ? '#ef4444' : ticket.severity === 'MEDIUM' ? '#f59e0b' : '#3b82f6'
+                            }}>
+                                <CardHeader className="pb-2">
+                                    <div className="flex items-center justify-between">
+                                        <Badge variant="outline">{ticket.status}</Badge>
+                                        <span className="text-xs text-slate-500 flex items-center gap-1">
+                                            <Clock className="w-3 h-3" />
+                                            {new Date(ticket.createdAt).toLocaleDateString()}
+                                        </span>
+                                    </div>
+                                    <CardTitle className="mt-2 text-lg leading-tight">{ticket.subject}</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-sm text-slate-500 line-clamp-2">{ticket.description}</p>
+                                    <div className="mt-4 flex items-center gap-2 pt-4 border-t border-slate-100">
+                                        <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600">
+                                            {ticket.patient?.firstName?.charAt(0) || '?'}
+                                        </div>
+                                        <span className="text-sm font-medium text-slate-700">
+                                            {ticket.patient?.firstName} {ticket.patient?.lastName}
+                                        </span>
+                                        <div className="ml-auto flex items-center gap-1 text-slate-400 text-xs">
+                                            <MessageSquare className="w-3 h-3" />
+                                            {ticket._count?.messages || 0}
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                )}
             </div>
         </DashboardLayout>
     );
