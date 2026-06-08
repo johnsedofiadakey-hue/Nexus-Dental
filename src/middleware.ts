@@ -71,7 +71,7 @@ export function middleware(request: NextRequest) {
     // For API routes, check for Authorization header
     if (pathname.startsWith("/api/")) {
         const authHeader = request.headers.get("authorization");
-        const cookieToken = request.cookies.get("nexus_token")?.value;
+        const cookieToken = request.cookies.get("nexus_token")?.value || request.cookies.get("nexus_patient_token")?.value;
         if ((!authHeader || !authHeader.startsWith("Bearer ")) && !cookieToken) {
             return NextResponse.json(
                 { success: false, error: "Authentication required" },
@@ -95,12 +95,13 @@ export function middleware(request: NextRequest) {
         pathname.startsWith("/appointments") ||
         pathname.startsWith("/patients")
     ) {
-        const token = request.cookies.get("nexus_token")?.value;
-        if (!token) {
-            // Check if it's a patient route or staff route
-            const isPatientRoute = pathname.startsWith("/portal");
-            const loginPath = isPatientRoute ? "/auth/patient" : "/auth/staff";
+        const isPatientRoute = pathname.startsWith("/portal");
+        const token = isPatientRoute 
+            ? request.cookies.get("nexus_patient_token")?.value 
+            : request.cookies.get("nexus_token")?.value;
 
+        if (!token) {
+            const loginPath = isPatientRoute ? "/auth/patient" : "/auth/staff";
             const loginUrl = new URL(loginPath, request.url);
             loginUrl.searchParams.set("redirect", pathname);
             return NextResponse.redirect(loginUrl);

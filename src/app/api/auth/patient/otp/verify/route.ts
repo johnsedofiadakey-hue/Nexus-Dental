@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
             data: { patient: { id: patient.id, firstName: patient.firstName, lastName: patient.lastName } },
         });
 
-        response.cookies.set("nexus_token", nexusToken, {
+        response.cookies.set("nexus_patient_token", nexusToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "lax",

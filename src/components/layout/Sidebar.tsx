@@ -182,7 +182,11 @@ export function Sidebar({ role, roles = [], className }: SidebarProps) {
             <div className="p-3 border-t border-slate-100 shrink-0">
                 <Button variant="ghost"
                     onClick={() => {
-                        document.cookie = "nexus_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT";
+                        if (role === "PATIENT") {
+                            document.cookie = "nexus_patient_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT";
+                        } else {
+                            document.cookie = "nexus_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT";
+                        }
                         window.location.href = role === "PATIENT" ? "/auth/patient" : "/auth/staff";
                     }}
                     className={cn("w-full justify-start gap-3 rounded-xl hover:bg-red-50 hover:text-red-700", collapsed && "justify-center px-0")}>

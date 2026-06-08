@@ -40,7 +40,18 @@ export function authenticateRequest(
 
     // 2. If no header, fallback to the HTTP-only cookie (for web app fetches)
     if (!token) {
-        token = request.cookies.get("nexus_token")?.value || null;
+        // Use patient token if it exists and request is for patient portal or patient API
+        if (request.nextUrl.pathname.startsWith("/portal") || request.nextUrl.pathname.startsWith("/api/auth/patient")) {
+            token = request.cookies.get("nexus_patient_token")?.value || null;
+        } else {
+            // Default to staff token
+            token = request.cookies.get("nexus_token")?.value || null;
+        }
+        
+        // If still no token, try the other one just in case
+        if (!token) {
+            token = request.cookies.get("nexus_token")?.value || request.cookies.get("nexus_patient_token")?.value || null;
+        }
     }
 
     if (!token) return null;
