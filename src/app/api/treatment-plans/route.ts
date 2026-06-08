@@ -31,14 +31,22 @@ export async function GET(request: NextRequest) {
             };
         }
 
-        const plans = await prisma.treatmentPlan.findMany({
-            where,
-            include: {
-                patient: { select: { id: true, firstName: true, lastName: true } },
-                steps: { select: { id: true, status: true } },
-            },
-            orderBy: { createdAt: "desc" },
-        });
+        const page = parseInt(searchParams.get("page") || "1");
+        const limit = parseInt(searchParams.get("limit") || "50");
+
+        const [plans, total] = await Promise.all([
+            prisma.treatmentPlan.findMany({
+                where,
+                include: {
+                    patient: { select: { id: true, firstName: true, lastName: true } },
+                    steps: { select: { id: true, status: true } },
+                },
+                orderBy: { createdAt: "desc" },
+                skip: (page - 1) * limit,
+                take: limit,
+            }),
+            prisma.treatmentPlan.count({ where })
+        ]);
 
         const result = plans.map((plan: typeof plans[number]) => ({
             id: plan.id,
@@ -55,7 +63,15 @@ export async function GET(request: NextRequest) {
             },
         }));
 
-        return apiSuccess({ plans: result });
+        return apiSuccess({ 
+            data: result,
+            pagination: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit)
+            }
+        });
     } catch (error) {
         console.error("[TreatmentPlans] GET error:", error);
         return apiError("Internal server error", 500);
@@ -77,6 +93,14 @@ export async function POST(request: NextRequest) {
 
         if (!patientId || !title) {
             return apiError("patientId and title are required", 400);
+        }
+
+        const patient = await prisma.patient.findFirst({
+            where: { id: patientId, tenantId }
+        });
+
+        if (!patient) {
+            return apiError("Patient not found", 404);
         }
 
         const plan = await prisma.treatmentPlan.create({

@@ -10,7 +10,9 @@ import {
   requireAuth,
   apiError,
   apiSuccess,
+  isPatientUser,
 } from "@/lib/auth";
+import type { PatientJWTPayload } from "@/lib/auth";
 import { getClinicId } from "@/lib/clinic";
 
 export async function POST(request: NextRequest) {
@@ -34,6 +36,13 @@ export async function POST(request: NextRequest) {
     if (!templateId) return apiError("templateId is required", 400);
     if (!patientId) return apiError("patientId is required", 400);
     if (!signatureData) return apiError("signatureData is required", 400);
+
+    // If caller is a patient, they can only sign their own consent forms
+    if (isPatientUser(user)) {
+      if ((user as PatientJWTPayload).patientId !== patientId) {
+        return apiError("Forbidden: Cannot sign consent for another patient", 403);
+      }
+    }
 
     // Verify template exists and is accessible by this tenant
     const template = await prisma.consentTemplate.findFirst({

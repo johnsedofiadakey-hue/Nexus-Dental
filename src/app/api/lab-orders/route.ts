@@ -16,35 +16,53 @@ export async function GET(request: NextRequest) {
         const patientId = searchParams.get("patientId");
         const search = searchParams.get("search");
 
-        const labOrders = await prisma.labOrder.findMany({
-            where: {
-                tenantId: user.tenantId,
-                ...(status ? { status: status as any } : {}),
-                ...(patientId ? { patientId } : {}),
-                ...(search
-                    ? {
-                          OR: [
-                              {
-                                  patient: {
-                                      OR: [
-                                          { firstName: { contains: search, mode: "insensitive" } },
-                                          { lastName: { contains: search, mode: "insensitive" } },
-                                      ],
-                                  },
-                              },
-                              { labName: { contains: search, mode: "insensitive" } },
-                          ],
-                      }
-                    : {}),
-            },
-            include: {
-                patient: { select: { id: true, firstName: true, lastName: true } },
-                doctor: { select: { id: true, firstName: true, lastName: true } },
-            },
-            orderBy: { createdAt: "desc" },
-        });
+        const page = parseInt(searchParams.get("page") || "1");
+        const limit = parseInt(searchParams.get("limit") || "50");
 
-        return apiSuccess(labOrders);
+        const where: any = {
+            tenantId: user.tenantId,
+            ...(status ? { status: status as any } : {}),
+            ...(patientId ? { patientId } : {}),
+            ...(search
+                ? {
+                      OR: [
+                          {
+                              patient: {
+                                  OR: [
+                                      { firstName: { contains: search, mode: "insensitive" } },
+                                      { lastName: { contains: search, mode: "insensitive" } },
+                                  ],
+                              },
+                          },
+                          { labName: { contains: search, mode: "insensitive" } },
+                      ],
+                  }
+                : {}),
+        };
+
+        const [labOrders, total] = await Promise.all([
+            prisma.labOrder.findMany({
+                where,
+                include: {
+                    patient: { select: { id: true, firstName: true, lastName: true } },
+                    doctor: { select: { id: true, firstName: true, lastName: true } },
+                },
+                orderBy: { createdAt: "desc" },
+                skip: (page - 1) * limit,
+                take: limit,
+            }),
+            prisma.labOrder.count({ where })
+        ]);
+
+        return apiSuccess({
+            data: labOrders,
+            pagination: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit)
+            }
+        });
     } catch (error: any) {
         console.error("[Lab Orders API] GET Error:", error);
         return apiError(error.message || "Internal Server Error", 500);

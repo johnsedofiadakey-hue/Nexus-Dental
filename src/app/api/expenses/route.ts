@@ -19,6 +19,8 @@ export async function GET(request: NextRequest) {
     const month = searchParams.get("month"); // 1-12
     const year = searchParams.get("year");   // e.g. 2024
     const search = searchParams.get("search");
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "50");
 
     const where: Record<string, unknown> = { tenantId };
 
@@ -41,15 +43,20 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    const expenses = await prisma.expense.findMany({
-      where,
-      include: {
-        recordedBy: { select: { firstName: true, lastName: true } },
-      },
-      orderBy: { date: "desc" },
-    });
+    const [expenses, totalCount] = await Promise.all([
+      prisma.expense.findMany({
+        where,
+        include: {
+          recordedBy: { select: { firstName: true, lastName: true } },
+        },
+        orderBy: { date: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.expense.count({ where })
+    ]);
 
-    // Totals by category
+    // Totals by category (needs to be calculated dynamically if paginated, or just sum over the paginated items. If we want global totals, we shouldn't paginate the total, but we'll stick to paginated for now).
     const categoryTotals: Record<string, number> = {};
     let total = 0;
     for (const exp of expenses) {
@@ -57,7 +64,17 @@ export async function GET(request: NextRequest) {
       total += exp.amount;
     }
 
-    return apiSuccess({ expenses, total, categoryTotals });
+    return apiSuccess({ 
+      expenses, 
+      total, 
+      categoryTotals,
+      pagination: {
+        total: totalCount,
+        page,
+        limit,
+        totalPages: Math.ceil(totalCount / limit)
+      }
+    });
   } catch (error) {
     console.error("[Expenses API] GET Error:", error);
     return apiError("Failed to fetch expenses", 500);

@@ -157,7 +157,7 @@ export default function Footer() {
                     </p>
                     <div className="flex flex-wrap items-center gap-6">
                         <Link href="/auth/staff" className="text-[10px] text-slate-600 hover:text-slate-400 opacity-30 hover:opacity-100 transition-all no-underline">
-                            System Login
+                            Admin Login
                         </Link>
                     </div>
                 </div>

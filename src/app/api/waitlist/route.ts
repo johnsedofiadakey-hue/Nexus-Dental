@@ -13,16 +13,24 @@ export async function GET(request: NextRequest) {
     const staffUser = user as JWTPayload;
     const tenantId = staffUser.tenantId;
     if (!tenantId) return apiError("No tenant", 400);
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "50");
 
-    const entries = await prisma.waitlist.findMany({
-      where: { tenantId },
-      include: {
-        patient: {
-          select: { id: true, firstName: true, lastName: true, phone: true },
+    const [entries, total] = await Promise.all([
+      prisma.waitlist.findMany({
+        where: { tenantId },
+        include: {
+          patient: {
+            select: { id: true, firstName: true, lastName: true, phone: true },
+          },
         },
-      },
-      orderBy: { createdAt: "asc" },
-    });
+        orderBy: { createdAt: "asc" },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.waitlist.count({ where: { tenantId } })
+    ]);
 
     // Also fetch services for the entries that have serviceId
     const serviceIds = entries
@@ -42,7 +50,15 @@ export async function GET(request: NextRequest) {
       service: e.serviceId ? serviceMap[e.serviceId] || null : null,
     }));
 
-    return apiSuccess(result);
+    return apiSuccess({
+      data: result,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     console.error("[Waitlist API] GET Error:", error);
     return apiError("Failed to fetch waitlist", 500);

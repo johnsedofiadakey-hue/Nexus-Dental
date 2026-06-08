@@ -284,7 +284,7 @@ model Appointment {
   updatedAt          DateTime                @updatedAt
   transitions        AppointmentTransition[]
   doctor             User                    @relation("DoctorAppointments", fields: [doctorId], references: [id])
-  patient            Patient                 @relation(fields: [patientId], references: [id])
+  patient            Patient                 @relation(fields: [patientId], references: [id], onDelete: Cascade)
   service            Service                 @relation(fields: [serviceId], references: [id])
   additionalServices Service[]               @relation("AppointmentAdditionalServices")
   tenant             Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Restrict)
@@ -379,7 +379,7 @@ model Invoice {
   updatedAt            DateTime         @updatedAt
   appointment          Appointment      @relation(fields: [appointmentId], references: [id])
   createdBy            User             @relation("InvoiceCreator", fields: [createdById], references: [id])
-  patient              Patient          @relation(fields: [patientId], references: [id])
+  patient              Patient          @relation(fields: [patientId], references: [id], onDelete: Cascade)
   tenant               Tenant           @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@index([tenantId])
@@ -407,7 +407,7 @@ model Prescription {
   appointment   Appointment?       @relation(fields: [appointmentId], references: [id])
   doctor        User               @relation("PrescribingDoctor", fields: [doctorId], references: [id])
   dispensedBy   User?              @relation("PrescriptionPharmacist", fields: [dispensedById], references: [id])
-  patient       Patient            @relation(fields: [patientId], references: [id])
+  patient       Patient            @relation(fields: [patientId], references: [id], onDelete: Cascade)
   tenant        Tenant             @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@index([tenantId])
@@ -430,7 +430,7 @@ model SupportTicket {
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   messages    SupportMessage[]
-  patient     Patient          @relation(fields: [patientId], references: [id])
+  patient     Patient          @relation(fields: [patientId], references: [id], onDelete: Cascade)
   tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@index([tenantId])
@@ -556,7 +556,7 @@ model Review {
   isApproved Boolean  @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-  patient    Patient? @relation(fields: [patientId], references: [id])
+  patient    Patient? @relation(fields: [patientId], references: [id], onDelete: Cascade)
   tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@index([tenantId])
@@ -749,7 +749,7 @@ model ToothRecord {
   notes       String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  patient     Patient  @relation(fields: [patientId], references: [id])
+  patient     Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
   tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@unique([tenantId, patientId, toothNumber])
@@ -773,7 +773,7 @@ model TreatmentPlan {
   deletedAt   DateTime?
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
-  patient     Patient             @relation(fields: [patientId], references: [id])
+  patient     Patient             @relation(fields: [patientId], references: [id], onDelete: Cascade)
   doctor      User                @relation("DoctorTreatmentPlans", fields: [doctorId], references: [id])
   tenant      Tenant              @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
@@ -829,7 +829,7 @@ model PatientConsent {
   signatureData String          @db.Text
   signedAt      DateTime        @default(now())
   ipAddress     String?
-  patient       Patient         @relation(fields: [patientId], references: [id])
+  patient       Patient         @relation(fields: [patientId], references: [id], onDelete: Cascade)
   template      ConsentTemplate @relation(fields: [templateId], references: [id])
   tenant        Tenant          @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
@@ -852,7 +852,7 @@ model PatientFile {
   category      String // xray, photo, document, consent, lab_result
   notes         String?
   createdAt     DateTime @default(now())
-  patient       Patient  @relation(fields: [patientId], references: [id])
+  patient       Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
   uploadedBy    User     @relation("FileUploader", fields: [uploadedById], references: [id])
   tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
@@ -884,7 +884,7 @@ model LabOrder {
   notes         String?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
-  patient       Patient        @relation(fields: [patientId], references: [id])
+  patient       Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
   doctor        User           @relation("DoctorLabOrders", fields: [doctorId], references: [id])
   tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
@@ -972,7 +972,7 @@ model Waitlist {
   notifiedAt     DateTime?
   bookedAt       DateTime?
   createdAt      DateTime  @default(now())
-  patient        Patient   @relation(fields: [patientId], references: [id])
+  patient        Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
   tenant         Tenant    @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@index([tenantId])

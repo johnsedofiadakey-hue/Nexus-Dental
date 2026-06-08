@@ -51,6 +51,14 @@ export async function POST(request: NextRequest) {
             return apiError("serviceIds must contain at least one valid service ID", 400);
         }
 
+        // Verify doctor exists and belongs to tenant
+        const doctor = await prisma.user.findFirst({
+            where: { id: doctorId, tenantId, role: "DOCTOR", isActive: true }
+        });
+        if (!doctor) {
+            return apiError("Doctor not found or inactive", 404);
+        }
+
         // Determine patient ID
         let finalPatientId: string;
         let isNewPatient = false;
@@ -61,6 +69,12 @@ export async function POST(request: NextRequest) {
             } else {
                 if (!reqPatientId) return apiError("patientId is required when staff books for a patient", 400);
                 finalPatientId = reqPatientId;
+            }
+            const existingPatient = await prisma.patient.findFirst({
+                where: { id: finalPatientId, tenantId }
+            });
+            if (!existingPatient) {
+                return apiError("Patient not found", 404);
             }
         } else {
             // Guest booking -> auto-onboard patient
