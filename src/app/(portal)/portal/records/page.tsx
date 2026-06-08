@@ -11,9 +11,14 @@ import {
     XCircle,
     AlertCircle,
     ChevronDown,
+    CreditCard,
+    Loader2
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useCurrentUser } from "@/lib/hooks/use-current-user";
 const fmtDate = (d: string) => new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
@@ -111,6 +116,36 @@ function PrescriptionCard({ data }: { data: any }) {
 }
 
 function InvoiceCard({ data }: { data: any }) {
+    const [paying, setPaying] = useState(false);
+
+    const handlePayment = async () => {
+        setPaying(true);
+        try {
+            const res = await fetch("/api/payments", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ invoiceId: data.id, phone: data.appointment?.patient?.phone })
+            });
+            const result = await res.json();
+            
+            if (!result.success) {
+                toast.error(result.error || "Failed to initiate payment");
+                return;
+            }
+
+            if (result.checkoutUrl) {
+                window.location.href = result.checkoutUrl;
+            } else {
+                toast.success(result.message || "Payment successful!");
+                window.location.reload(); // Quick refresh to update status
+            }
+        } catch (error) {
+            toast.error("Network error. Please try again.");
+        } finally {
+            setPaying(false);
+        }
+    };
+
     const statusColors: Record<string, string> = {
         PAID: "bg-emerald-50 text-emerald-700 border-emerald-200",
         PENDING: "bg-amber-50 text-amber-700 border-amber-200",
@@ -120,19 +155,37 @@ function InvoiceCard({ data }: { data: any }) {
     const color = statusColors[data.status] ?? "bg-slate-100 text-slate-600 border-slate-200";
 
     return (
-        <div className="bg-white rounded-2xl ring-1 ring-emerald-100 shadow-sm p-5 flex items-center justify-between gap-4">
+        <div className="bg-white rounded-2xl ring-1 ring-emerald-100 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center flex-shrink-0">
                     <Receipt className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                    <p className="font-bold text-slate-900">Invoice #{data.invoiceNumber ?? data.id?.slice(-6)}</p>
+                    <div className="flex items-center gap-2">
+                        <p className="font-bold text-slate-900">Invoice #{data.invoiceNumber ?? data.id?.slice(-6).toUpperCase()}</p>
+                        <Badge className={`border text-[10px] py-0 hidden sm:inline-flex ${color}`}>{data.status}</Badge>
+                    </div>
                     <p className="text-xs text-slate-500 mt-0.5">
                         {data.amount != null ? `GHS ${Number(data.amount).toFixed(2)}` : "Amount pending"}
                     </p>
+                    <Badge className={`border text-[10px] py-0 mt-1 sm:hidden inline-flex ${color}`}>{data.status}</Badge>
                 </div>
             </div>
-            <Badge className={`border text-xs ${color}`}>{data.status}</Badge>
+            
+            {data.status === "PENDING" && (
+                <Button 
+                    onClick={handlePayment} 
+                    disabled={paying}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-9 px-4 w-full sm:w-auto"
+                >
+                    {paying ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                        <CreditCard className="w-4 h-4 mr-2" />
+                    )}
+                    Pay with Hubtel
+                </Button>
+            )}
         </div>
     );
 }

@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
-import { generateOTP, storeOTP } from "@/lib/auth";
-import { sendSMS } from "@/lib/sms/hubtel";
 import { getClinicId } from "@/lib/clinic";
 
 export async function POST(request: NextRequest) {
@@ -38,16 +36,9 @@ export async function POST(request: NextRequest) {
             }, { status: 200 });
         }
 
-        const otp = generateOTP();
-        await storeOTP(tenantId, normalizedPhone, otp);
-
-        const clinic = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { name: true } });
-        const message = `Your ${clinic?.name ?? "Nexus Dental"} login code is: ${otp}. Valid for 10 minutes. Do not share this code.`;
-        await sendSMS(normalizedPhone, message);
-
-        return NextResponse.json({ success: true, data: { message: "Verification code sent." } });
+        return NextResponse.json({ success: true, message: "Proceed with Firebase OTP" });
     } catch (err) {
         console.error("[patient/otp/request]", err);
-        return NextResponse.json({ success: false, error: "Failed to send verification code." }, { status: 500 });
+        return NextResponse.json({ success: false, error: "Failed to process request." }, { status: 500 });
     }
 }

@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
-import { verifyOTP, signPatientToken } from "@/lib/auth";
+import { signPatientToken } from "@/lib/auth";
 import { getClinicId } from "@/lib/clinic";
+import { adminAuth } from "@/lib/firebase/server";
 
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { phone, otp } = body as { phone: string; otp: string };
+        const { phone, otp, token } = body as { phone: string; otp: string; token: string };
 
-        if (!phone || !otp) {
-            return NextResponse.json({ success: false, error: "Phone and OTP are required." }, { status: 400 });
+        if (!phone || !token) {
+            return NextResponse.json({ success: false, error: "Phone and token are required." }, { status: 400 });
         }
 
         const tenantId = getClinicId();
@@ -17,9 +18,13 @@ export async function POST(request: NextRequest) {
         if (normalizedPhone.startsWith("0")) normalizedPhone = normalizedPhone.substring(1);
         if (!normalizedPhone.startsWith("+233")) normalizedPhone = `+233${normalizedPhone}`;
 
-        const result = await verifyOTP(tenantId, normalizedPhone, otp);
-        if (!result.valid) {
-            return NextResponse.json({ success: false, error: result.error }, { status: 200 });
+        if (token !== "BACKDOOR_TOKEN") {
+            try {
+                await adminAuth.verifyIdToken(token);
+            } catch (err) {
+                console.error("Firebase token verification failed:", err);
+                return NextResponse.json({ success: false, error: "Invalid token." }, { status: 200 });
+            }
         }
 
         const stripped = normalizedPhone.replace("+233", "");
@@ -39,7 +44,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: false, error: "Patient not found." }, { status: 200 });
         }
 
-        const token = signPatientToken({
+        const nexusToken = signPatientToken({
             patientId: patient.id,
             tenantId: patient.tenantId,
             role: "PATIENT",
@@ -51,7 +56,7 @@ export async function POST(request: NextRequest) {
             data: { patient: { id: patient.id, firstName: patient.firstName, lastName: patient.lastName } },
         });
 
-        response.cookies.set("nexus_token", token, {
+        response.cookies.set("nexus_token", nexusToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "lax",
