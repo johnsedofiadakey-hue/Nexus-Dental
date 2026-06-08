@@ -20,12 +20,16 @@ export default function PatientLoginPage() {
     const handleSendOTP = async () => {
         if (!phone.trim()) { toast.error("Enter your phone number."); return; }
 
+        let formattedPhone = phone.trim();
+        if (formattedPhone.startsWith("0")) formattedPhone = formattedPhone.substring(1);
+        if (!formattedPhone.startsWith("+233")) formattedPhone = `+233${formattedPhone}`;
+
         setLoading(true);
         try {
             const res = await fetch("/api/auth/patient/otp/request", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ phone: phone.trim() }),
+                body: JSON.stringify({ phone: formattedPhone }),
             });
             const data = await res.json();
             if (data.success) {
@@ -45,12 +49,16 @@ export default function PatientLoginPage() {
         const otp = otpValues.join("");
         if (otp.length !== 6) { toast.error("Enter the 6-digit code."); return; }
 
+        let formattedPhone = phone.trim();
+        if (formattedPhone.startsWith("0")) formattedPhone = formattedPhone.substring(1);
+        if (!formattedPhone.startsWith("+233")) formattedPhone = `+233${formattedPhone}`;
+
         setLoading(true);
         try {
             const res = await fetch("/api/auth/patient/otp/verify", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ phone: phone.trim(), otp }),
+                body: JSON.stringify({ phone: formattedPhone, otp }),
             });
             const data = await res.json();
             if (data.success) {

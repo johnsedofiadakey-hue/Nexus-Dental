@@ -67,15 +67,19 @@ export async function POST(request: NextRequest) {
             if (!firstName || !lastName || !phone) {
                 return apiError("firstName, lastName, and phone are required for guest booking. Please log in or provide details.", 401);
             }
+            let normalizedPhone = phone.trim();
+            if (normalizedPhone.startsWith("0")) normalizedPhone = normalizedPhone.substring(1);
+            if (!normalizedPhone.startsWith("+233")) normalizedPhone = `+233${normalizedPhone}`;
+
             let patient = await prisma.patient.findUnique({
-                where: { tenantId_phone: { tenantId, phone } }
+                where: { tenantId_phone: { tenantId, phone: normalizedPhone } }
             });
             if (!patient) {
                 patient = await prisma.patient.create({
-                    data: { tenantId, phone, firstName, lastName }
+                    data: { tenantId, phone: normalizedPhone, firstName, lastName }
                 });
                 isNewPatient = true;
-                console.log(`[SMS Simulation] Sent to ${phone}: "Welcome to Nexus Dental! Your portal is ready. Login with this phone number to manage your appointments."`);
+                console.log(`[SMS Simulation] Sent to ${normalizedPhone}: "Welcome to Nexus Dental! Your portal is ready. Login with this phone number to manage your appointments."`);
             }
             finalPatientId = patient.id;
         }

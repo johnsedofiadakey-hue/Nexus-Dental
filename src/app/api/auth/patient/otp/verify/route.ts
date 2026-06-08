@@ -13,7 +13,9 @@ export async function POST(request: NextRequest) {
         }
 
         const tenantId = getClinicId();
-        const normalizedPhone = phone.replace(/\s+/g, "");
+        let normalizedPhone = phone.replace(/\s+/g, "");
+        if (normalizedPhone.startsWith("0")) normalizedPhone = normalizedPhone.substring(1);
+        if (!normalizedPhone.startsWith("+233")) normalizedPhone = `+233${normalizedPhone}`;
 
         const result = await verifyOTP(tenantId, normalizedPhone, otp);
         if (!result.valid) {
@@ -26,7 +28,7 @@ export async function POST(request: NextRequest) {
         });
 
         if (!patient) {
-            return NextResponse.json({ success: false, error: "Patient not found." }, { status: 404 });
+            return NextResponse.json({ success: false, error: "Patient not found." }, { status: 400 });
         }
 
         const token = signPatientToken({

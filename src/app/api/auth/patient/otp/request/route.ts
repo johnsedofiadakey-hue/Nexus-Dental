@@ -14,7 +14,9 @@ export async function POST(request: NextRequest) {
         }
 
         const tenantId = getClinicId();
-        const normalizedPhone = phone.replace(/\s+/g, "");
+        let normalizedPhone = phone.replace(/\s+/g, "");
+        if (normalizedPhone.startsWith("0")) normalizedPhone = normalizedPhone.substring(1);
+        if (!normalizedPhone.startsWith("+233")) normalizedPhone = `+233${normalizedPhone}`;
 
         const patient = await prisma.patient.findFirst({
             where: { tenantId, phone: normalizedPhone },
@@ -25,7 +27,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({
                 success: false,
                 error: "No account found with this phone number. Please book an appointment first.",
-            }, { status: 404 });
+            }, { status: 400 });
         }
 
         const otp = generateOTP();

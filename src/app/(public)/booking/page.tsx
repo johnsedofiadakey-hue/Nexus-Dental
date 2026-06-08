@@ -121,6 +121,10 @@ export default function BookingPage() {
         if (!firstName || !lastName || !phone) {
             return toast.error("Please fill in your details.");
         }
+        let formattedPhone = phone.trim();
+        if (formattedPhone.startsWith("0")) formattedPhone = formattedPhone.substring(1);
+        if (!formattedPhone.startsWith("+233")) formattedPhone = `+233${formattedPhone}`;
+
         setIsSubmitting(true);
         try {
             const res = await fetch("/api/appointments/book", {
@@ -133,7 +137,7 @@ export default function BookingPage() {
                     time: selectedTime,
                     firstName,
                     lastName,
-                    phone,
+                    phone: formattedPhone,
                     notes,
                 })
             });
