@@ -93,7 +93,22 @@ export function middleware(request: NextRequest) {
         pathname.startsWith("/finance") ||
         pathname.startsWith("/inventory") ||
         pathname.startsWith("/appointments") ||
-        pathname.startsWith("/patients")
+        pathname.startsWith("/patients") ||
+        pathname.startsWith("/dental-chart") ||
+        pathname.startsWith("/treatment-plans") ||
+        pathname.startsWith("/lab-orders") ||
+        pathname.startsWith("/consent") ||
+        pathname.startsWith("/clinic-services") ||
+        pathname.startsWith("/pharmacy") ||
+        pathname.startsWith("/suppliers") ||
+        pathname.startsWith("/expenses") ||
+        pathname.startsWith("/waitlist") ||
+        pathname.startsWith("/insurance") ||
+        pathname.startsWith("/analytics") ||
+        pathname.startsWith("/reviews") ||
+        pathname.startsWith("/content") ||
+        pathname.startsWith("/support") ||
+        pathname.startsWith("/doctor")
     ) {
         const isPatientRoute = pathname.startsWith("/portal");
         const token = isPatientRoute 
