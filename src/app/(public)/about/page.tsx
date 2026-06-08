@@ -14,7 +14,7 @@ export default function AboutPage() {
     useEffect(() => {
         const fetchContent = async () => {
             try {
-                const res = await fetch("/api/public/clinic/content?tenantId=global-test");
+                const res = await fetch("/api/public/clinic/content");
                 const data = await res.json();
                 if (data.success && data.data) {
                     setContent({

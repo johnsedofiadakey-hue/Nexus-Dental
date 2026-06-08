@@ -51,7 +51,7 @@ export default function TestimonialsSection() {
             try {
                 // In a real multi-tenant scenario, tenantId would come from hostname or context
                 // For demo/dev, we try to fetch from any active tenant or use defaults
-                const res = await fetch("/api/public/clinic/content?tenantId=global-test"); // placeholder
+                const res = await fetch("/api/public/clinic/content");
                 const data = await res.json();
 
                 if (data.success && data.data.testimonials && data.data.testimonials.length > 0) {

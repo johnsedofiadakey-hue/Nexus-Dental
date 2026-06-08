@@ -26,6 +26,7 @@ const PUBLIC_API_ROUTES = [
     "/api/auth/patient/otp/verify",
     "/api/appointments/doctors",
     "/api/appointments/slots",
+    "/api/appointments/book",
     "/api/services",
     "/api/public",
 ];
@@ -70,7 +71,8 @@ export function middleware(request: NextRequest) {
     // For API routes, check for Authorization header
     if (pathname.startsWith("/api/")) {
         const authHeader = request.headers.get("authorization");
-        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        const cookieToken = request.cookies.get("nexus_token")?.value;
+        if ((!authHeader || !authHeader.startsWith("Bearer ")) && !cookieToken) {
             return NextResponse.json(
                 { success: false, error: "Authentication required" },
                 { status: 401 }
