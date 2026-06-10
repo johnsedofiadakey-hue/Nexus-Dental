@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
 
         // Audit
         const userId = user.type === "PATIENT"
-            ? (user as PatientJWTPayload).patientId
+            ? null
             : (user as JWTPayload).userId;
 
         await logAudit({

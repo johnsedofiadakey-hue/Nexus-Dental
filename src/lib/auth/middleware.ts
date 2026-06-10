@@ -43,14 +43,12 @@ export function authenticateRequest(
         // Use patient token if it exists and request is for patient portal or patient API
         if (request.nextUrl.pathname.startsWith("/portal") || request.nextUrl.pathname.startsWith("/api/auth/patient")) {
             token = request.cookies.get("nexus_patient_token")?.value || null;
-        } else {
-            // Default to staff token
-            token = request.cookies.get("nexus_token")?.value || null;
-        }
-        
-        // If still no token, try the other one just in case
-        if (!token) {
+        } else if (request.nextUrl.pathname.startsWith("/api/")) {
+            // For API routes, it could be either staff or patient depending on the endpoint
             token = request.cookies.get("nexus_token")?.value || request.cookies.get("nexus_patient_token")?.value || null;
+        } else {
+            // Default to staff token for internal UI routes
+            token = request.cookies.get("nexus_token")?.value || null;
         }
     }
 

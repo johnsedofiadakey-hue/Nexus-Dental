@@ -109,7 +109,7 @@ model User {
   prescriptions          Prescription[]         @relation("PrescribingDoctor")
   prescriptionsDispensed Prescription[]         @relation("PrescriptionPharmacist")
   inventoryTransactions  InventoryTransaction[]
-  supportMessages        SupportMessage[]
+  // supportMessages        SupportMessage[]
   userOverrides          UserOverride[]
   impersonations         ImpersonationLog[]     @relation("AdminImpersonation")
   impersonatedBy         ImpersonationLog[]     @relation("ImpersonatedUser")
@@ -283,9 +283,9 @@ model Appointment {
   createdAt          DateTime                @default(now())
   updatedAt          DateTime                @updatedAt
   transitions        AppointmentTransition[]
-  doctor             User                    @relation("DoctorAppointments", fields: [doctorId], references: [id])
+  doctor             User                    @relation("DoctorAppointments", fields: [doctorId], references: [id], onDelete: Restrict)
   patient            Patient                 @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  service            Service                 @relation(fields: [serviceId], references: [id])
+  service            Service                 @relation(fields: [serviceId], references: [id], onDelete: Restrict)
   additionalServices Service[]               @relation("AppointmentAdditionalServices")
   tenant             Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   invoice            Invoice?
@@ -405,7 +405,7 @@ model Prescription {
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
   appointment   Appointment?       @relation(fields: [appointmentId], references: [id])
-  doctor        User               @relation("PrescribingDoctor", fields: [doctorId], references: [id])
+  doctor        User               @relation("PrescribingDoctor", fields: [doctorId], references: [id], onDelete: Restrict)
   dispensedBy   User?              @relation("PrescriptionPharmacist", fields: [dispensedById], references: [id])
   patient       Patient            @relation(fields: [patientId], references: [id], onDelete: Cascade)
   tenant        Tenant             @relation(fields: [tenantId], references: [id], onDelete: Restrict)
@@ -447,7 +447,7 @@ model SupportMessage {
   attachments Json          @default("[]")
   isInternal  Boolean       @default(false)
   timestamp   DateTime      @default(now())
-  sender      User          @relation(fields: [senderId], references: [id])
+  // sender      User          @relation(fields: [senderId], references: [id]) // Removed due to PATIENT senders
   ticket      SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Restrict)
 
   @@index([ticketId])
@@ -774,7 +774,7 @@ model TreatmentPlan {
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
   patient     Patient             @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  doctor      User                @relation("DoctorTreatmentPlans", fields: [doctorId], references: [id])
+  doctor      User                @relation("DoctorTreatmentPlans", fields: [doctorId], references: [id], onDelete: Restrict)
   tenant      Tenant              @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@index([patientId])
@@ -885,7 +885,7 @@ model LabOrder {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   patient       Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  doctor        User           @relation("DoctorLabOrders", fields: [doctorId], references: [id])
+  doctor        User           @relation("DoctorLabOrders", fields: [doctorId], references: [id], onDelete: Restrict)
   tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@index([tenantId])
@@ -1011,6 +1011,14 @@ enum PurchaseOrderStatus {
   CANCELLED
 }
 
+enum InsuranceClaimStatus {
+  PENDING
+  SUBMITTED
+  APPROVED
+  REJECTED
+  PARTIAL
+}
+
 model InsuranceClaim {
   id             String    @id @default(cuid())
   invoiceId      String
@@ -1020,7 +1028,7 @@ model InsuranceClaim {
   claimRef       String?
   claimedAmount  Float
   approvedAmount Float?
-  status         String    @default("SUBMITTED") // PENDING, SUBMITTED, APPROVED, REJECTED, PARTIAL
+  status         InsuranceClaimStatus @default(SUBMITTED)
   notes          String?
   submittedAt    DateTime  @default(now())
   resolvedAt     DateTime?

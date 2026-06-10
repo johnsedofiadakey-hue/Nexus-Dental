@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { authenticateRequest, apiError, apiSuccess } from "@/lib/auth";
+import { requireAuth, apiError, apiSuccess } from "@/lib/auth";
 import { PharmacyService } from "@/lib/services/pharmacy.service";
 import { JWTPayload } from "@/lib/auth/types";
+import { getClinicId } from "@/lib/clinic";
 
 
 /**
@@ -10,10 +11,9 @@ import { JWTPayload } from "@/lib/auth/types";
  */
 export async function GET(request: NextRequest) {
     try {
-        const user = authenticateRequest(request);
-        if (!user || !user.tenantId) {
-            return apiError("Unauthorized", 401);
-        }
+        const authResult = requireAuth(request);
+        if ("error" in authResult) return authResult.error;
+        const user = authResult.user as JWTPayload;
 
         const { searchParams } = new URL(request.url);
 
@@ -21,11 +21,11 @@ export async function GET(request: NextRequest) {
         const patientId = searchParams.get("patientId");
 
         if (patientId) {
-            const history = await PharmacyService.getPatientHistory(patientId, user.tenantId);
+            const history = await PharmacyService.getPatientHistory(patientId, getClinicId());
             return apiSuccess(history);
         }
 
-        const prescriptions = await PharmacyService.getPrescriptions(user.tenantId, status);
+        const prescriptions = await PharmacyService.getPrescriptions(getClinicId(), status);
         return apiSuccess(prescriptions);
 
     } catch (error: any) {
@@ -40,10 +40,9 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
     try {
-        const user = authenticateRequest(request);
-        if (!user || !user.tenantId) {
-            return apiError("Unauthorized", 401);
-        }
+        const authResult = requireAuth(request);
+        if ("error" in authResult) return authResult.error;
+        const user = authResult.user as JWTPayload;
 
         // Verify role (Doctor or Admin)
         const staffUser = user as JWTPayload;
@@ -59,7 +58,7 @@ export async function POST(request: NextRequest) {
         }
 
         const prescription = await PharmacyService.createPrescription({
-            tenantId: user.tenantId,
+            tenantId: getClinicId(),
             patientId,
             doctorId: staffUser.userId,
 

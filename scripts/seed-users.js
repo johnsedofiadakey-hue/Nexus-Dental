@@ -26,6 +26,10 @@ async function main() {
     console.log('Created/Verified Tenant: airport-hills-dental');
 
     // Clear old data for a fresh seed
+    await prisma.supportTicket.deleteMany({});
+    await prisma.inventoryItem.deleteMany({});
+    await prisma.patient.deleteMany({});
+    await prisma.appointmentTransition.deleteMany({});
     await prisma.appointment.deleteMany({ where: { tenantId: tenant.id } });
     await prisma.service.deleteMany({ where: { tenantId: tenant.id } });
     await prisma.userRoleMapping.deleteMany({ where: { user: { id: { in: ['sys-admin', 'owner-airport-hills', 'staff-receptionist', 'doc-1', 'doc-2'] } } } });
@@ -35,7 +39,7 @@ async function main() {
     console.log('Cleared old user accounts and services...');
 
     // 2. Create System Owner
-    const hashedDevPassword = await bcrypt.hash('dev123', 10);
+    const hashedDevPassword = await bcrypt.hash('dev123', 12);
     await prisma.user.create({
       data: {
         id: 'sys-admin',
@@ -50,7 +54,7 @@ async function main() {
     console.log('Created System Owner: dev@nexusdental.com');
 
     // 3. Create Clinic Owner
-    const hashedAdminPassword = await bcrypt.hash('admin123', 10);
+    const hashedAdminPassword = await bcrypt.hash('admin123', 12);
     await prisma.user.create({
       data: {
         id: 'owner-airport-hills',
@@ -66,7 +70,7 @@ async function main() {
     console.log('Created Clinic Owner: admin@nexusdental.com');
 
     // 4. Create Receptionist
-    const hashedStaffPassword = await bcrypt.hash('staff123', 10);
+    const hashedStaffPassword = await bcrypt.hash('staff123', 12);
     await prisma.user.create({
       data: {
         id: 'staff-receptionist',
@@ -82,7 +86,7 @@ async function main() {
     console.log('Created Receptionist: sarah@airporthills.com');
 
     // 5. Create Doctors
-    const hashedDocPassword = await bcrypt.hash('doc123', 10);
+    const hashedDocPassword = await bcrypt.hash('doc123', 12);
     await prisma.user.create({
       data: {
         id: 'doc-1',
@@ -152,19 +156,18 @@ async function main() {
     });
     console.log('Created Tenant Settings and Content.');
 
-    // 8. Create Dummy Patients
-    const hashedPatientPassword = await bcrypt.hash('patient123', 10);
+    // 8. Create Dummy Patients (OTP-based auth — no passwordHash on Patient model)
     const patient1 = await prisma.patient.create({
       data: {
         id: 'patient-1',
         tenantId: tenant.id,
         email: 'john.doe@example.com',
-        passwordHash: hashedPatientPassword,
         firstName: 'John',
         lastName: 'Doe',
         phone: '+233241111111',
-        dob: new Date('1990-05-15'),
+        dateOfBirth: new Date('1990-05-15'),
         gender: 'MALE',
+        isVerified: true,
       }
     });
     const patient2 = await prisma.patient.create({
@@ -172,12 +175,12 @@ async function main() {
         id: 'patient-2',
         tenantId: tenant.id,
         email: 'jane.smith@example.com',
-        passwordHash: hashedPatientPassword,
         firstName: 'Jane',
         lastName: 'Smith',
         phone: '+233242222222',
-        dob: new Date('1985-10-22'),
+        dateOfBirth: new Date('1985-10-22'),
         gender: 'FEMALE',
+        isVerified: true,
       }
     });
     console.log('Created Dummy Patients: John Doe, Jane Smith');
@@ -189,11 +192,9 @@ async function main() {
         tenantId: tenant.id,
         name: 'Amoxicillin 500mg',
         sku: 'AMX-500',
-        category: 'MEDICATION',
         quantity: 100,
         unit: 'capsules',
         threshold: 20,
-        isActive: true,
       }
     });
     await prisma.inventoryItem.create({
@@ -202,11 +203,9 @@ async function main() {
         tenantId: tenant.id,
         name: 'Dental Syringe',
         sku: 'SYR-100',
-        category: 'EQUIPMENT',
         quantity: 50,
         unit: 'pieces',
         threshold: 10,
-        isActive: true,
       }
     });
     console.log('Created Inventory Items.');
@@ -218,9 +217,10 @@ async function main() {
         tenantId: tenant.id,
         patientId: patient1.id,
         subject: 'Inquiry about teeth whitening',
-        category: 'INQUIRY',
+        description: 'Hello, I would like to know how much the teeth whitening procedure costs and how long it takes.',
+        issueType: 'INQUIRY',
         status: 'OPEN',
-        priority: 'NORMAL',
+        severity: 'LOW',
         messages: {
           create: {
             senderId: patient1.id,

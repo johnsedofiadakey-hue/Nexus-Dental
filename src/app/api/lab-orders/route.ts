@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
-import { authenticateRequest, apiError, apiSuccess } from "@/lib/auth";
+import { requireAuth, apiError, apiSuccess } from "@/lib/auth";
+import type { JWTPayload } from "@/lib/auth";
 import { prisma } from "@/lib/db/prisma";
+import { getClinicId } from "@/lib/clinic";
 
 /**
  * GET /api/lab-orders
@@ -8,8 +10,9 @@ import { prisma } from "@/lib/db/prisma";
  */
 export async function GET(request: NextRequest) {
     try {
-        const user = authenticateRequest(request);
-        if (!user || !user.tenantId) return apiError("Unauthorized", 401);
+        const authResult = requireAuth(request);
+        if ("error" in authResult) return authResult.error;
+        const user = authResult.user as JWTPayload;
 
         const { searchParams } = new URL(request.url);
         const status = searchParams.get("status") as string | null;
@@ -20,7 +23,7 @@ export async function GET(request: NextRequest) {
         const limit = parseInt(searchParams.get("limit") || "50");
 
         const where: any = {
-            tenantId: user.tenantId,
+            tenantId: getClinicId(),
             ...(status ? { status: status as any } : {}),
             ...(patientId ? { patientId } : {}),
             ...(search
@@ -75,8 +78,9 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
     try {
-        const user = authenticateRequest(request);
-        if (!user || !user.tenantId) return apiError("Unauthorized", 401);
+        const authResult = requireAuth(request);
+        if ("error" in authResult) return authResult.error;
+        const user = authResult.user as JWTPayload;
 
         const body = await request.json();
         const {
@@ -101,7 +105,7 @@ export async function POST(request: NextRequest) {
 
         const labOrder = await prisma.labOrder.create({
             data: {
-                tenantId: user.tenantId,
+                tenantId: getClinicId(),
                 patientId,
                 appointmentId: appointmentId || null,
                 doctorId,

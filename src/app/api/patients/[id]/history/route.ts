@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { authenticateRequest, apiError, apiSuccess } from "@/lib/auth";
+import { requireAuth, apiError, apiSuccess } from "@/lib/auth";
+import type { JWTPayload, PatientJWTPayload } from "@/lib/auth";
 import { PatientService } from "@/lib/services/patient.service";
+import { getClinicId } from "@/lib/clinic";
 
 /**
  * GET /api/patients/[id]/history
@@ -11,24 +13,22 @@ export async function GET(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const user = authenticateRequest(request);
-        if (!user) {
-            return apiError("Unauthorized", 401);
-        }
+        const authResult = requireAuth(request);
+        if ("error" in authResult) return authResult.error;
+        const user = authResult.user;
 
         const patientId = (await params).id;
-        const tenantId = user.tenantId;
+        const tenantId = getClinicId();
 
         // Security Check: 
         // 1. Staff can view any patient in their tenant
         // 2. Patient can only view their own history
         if (user.type === "PATIENT") {
-            const tokenPatientId = (user as any).patientId;
-            if (tokenPatientId !== patientId) {
-                return apiError("Forbidden: You can only view your own history", 403);
+            if ((user as PatientJWTPayload).patientId !== patientId) {
+                return apiError("Forbidden", 403);
             }
         } else if (!tenantId) {
-            return apiError("Staff must have an associated tenant", 400);
+            return apiError("Tenant ID is required for staff", 400);
         }
 
         const history = await PatientService.getTimelineHistory(patientId, tenantId || "");

@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { requireAuth, isStaffUser, apiError, apiSuccess } from "@/lib/auth";
 import type { JWTPayload } from "@/lib/auth";
 import prisma from "@/lib/db/prisma";
+import { getClinicId } from "@/lib/clinic";
 
 export async function GET(request: NextRequest) {
     try {
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
         const page = parseInt(searchParams.get("page") || "1");
         const limit = parseInt(searchParams.get("limit") || "50");
 
-        const where: any = { tenantId: user.tenantId, deletedAt: null };
+        const where: any = { tenantId: getClinicId(), deletedAt: null };
         if (status) where.status = status;
         if (invoiceId) where.invoiceId = invoiceId;
 
@@ -68,14 +69,14 @@ export async function POST(request: NextRequest) {
         }
 
         const invoice = await prisma.invoice.findFirst({
-            where: { id: invoiceId, tenantId: user.tenantId }
+            where: { id: invoiceId, tenantId: getClinicId() }
         });
 
         if (!invoice) return apiError("Invoice not found", 404);
 
         const claim = await prisma.insuranceClaim.create({
             data: {
-                tenantId: user.tenantId,
+                tenantId: getClinicId(),
                 invoiceId,
                 provider,
                 policyNo: policyNo || null,
@@ -121,7 +122,7 @@ export async function PATCH(request: NextRequest) {
         }
 
         const existingClaim = await prisma.insuranceClaim.findFirst({
-            where: { id, tenantId: user.tenantId }
+            where: { id, tenantId: getClinicId() }
         });
 
         if (!existingClaim) return apiError("Claim not found", 404);

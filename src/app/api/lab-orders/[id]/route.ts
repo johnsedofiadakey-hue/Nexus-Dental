@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
-import { authenticateRequest, apiError, apiSuccess } from "@/lib/auth";
+import { requireAuth, apiError, apiSuccess } from "@/lib/auth";
+import type { JWTPayload } from "@/lib/auth";
 import { prisma } from "@/lib/db/prisma";
+import { getClinicId } from "@/lib/clinic";
 import { LabOrderStatus } from "@prisma/client";
 
 const STATUS_PROGRESSION: Record<string, LabOrderStatus> = {
@@ -16,14 +18,15 @@ const STATUS_PROGRESSION: Record<string, LabOrderStatus> = {
  */
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const user = authenticateRequest(request);
-        if (!user || !user.tenantId) return apiError("Unauthorized", 401);
+        const authResult = requireAuth(request);
+        if ("error" in authResult) return authResult.error;
+        const user = authResult.user as JWTPayload;
 
         const { id } = await params;
         const body = await request.json();
 
         // Verify ownership
-        const existing = await prisma.labOrder.findFirst({ where: { id, tenantId: user.tenantId } });
+        const existing = await prisma.labOrder.findFirst({ where: { id, tenantId: getClinicId() } });
         if (!existing) return apiError("Lab order not found", 404);
 
         const {
@@ -86,12 +89,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
  */
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const user = authenticateRequest(request);
-        if (!user || !user.tenantId) return apiError("Unauthorized", 401);
+        const authResult = requireAuth(request);
+        if ("error" in authResult) return authResult.error;
+        const user = authResult.user as JWTPayload;
 
         const { id } = await params;
 
-        const existing = await prisma.labOrder.findFirst({ where: { id, tenantId: user.tenantId } });
+        const existing = await prisma.labOrder.findFirst({ where: { id, tenantId: getClinicId() } });
         if (!existing) return apiError("Lab order not found", 404);
         if (existing.status === "CANCELLED") return apiError("Lab order is already cancelled", 400);
 

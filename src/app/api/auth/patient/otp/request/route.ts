@@ -2,8 +2,35 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { getClinicId } from "@/lib/clinic";
 
+const rateLimitMap = new Map<string, { count: number; lastRequest: number }>();
+
+function checkRateLimit(ip: string): boolean {
+    const now = Date.now();
+    const windowMs = 15 * 60 * 1000; // 15 minutes
+    const maxRequests = 5;
+
+    const record = rateLimitMap.get(ip);
+    if (!record || (now - record.lastRequest > windowMs)) {
+        rateLimitMap.set(ip, { count: 1, lastRequest: now });
+        return true;
+    }
+    
+    if (record.count >= maxRequests) {
+        return false;
+    }
+
+    record.count++;
+    record.lastRequest = now;
+    return true;
+}
+
 export async function POST(request: NextRequest) {
     try {
+        const ip = request.headers.get("x-forwarded-for") || "unknown";
+        if (!checkRateLimit(ip)) {
+            return NextResponse.json({ success: false, error: "Too many requests. Try again later." }, { status: 429 });
+        }
+
         const body = await request.json();
         const { phone } = body as { phone: string };
 
@@ -33,7 +60,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({
                 success: false,
                 error: "No account found with this phone number. Please book an appointment first.",
-            }, { status: 200 });
+            }, { status: 404 });
         }
 
         return NextResponse.json({ success: true, message: "Proceed with Firebase OTP" });

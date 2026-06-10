@@ -53,7 +53,12 @@ export async function POST(request: NextRequest) {
 
         // Verify doctor exists and belongs to tenant
         const doctor = await prisma.user.findFirst({
-            where: { id: doctorId, tenantId, role: "DOCTOR", isActive: true }
+            where: {
+                id: doctorId,
+                tenantId,
+                status: "ACTIVE",
+                roles: { some: { systemRole: "DOCTOR" } }
+            }
         });
         if (!doctor) {
             return apiError("Doctor not found or inactive", 404);

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
-import { authenticateRequest, apiError, apiSuccess } from "@/lib/auth";
+import { requireAuth, apiError, apiSuccess } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 import { JWTPayload } from "@/lib/auth/types";
+import { getClinicId } from "@/lib/clinic";
 
 
 /**
@@ -10,13 +11,12 @@ import { JWTPayload } from "@/lib/auth/types";
  */
 export async function GET(request: NextRequest) {
     try {
-        const user = authenticateRequest(request);
-        if (!user || !user.tenantId) {
-            return apiError("Unauthorized", 401);
-        }
+        const authResult = requireAuth(request);
+        if ("error" in authResult) return authResult.error;
+        const user = authResult.user as JWTPayload;
 
         const employees = await prisma.user.findMany({
-            where: { tenantId: user.tenantId },
+            where: { tenantId: getClinicId() },
             select: {
                 id: true,
                 email: true,
@@ -44,10 +44,9 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
     try {
-        const user = authenticateRequest(request);
-        if (!user || !user.tenantId) {
-            return apiError("Unauthorized", 401);
-        }
+        const authResult = requireAuth(request);
+        if ("error" in authResult) return authResult.error;
+        const user = authResult.user as JWTPayload;
 
         // Only Owners and Admins can create staff
         const staffUser = user as JWTPayload;
@@ -73,7 +72,7 @@ export async function POST(request: NextRequest) {
 
         // Generate temporary password
         const tempPassword = `Temp${Math.random().toString(36).slice(-8)}!`;
-        const passwordHash = await bcrypt.hash(tempPassword, 10);
+        const passwordHash = await bcrypt.hash(tempPassword, 12);
 
         // Create employee
         const employee = await prisma.user.create({
@@ -84,7 +83,7 @@ export async function POST(request: NextRequest) {
                 lastName,
                 phone: phone || null,
                 status: "ACTIVE",
-                tenantId: user.tenantId,
+                tenantId: getClinicId(),
                 roles: {
                     create: {
                         systemRole: role,
