@@ -156,6 +156,50 @@ async function main() {
     });
     console.log('Created Tenant Settings and Content.');
 
+    // 8. Create Consent Templates
+    await prisma.consentTemplate.upsert({
+      where: { id: 'global-telehealth-consent' },
+      update: {},
+      create: {
+        id: 'global-telehealth-consent',
+        tenantId: null, // Global template
+        title: 'Telehealth Consultation Consent',
+        category: 'telehealth',
+        content: `TELEHEALTH CONSULTATION CONSENT FORM
+
+I understand that I am participating in a virtual telehealth consultation with a licensed healthcare provider.
+
+KEY LIMITATIONS OF TELEHEALTH:
+- Visual examination may be limited compared to in-person visits
+- Physical examination may not be possible
+- Some conditions may require in-person evaluation
+
+TECHNICAL REQUIREMENTS:
+- I have a stable internet connection
+- I have access to a private, quiet location
+- I understand that technical difficulties may interrupt the consultation
+
+PRIVACY & CONFIDENTIALITY:
+- This consultation will be conducted privately between me and the healthcare provider
+- All health information discussed is confidential and protected by HIPAA
+- I will not share the consultation link with unauthorized individuals
+
+CONSENT TO RECORDING (Optional):
+- I understand that this consultation may be recorded for quality assurance and training
+- Recordings will be stored securely and accessed only by authorized personnel
+- I may revoke recording consent at any time by stating so during the consultation
+
+By clicking "I Agree", I confirm that:
+1. I understand the limitations and risks of telehealth
+2. I am in a suitable location for this consultation
+3. I provide informed consent for this telehealth consultation
+4. I agree to maintain privacy and confidentiality`,
+        version: 1,
+        isActive: true,
+      }
+    });
+    console.log('Created Telehealth Consent Template.');
+
     // 8. Create Dummy Patients (OTP-based auth — no passwordHash on Patient model)
     const patient1 = await prisma.patient.create({
       data: {
