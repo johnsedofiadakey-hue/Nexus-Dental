@@ -13,7 +13,7 @@ import {
   apiError,
   apiSuccess,
 } from "@/lib/auth";
-import { getClinicId } from "@/lib/clinic";
+import { getTenantIdFromUser } from "@/lib/clinic";
 
 // ── GET /api/consent ─────────────────────────────────────────────────────────
 export async function GET(request: NextRequest) {
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     if ("error" in authResult) return authResult.error;
     const { user } = authResult;
 
-    const tenantId = getClinicId();
+    const tenantId = getTenantIdFromUser(user);
 
     // Return global templates (tenantId IS NULL) + tenant-specific ones
     const templates = await prisma.consentTemplate.findMany({
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
       content?: string;
     };
 
-    const tenantId = getClinicId();
+    const tenantId = getTenantIdFromUser(user);
     const { title, category, content } = body;
 
     if (!title) return apiError("title is required", 400);

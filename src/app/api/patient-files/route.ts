@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { requireAuth, apiError, apiSuccess } from "@/lib/auth";
 import type { JWTPayload, PatientJWTPayload } from "@/lib/auth";
 import prisma from "@/lib/db/prisma";
-import { getClinicId } from "@/lib/clinic";
+import { getTenantIdFromUser } from "@/lib/clinic";
 
 export async function GET(request: NextRequest) {
     try {
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
 
         const files = await prisma.patientFile.findMany({
             where: { 
-                tenantId: getClinicId(),
+                tenantId: getTenantIdFromUser(user),
                 patientId
             },
             include: {
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
 
         // Validate patient belongs to tenant
         const patient = await prisma.patient.findFirst({
-            where: { id: patientId, tenantId: getClinicId() }
+            where: { id: patientId, tenantId: getTenantIdFromUser(user) }
         });
         if (!patient) return apiError("Patient not found", 404);
 
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
 
         const file = await prisma.patientFile.create({
             data: {
-                tenantId: getClinicId(),
+                tenantId: getTenantIdFromUser(user),
                 patientId,
                 appointmentId: appointmentId || null,
                 uploadedById: staffUser.userId,

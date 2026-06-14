@@ -12,7 +12,7 @@ import {
     apiError,
     apiSuccess,
 } from "@/lib/auth";
-import { getClinicId } from "@/lib/clinic";
+import { getTenantIdFromUser } from "@/lib/clinic";
 import {
     overrideAppointmentStatus,
     overrideBuffer,
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
         const staffUser = user as JWTPayload;
         const body = await request.json();
         const { action, entityId, newStatus, reason } = body;
-        const tenantId = getClinicId();
+        const tenantId = getTenantIdFromUser(user);
 
         if (!action || !entityId || !reason) {
             return apiError(
@@ -120,7 +120,7 @@ export async function GET(request: NextRequest) {
         if (permCheck) return permCheck;
 
         const { searchParams } = new URL(request.url);
-        const tenantId = getClinicId();
+        const tenantId = getTenantIdFromUser(user);
         const action = searchParams.get("action") as OverrideAction | null;
         const userId = searchParams.get("userId");
         const entity = searchParams.get("entity");

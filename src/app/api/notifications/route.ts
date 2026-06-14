@@ -10,7 +10,7 @@ import {
     apiError,
     apiSuccess,
 } from "@/lib/auth";
-import { getClinicId } from "@/lib/clinic";
+import { getTenantIdFromUser } from "@/lib/clinic";
 import { sendNotification, getNotificationHistory } from "@/lib/support";
 import type { JWTPayload, PatientJWTPayload } from "@/lib/auth";
 import type { NotificationChannel, NotificationStatus } from "@prisma/client";
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
         if ("error" in authResult) return authResult.error;
         const { user } = authResult;
 
-        const tenantId = getClinicId();
+        const tenantId = getTenantIdFromUser(user);
         const { searchParams } = new URL(request.url);
         const type = searchParams.get("type");
         const status = searchParams.get("status") as NotificationStatus | null;
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
 
         const staffUser = user as JWTPayload;
         const body = await request.json();
-        const tenantId = getClinicId();
+        const tenantId = getTenantIdFromUser(user);
         const { recipientId, type, title, content, preferredChannel } =
             body;
 

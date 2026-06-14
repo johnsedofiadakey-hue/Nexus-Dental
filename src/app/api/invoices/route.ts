@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { requireAuth, requirePermission, PERMISSIONS, apiError, apiSuccess } from "@/lib/auth";
-import { getClinicId } from "@/lib/clinic";
+import { getTenantIdFromUser } from "@/lib/clinic";
 import type { JWTPayload } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
         if ("error" in authResult) return authResult.error;
         const { user } = authResult;
 
-        const tenantId = getClinicId();
+        const tenantId = getTenantIdFromUser(user);
         const { searchParams } = new URL(request.url);
         const status = searchParams.get("status");
         const patientId = searchParams.get("patientId");
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
 
         const staffUser = user as JWTPayload;
         const body = await request.json();
-        const tenantId = getClinicId();
+        const tenantId = getTenantIdFromUser(user);
         const { patientId, appointmentId, items, discount = 0, notes } = body;
 
         if (!patientId || !appointmentId || !items?.length) {

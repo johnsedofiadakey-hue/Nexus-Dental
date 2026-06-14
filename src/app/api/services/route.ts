@@ -1,12 +1,12 @@
 import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { requireAuth, requirePermission, PERMISSIONS, apiError, apiSuccess } from "@/lib/auth";
-import { getClinicId } from "@/lib/clinic";
+import { getTenantIdFromUser } from "@/lib/clinic";
 import type { JWTPayload } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
     try {
-        const tenantId = getClinicId();
+        const tenantId = getTenantIdFromUser(user);
         const { searchParams } = new URL(request.url);
         const category = searchParams.get("category");
         const includeInactive = searchParams.get("includeInactive") === "true";
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
 
         const staffUser = user as JWTPayload;
         const body = await request.json();
-        const tenantId = getClinicId();
+        const tenantId = getTenantIdFromUser(user);
         const { name, description, category, price, duration } = body;
 
         if (!name || !category || price === undefined || !duration) {

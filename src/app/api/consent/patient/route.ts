@@ -10,7 +10,7 @@ import {
   apiError,
   apiSuccess,
 } from "@/lib/auth";
-import { getClinicId } from "@/lib/clinic";
+import { getTenantIdFromUser } from "@/lib/clinic";
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     if ("error" in authResult) return authResult.error;
     const { user } = authResult;
 
-    const tenantId = getClinicId();
+    const tenantId = getTenantIdFromUser(user);
     const { searchParams } = new URL(request.url);
     const patientId = searchParams.get("patientId");
 

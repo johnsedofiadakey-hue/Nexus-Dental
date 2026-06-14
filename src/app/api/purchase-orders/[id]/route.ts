@@ -12,7 +12,7 @@ import {
     apiError,
     apiSuccess,
 } from "@/lib/auth";
-import { getClinicId } from "@/lib/clinic";
+import { getTenantIdFromUser } from "@/lib/clinic";
 import type { JWTPayload } from "@/lib/auth";
 
 interface POItem {
@@ -36,7 +36,7 @@ export async function PATCH(
 
         const { id } = await params;
         const body = await request.json();
-        const tenantId = getClinicId();
+        const tenantId = getTenantIdFromUser(user);
         const { status, notes, expectedAt } = body;
 
         const existing = await prisma.purchaseOrder.findFirst({ where: { id, tenantId } });

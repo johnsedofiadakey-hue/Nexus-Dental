@@ -3,7 +3,7 @@ import prisma from "@/lib/db/prisma";
 import { requireAuth, apiError, apiSuccess } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 import { JWTPayload } from "@/lib/auth/types";
-import { getClinicId } from "@/lib/clinic";
+import { getTenantIdFromUser } from "@/lib/clinic";
 
 
 /**
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
         const user = authResult.user as JWTPayload;
 
         const employees = await prisma.user.findMany({
-            where: { tenantId: getClinicId() },
+            where: { tenantId: getTenantIdFromUser(user) },
             select: {
                 id: true,
                 email: true,
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
                 lastName,
                 phone: phone || null,
                 status: "ACTIVE",
-                tenantId: getClinicId(),
+                tenantId: getTenantIdFromUser(user),
                 roles: {
                     create: {
                         systemRole: role,

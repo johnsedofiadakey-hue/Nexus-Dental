@@ -11,7 +11,7 @@ import {
     apiError,
     apiSuccess,
 } from "@/lib/auth";
-import { getClinicId } from "@/lib/clinic";
+import { getTenantIdFromUser } from "@/lib/clinic";
 import { triageTicket } from "@/lib/support";
 import { logAudit } from "@/lib/audit/logger";
 import type { JWTPayload, PatientJWTPayload } from "@/lib/auth";
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
         if ("error" in authResult) return authResult.error;
         const { user } = authResult;
 
-        const tenantId = getClinicId();
+        const tenantId = getTenantIdFromUser(user);
         const { searchParams } = new URL(request.url);
         const status = searchParams.get("status");
         const severity = searchParams.get("severity");
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
         const { user } = authResult;
 
         const body = await request.json();
-        const tenantId = getClinicId();
+        const tenantId = getTenantIdFromUser(user);
         const { subject, description, issueType, patientId: bodyPatientId } = body;
 
         if (!subject || !description) {

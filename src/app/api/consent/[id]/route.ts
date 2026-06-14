@@ -11,7 +11,7 @@ import {
   apiError,
   apiSuccess,
 } from "@/lib/auth";
-import { getClinicId } from "@/lib/clinic";
+import { getTenantIdFromUser } from "@/lib/clinic";
 
 export async function GET(
   request: NextRequest,
@@ -23,7 +23,7 @@ export async function GET(
     const { user } = authResult;
 
     const { id } = await params;
-    const tenantId = getClinicId();
+    const tenantId = getTenantIdFromUser(user);
 
     // Try as a ConsentTemplate first
     const template = await prisma.consentTemplate.findFirst({
@@ -65,7 +65,7 @@ export async function DELETE(
     const { user } = authResult;
 
     const { id } = await params;
-    const tenantId = getClinicId();
+    const tenantId = getTenantIdFromUser(user);
 
     const template = await prisma.consentTemplate.findUnique({
       where: { id },

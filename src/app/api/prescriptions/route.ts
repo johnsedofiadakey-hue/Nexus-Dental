@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, apiError, apiSuccess } from "@/lib/auth";
 import { PharmacyService } from "@/lib/services/pharmacy.service";
 import { JWTPayload } from "@/lib/auth/types";
-import { getClinicId } from "@/lib/clinic";
+import { getTenantIdFromUser } from "@/lib/clinic";
 
 
 /**
@@ -21,11 +21,11 @@ export async function GET(request: NextRequest) {
         const patientId = searchParams.get("patientId");
 
         if (patientId) {
-            const history = await PharmacyService.getPatientHistory(patientId, getClinicId());
+            const history = await PharmacyService.getPatientHistory(patientId, getTenantIdFromUser(user));
             return apiSuccess(history);
         }
 
-        const prescriptions = await PharmacyService.getPrescriptions(getClinicId(), status);
+        const prescriptions = await PharmacyService.getPrescriptions(getTenantIdFromUser(user), status);
         return apiSuccess(prescriptions);
 
     } catch (error: any) {
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
         }
 
         const prescription = await PharmacyService.createPrescription({
-            tenantId: getClinicId(),
+            tenantId: getTenantIdFromUser(user),
             patientId,
             doctorId: staffUser.userId,
 

@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { randomUUID } from "crypto";
 import prisma from "@/lib/db/prisma";
 import { requireAuth, apiError, apiSuccess } from "@/lib/auth";
-import { getClinicId } from "@/lib/clinic";
+import { getTenantIdFromUser } from "@/lib/clinic";
 import { sendEmail, staffInviteEmailHtml } from "@/lib/email/sender";
 import type { JWTPayload } from "@/lib/auth";
 import type { UserRole } from "@prisma/client";
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
             return apiError("Only clinic owners and admins can invite staff", 403);
         }
 
-        const tenantId = getClinicId();
+        const tenantId = getTenantIdFromUser(user);
         const body = await request.json();
         const { email, role } = body as { email: string; role: UserRole };
 
@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
         if ("error" in authResult) return authResult.error;
         const { user } = authResult;
 
-        const tenantId = getClinicId();
+        const tenantId = getTenantIdFromUser(user);
 
         const invites = await prisma.staffInvite.findMany({
             where: { tenantId, acceptedAt: null },

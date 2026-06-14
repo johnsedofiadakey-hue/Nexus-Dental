@@ -13,7 +13,7 @@ import {
     apiError,
     apiSuccess,
 } from "@/lib/auth";
-import { getClinicId } from "@/lib/clinic";
+import { getTenantIdFromUser } from "@/lib/clinic";
 import type { JWTPayload } from "@/lib/auth";
 
 export async function PATCH(
@@ -30,7 +30,7 @@ export async function PATCH(
 
         const { id } = await params;
         const body = await request.json();
-        const tenantId = getClinicId();
+        const tenantId = getTenantIdFromUser(user);
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { tenantId: _ignored, ...fields } = body;
 
@@ -86,7 +86,7 @@ export async function DELETE(
         if (permCheck) return permCheck;
 
         const { id } = await params;
-        const tenantId = getClinicId();
+        const tenantId = getTenantIdFromUser(user);
 
         const existing = await prisma.supplier.findFirst({ where: { id, tenantId } });
         if (!existing) return apiError("Supplier not found", 404);

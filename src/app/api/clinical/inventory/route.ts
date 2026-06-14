@@ -14,7 +14,7 @@ import {
     apiSuccess,
 } from "@/lib/auth";
 import type { JWTPayload } from "@/lib/auth";
-import { getClinicId } from "@/lib/clinic";
+import { getTenantIdFromUser } from "@/lib/clinic";
 
 export async function GET(request: NextRequest) {
     try {
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
         if (permCheck) return permCheck;
 
         const { searchParams } = new URL(request.url);
-        const tenantId = getClinicId();
+        const tenantId = getTenantIdFromUser(user);
         const lowStockOnly = searchParams.get("lowStock") === "true";
         const search = searchParams.get("search");
         const page = parseInt(searchParams.get("page") || "1");
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
         const staffUser = user as JWTPayload;
         const body = await request.json();
         const { name, sku, quantity, threshold, unit, cost, supplier, expiresAt } = body;
-        const tenantId = getClinicId();
+        const tenantId = getTenantIdFromUser(user);
 
         if (!name) {
             return apiError("name is required", 400);

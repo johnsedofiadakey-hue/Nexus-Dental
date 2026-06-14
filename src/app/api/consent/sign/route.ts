@@ -13,7 +13,7 @@ import {
   isPatientUser,
 } from "@/lib/auth";
 import type { PatientJWTPayload } from "@/lib/auth";
-import { getClinicId } from "@/lib/clinic";
+import { getTenantIdFromUser } from "@/lib/clinic";
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       ipAddress?: string;
     };
 
-    const tenantId = getClinicId();
+    const tenantId = getTenantIdFromUser(user);
     const { templateId, patientId, appointmentId, signatureData, ipAddress } = body;
 
     if (!templateId) return apiError("templateId is required", 400);

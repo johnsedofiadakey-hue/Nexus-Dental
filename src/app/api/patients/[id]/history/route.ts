@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, apiError, apiSuccess } from "@/lib/auth";
 import type { JWTPayload, PatientJWTPayload } from "@/lib/auth";
 import { PatientService } from "@/lib/services/patient.service";
-import { getClinicId } from "@/lib/clinic";
+import { getTenantIdFromUser } from "@/lib/clinic";
 
 /**
  * GET /api/patients/[id]/history
@@ -18,7 +18,7 @@ export async function GET(
         const user = authResult.user;
 
         const patientId = (await params).id;
-        const tenantId = getClinicId();
+        const tenantId = getTenantIdFromUser(user);
 
         // Security Check: 
         // 1. Staff can view any patient in their tenant

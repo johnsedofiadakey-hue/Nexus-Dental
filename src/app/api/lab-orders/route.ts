@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { requireAuth, apiError, apiSuccess } from "@/lib/auth";
 import type { JWTPayload } from "@/lib/auth";
 import { prisma } from "@/lib/db/prisma";
-import { getClinicId } from "@/lib/clinic";
+import { getTenantIdFromUser } from "@/lib/clinic";
 
 /**
  * GET /api/lab-orders
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
         const limit = parseInt(searchParams.get("limit") || "50");
 
         const where: any = {
-            tenantId: getClinicId(),
+            tenantId: getTenantIdFromUser(user),
             ...(status ? { status: status as any } : {}),
             ...(patientId ? { patientId } : {}),
             ...(search
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
 
         const labOrder = await prisma.labOrder.create({
             data: {
-                tenantId: getClinicId(),
+                tenantId: getTenantIdFromUser(user),
                 patientId,
                 appointmentId: appointmentId || null,
                 doctorId,

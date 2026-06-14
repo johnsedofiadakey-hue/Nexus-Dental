@@ -13,7 +13,7 @@ import {
     apiError,
     apiSuccess,
 } from "@/lib/auth";
-import { getClinicId } from "@/lib/clinic";
+import { getTenantIdFromUser } from "@/lib/clinic";
 import type { JWTPayload } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
         const permCheck = requirePermission(user, PERMISSIONS.INVENTORY_VIEW);
         if (permCheck) return permCheck;
 
-        const tenantId = getClinicId();
+        const tenantId = getTenantIdFromUser(user);
         const { searchParams } = new URL(request.url);
         const search = searchParams.get("search") ?? undefined;
         const isActiveParam = searchParams.get("isActive");
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
 
         const staffUser = user as JWTPayload;
         const body = await request.json();
-        const tenantId = getClinicId();
+        const tenantId = getTenantIdFromUser(user);
         const {
             name,
             contactPerson,
