@@ -6,6 +6,7 @@
 import prisma from "@/lib/db/prisma";
 import { queueRedisConnection } from "@/lib/queue/redis";
 import { getQueue } from "@/lib/queue/queues";
+import { getWorkerStatus } from "@/lib/queue/manager";
 
 export interface HealthReport {
     status: "HEALTHY" | "DEGRADED" | "UNHEALTHY";
@@ -17,6 +18,10 @@ export interface HealthReport {
             notification: { waiting: number; active: number };
             appointment: { waiting: number; active: number };
         };
+    };
+    workerRegistry?: {
+        activeWorkers: string[];
+        count: number;
     };
 }
 
@@ -53,6 +58,7 @@ export async function getSystemHealth(): Promise<HealthReport> {
     ]);
 
     const isHealthy = dbStatus === "UP" && redisStatus === "UP";
+    const workerStatus = getWorkerStatus();
 
     return {
         status: isHealthy ? "HEALTHY" : "UNHEALTHY",
@@ -65,5 +71,6 @@ export async function getSystemHealth(): Promise<HealthReport> {
                 appointment: { waiting: aw, active: aa },
             },
         },
+        workerRegistry: workerStatus,
     };
 }
