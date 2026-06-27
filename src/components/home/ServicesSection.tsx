@@ -99,7 +99,7 @@ export default function ServicesSection() {
                     </p>
                 </motion.div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
                     {services.map((service, i) => {
                         const Icon = service.icon;
                         return (
@@ -111,20 +111,20 @@ export default function ServicesSection() {
                             >
                                 <Link
                                     href={service.href}
-                                    className="card-hover group block p-7 rounded-2xl bg-white border border-border-light hover:border-primary/20 no-underline h-full"
+                                    className="group block p-8 rounded-xl bg-white border border-slate-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 no-underline h-full"
                                 >
                                     <div
-                                        className={`w-12 h-12 ${service.bg} rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300`}
+                                        className={`w-16 h-16 ${service.bg} rounded-lg flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}
                                     >
-                                        <Icon className={`h-6 w-6 ${service.color}`} />
+                                        <Icon className={`h-8 w-8 ${service.color}`} />
                                     </div>
-                                    <h3 className="font-[family-name:var(--font-heading)] text-lg text-secondary mb-2">
+                                    <h3 className="font-semibold text-lg text-secondary mb-3">
                                         {service.title}
                                     </h3>
-                                    <p className="text-sm text-text-secondary leading-relaxed mb-4">
+                                    <p className="text-sm text-text-secondary leading-relaxed mb-5">
                                         {service.description}
                                     </p>
-                                    <span className="inline-flex items-center gap-1.5 text-sm font-medium text-primary group-hover:gap-2.5 transition-all">
+                                    <span className="inline-flex items-center gap-2 text-sm font-medium text-primary group-hover:gap-3 transition-all">
                                         Learn More
                                         <ArrowRight className="h-4 w-4" />
                                     </span>
