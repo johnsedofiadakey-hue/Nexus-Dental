@@ -1,0 +1,47 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Deny all by default
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+
+    // Patient records and files (patient-specific, authenticated only)
+    match /patients/{patientId}/{allPaths=**} {
+      // Authenticated users can read/write their own patient folder
+      allow read, write: if request.auth != null && request.auth.uid == patientId;
+      // Authenticated clinic staff can also access (we'll validate clinic ID in the app)
+      allow read, write: if request.auth != null;
+    }
+
+    // Clinic documents (authenticated clinic staff only)
+    match /clinics/{clinicId}/{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Patient X-rays and diagnostics (authenticated users)
+    match /diagnostics/{patientId}/{allPaths=**} {
+      allow read: if request.auth != null && request.auth.uid == patientId;
+      allow read, write: if request.auth != null;
+    }
+
+    // Prescriptions and lab results (authenticated users)
+    match /prescriptions/{prescriptionId}/{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Temporary uploads (authenticated users, 100MB limit)
+    match /uploads/{userId}/{allPaths=**} {
+      allow write: if request.auth != null &&
+        request.auth.uid == userId &&
+        request.resource.size < 100 * 1024 * 1024;
+      allow read: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Clinic logos and branding (public read, authenticated write)
+    match /public/clinics/{clinicId}/logo {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+  }
+}

@@ -3,5 +3,11 @@
     {
       "backendId": "nexusdental"
     }
+  ],
+  "storage": [
+    {
+      "target": "default",
+      "rules": "storage.rules"
+    }
   ]
 }
