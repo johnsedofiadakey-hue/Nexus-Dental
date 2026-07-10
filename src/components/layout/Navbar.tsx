@@ -1,163 +1,178 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Phone, Calendar } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+    CalendarDays,
+    CircleUserRound,
+    HeartPulse,
+    Menu,
+    MessageCircle,
+    Stethoscope,
+    X,
+} from "lucide-react";
 
 const navLinks = [
     { label: "Home", href: "/" },
     { label: "Services", href: "/services" },
-    { label: "Consultation", href: "/consultation" },
     { label: "About", href: "/about" },
+    { label: "Virtual care", href: "/consultation" },
     { label: "Contact", href: "/contact" },
+    { label: "Client Demo", href: "/client-demo" },
 ];
 
 export default function Navbar() {
+    const pathname = usePathname();
     const [isOpen, setIsOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
+    const clinicName = process.env.NEXT_PUBLIC_CLINIC_NAME || "Nexus Dental";
 
     useEffect(() => {
-        const handleScroll = () => {
-            setScrolled(window.scrollY > 20);
-        };
-        window.addEventListener("scroll", handleScroll);
+        const handleScroll = () => setScrolled(window.scrollY > 12);
+        handleScroll();
+        window.addEventListener("scroll", handleScroll, { passive: true });
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
+    const isActive = (href: string) =>
+        href === "/" ? pathname === "/" : pathname.startsWith(href);
+
     return (
         <header
-            className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
-                ? "glass shadow-[var(--shadow-card)]"
-                : "bg-transparent"
-                }`}
+            className={`fixed inset-x-0 top-0 z-50 border-b transition-all duration-300 ${
+                scrolled
+                    ? "border-border-light bg-white/95 shadow-[var(--shadow-soft)] backdrop-blur-xl"
+                    : "border-transparent bg-white/80 backdrop-blur-md"
+            }`}
         >
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                <div className="flex h-20 items-center justify-between">
-                    {/* Logo */}
-                    <Link href="/" className="flex items-center gap-3 no-underline">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
-                            <span className="text-lg font-bold text-white">N</span>
-                        </div>
-                        <div>
-                            <span className="font-[family-name:var(--font-heading)] text-xl text-secondary">
-                                Nexus
-                            </span>
-                            <span className="font-[family-name:var(--font-heading)] text-xl text-primary ml-1">
-                                Dental
-                            </span>
-                        </div>
-                    </Link>
+            <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+                <Link href="/" className="flex min-w-0 items-center gap-3 no-underline" aria-label={`${clinicName} home`}>
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-white shadow-[0_10px_22px_rgba(15,157,139,0.22)]">
+                        <HeartPulse className="h-5 w-5" />
+                    </span>
+                    <span className="truncate font-[family-name:var(--font-heading)] text-xl text-secondary sm:text-2xl">
+                        {clinicName}
+                    </span>
+                </Link>
 
-                    {/* Desktop Nav */}
-                    <nav className="hidden lg:flex items-center gap-8">
-                        {navLinks.map((link) => (
-                            <Link
-                                key={link.href}
-                                href={link.href}
-                                className="text-sm font-medium text-text-secondary hover:text-primary transition-colors no-underline"
-                            >
-                                {link.label}
-                            </Link>
-                        ))}
-                    </nav>
-
-                    {/* Desktop Actions */}
-                    <div className="hidden lg:flex items-center gap-4">
-                        <Link href="/auth/patient" className="text-sm font-semibold text-secondary hover:text-primary transition-colors no-underline px-4">
-                            Patient Portal
-                        </Link>
-                        <a
-                            href="tel:+1234567890"
-                            className="flex items-center gap-2 text-sm font-medium text-text-secondary hover:text-primary transition-colors no-underline"
+                <nav className="hidden items-center gap-7 lg:flex" aria-label="Primary navigation">
+                    {navLinks.map((link) => (
+                        <Link
+                            key={link.href}
+                            href={link.href}
+                            className={`relative py-2 text-sm font-semibold no-underline transition-colors ${
+                                isActive(link.href) ? "text-primary-dark" : "text-text-secondary hover:text-secondary"
+                            }`}
                         >
-                            <Phone className="h-4 w-4" />
-                            <span>Emergency</span>
-                        </a>
-                        <Link href="/booking" className="btn-primary text-sm no-underline">
-                            <Calendar className="h-4 w-4" />
-                            Book Appointment
+                            {link.label}
+                            {isActive(link.href) && (
+                                <span className="absolute inset-x-0 -bottom-1 mx-auto h-0.5 w-6 rounded-full bg-primary" />
+                            )}
                         </Link>
-                    </div>
+                    ))}
+                </nav>
 
-                    {/* Mobile Menu Toggle */}
+                <div className="hidden items-center gap-3 lg:flex">
+                    <Link
+                        href="/auth/patient"
+                        className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-secondary no-underline transition-colors hover:bg-bg hover:text-primary-dark"
+                    >
+                        <CircleUserRound className="h-4 w-4" />
+                        Patient portal
+                    </Link>
+                    <Link href="/booking" className="btn-primary px-5 py-3 text-sm no-underline">
+                        <CalendarDays className="h-4 w-4" />
+                        Book appointment
+                    </Link>
+                </div>
+
+                <div className="flex items-center gap-2 lg:hidden">
+                    <Link
+                        href="/booking"
+                        className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-3 text-sm font-semibold text-white no-underline shadow-sm"
+                        aria-label="Book an appointment"
+                    >
+                        <CalendarDays className="h-4 w-4" />
+                        <span className="hidden min-[390px]:inline">Book</span>
+                    </Link>
                     <button
-                        onClick={() => setIsOpen(!isOpen)}
-                        className="lg:hidden flex items-center justify-center w-10 h-10 rounded-xl bg-bg-white border border-border text-secondary"
-                        aria-label="Toggle menu"
+                        type="button"
+                        onClick={() => setIsOpen((open) => !open)}
+                        className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-white text-secondary"
+                        aria-expanded={isOpen}
+                        aria-controls="mobile-navigation"
+                        aria-label={isOpen ? "Close menu" : "Open menu"}
                     >
                         {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
                     </button>
                 </div>
             </div>
 
-            {/* Mobile Drawer */}
             <AnimatePresence>
                 {isOpen && (
                     <>
-                        {/* Backdrop */}
-                        <motion.div
+                        <motion.button
+                            type="button"
+                            aria-label="Close menu"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="fixed inset-0 bg-black/20 backdrop-blur-sm lg:hidden"
+                            className="fixed inset-0 top-20 bg-secondary/20 backdrop-blur-sm lg:hidden"
                             onClick={() => setIsOpen(false)}
                         />
-                        {/* Drawer */}
                         <motion.div
-                            initial={{ x: "100%" }}
-                            animate={{ x: 0 }}
-                            exit={{ x: "100%" }}
-                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                            className="fixed top-0 right-0 bottom-0 w-80 bg-bg-white shadow-hero lg:hidden z-50"
+                            id="mobile-navigation"
+                            initial={{ opacity: 0, y: -14 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -14 }}
+                            transition={{ duration: 0.2 }}
+                            className="absolute inset-x-3 top-[5.4rem] overflow-hidden rounded-3xl border border-border-light bg-white shadow-[var(--shadow-hero)] lg:hidden"
                         >
-                            <div className="flex flex-col h-full">
-                                <div className="flex items-center justify-between p-6 border-b border-border">
-                                    <span className="font-[family-name:var(--font-heading)] text-lg text-secondary">
-                                        Menu
-                                    </span>
-                                    <button
-                                        onClick={() => setIsOpen(false)}
-                                        className="flex items-center justify-center w-10 h-10 rounded-xl bg-bg border border-border text-secondary"
-                                    >
-                                        <X className="h-5 w-5" />
-                                    </button>
-                                </div>
-                                <nav className="flex flex-col p-6 gap-1">
-                                    {navLinks.map((link, i) => (
-                                        <motion.div
-                                            key={link.href}
-                                            initial={{ opacity: 0, x: 20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            transition={{ delay: i * 0.05 }}
-                                        >
-                                            <Link
-                                                href={link.href}
-                                                onClick={() => setIsOpen(false)}
-                                                className="flex items-center px-4 py-3 rounded-xl text-sm font-medium text-text-secondary hover:bg-bg hover:text-primary transition-colors no-underline"
-                                            >
-                                                {link.label}
-                                            </Link>
-                                        </motion.div>
-                                    ))}
-                                </nav>
-                                <div className="mt-auto p-6 border-t border-border">
+                            <nav className="grid gap-1 p-3" aria-label="Mobile navigation">
+                                {navLinks.map((link) => (
                                     <Link
-                                        href="/booking"
+                                        key={link.href}
+                                        href={link.href}
                                         onClick={() => setIsOpen(false)}
-                                        className="btn-primary w-full text-sm no-underline"
+                                        className={`rounded-2xl px-4 py-3 text-sm font-semibold no-underline ${
+                                            isActive(link.href) ? "bg-primary/10 text-primary-dark" : "text-secondary hover:bg-bg"
+                                        }`}
                                     >
-                                        <Calendar className="h-4 w-4" />
-                                        Book Appointment
+                                        {link.label}
                                     </Link>
-                                    <a
-                                        href="tel:+1234567890"
-                                        className="flex items-center justify-center gap-2 mt-3 py-3 text-sm font-medium text-text-secondary no-underline"
-                                    >
-                                        <Phone className="h-4 w-4" />
-                                        Emergency: (123) 456-7890
-                                    </a>
-                                </div>
+                                ))}
+                            </nav>
+                            <div className="grid grid-cols-2 gap-3 border-t border-border-light bg-bg/70 p-4">
+                                <Link
+                                    href="/auth/patient"
+                                    onClick={() => setIsOpen(false)}
+                                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-white px-3 py-3 text-sm font-semibold text-secondary no-underline"
+                                >
+                                    <CircleUserRound className="h-4 w-4" />
+                                    Portal
+                                </Link>
+                                <Link
+                                    href="/contact"
+                                    onClick={() => setIsOpen(false)}
+                                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-white px-3 py-3 text-sm font-semibold text-secondary no-underline"
+                                >
+                                    <MessageCircle className="h-4 w-4" />
+                                    Get help
+                                </Link>
+                                <Link
+                                    href="/services"
+                                    onClick={() => setIsOpen(false)}
+                                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-white px-3 py-3 text-sm font-semibold text-secondary no-underline"
+                                >
+                                    <Stethoscope className="h-4 w-4" />
+                                    Services
+                                </Link>
+                                <Link href="/booking" onClick={() => setIsOpen(false)} className="btn-primary px-3 py-3 text-sm no-underline">
+                                    <CalendarDays className="h-4 w-4" />
+                                    Book now
+                                </Link>
                             </div>
                         </motion.div>
                     </>

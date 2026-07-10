@@ -22,6 +22,7 @@ const PUBLIC_ROUTES = [
 
 const PUBLIC_API_ROUTES = [
     "/api/auth/login",
+    "/api/auth/logout",
     "/api/auth/patient/otp/request",
     "/api/auth/patient/otp/verify",
     "/api/appointments/doctors",
@@ -60,6 +61,11 @@ export function middleware(request: NextRequest) {
 
     // Allow public marketing routes
     if (PUBLIC_ROUTES.includes(pathname)) {
+        return NextResponse.next();
+    }
+
+    // Allow public client demo pages (e.g. /client-demo/dentocdental)
+    if (pathname.startsWith("/client-demo")) {
         return NextResponse.next();
     }
 
