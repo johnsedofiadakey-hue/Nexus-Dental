@@ -19,6 +19,24 @@ export interface ClientTestimonial {
     rating: number;
 }
 
+export interface ClientStat {
+    id: string;
+    label: string;
+    value: string;
+}
+
+export interface ClientFeature {
+    id: string;
+    title: string;
+    icon: string;
+}
+
+export interface ClientFaq {
+    id: string;
+    question: string;
+    answer: string;
+}
+
 export interface ClientBranch {
     name: string;
 }
@@ -51,6 +69,10 @@ export interface ClientData {
     featuredServices: ClientService[];
     serviceCategories: ClientServiceCategory[];
     testimonials: ClientTestimonial[];
+    stats: ClientStat[];
+    comfortIntro: string;
+    comfortFeatures: ClientFeature[];
+    faqs: ClientFaq[];
     insurancePartners: string[];
     contact: ClientContact;
     sourceUrl: string;
@@ -181,6 +203,68 @@ const CLIENTS: Record<string, ClientData> = {
                 author: "Rehana Yusif",
                 text: "Dr. Emmanuel took his time to explain everything to me and made sure that I was well taken care of. Everyone was very professional and friendly. My results were more than what I expected.",
                 rating: 5,
+            },
+            {
+                id: "t5",
+                author: "nana ama",
+                text: "It was a good experience, and I got exactly what I wanted — perfect results.",
+                rating: 5,
+            },
+            {
+                id: "t6",
+                author: "Bashiru Tahiru",
+                text: "My first time booking an appointment, I was served very nicely and they recommended a mouth wash. I liked their service so much I'll be coming around more often.",
+                rating: 5,
+            },
+            {
+                id: "t7",
+                author: "Linda Abena",
+                text: "I came in for a swollen gum and the dentist was amazing — he took his time to explain everything, then scheduled me to fix other issues he noticed. Service was 10/10, very friendly and professional.",
+                rating: 5,
+            },
+        ],
+        stats: [
+            { id: "referrals", label: "Patient Referrals", value: "325+" },
+            { id: "success", label: "Successful Treatments", value: "98%" },
+            { id: "doctors", label: "Active Doctors", value: "15+" },
+        ],
+        comfortIntro:
+            "From the moment you walk in, we prioritize your comfort, offering a calming atmosphere designed to reduce anxiety. Our treatment rooms are equipped with the latest technology, which helps make procedures smoother and less invasive.",
+        comfortFeatures: [
+            { id: "satisfaction", title: "Customer Satisfaction", icon: "Sparkles" },
+            { id: "personalized", title: "Personalized Care", icon: "HeartHandshake" },
+            { id: "support", title: "Post-Treatment Support", icon: "ShieldCheck" },
+        ],
+        faqs: [
+            {
+                id: "faq1",
+                question: "What services does Dentoc Dental Clinic offer?",
+                answer: "A wide range including general dentistry (check-ups, cleanings, fillings), advanced dentistry (root canals, implants), cosmetic dentistry (veneers, whitening, smile makeovers), and specialized treatments like crowns, bridges, dentures, and night guards.",
+            },
+            {
+                id: "faq2",
+                question: "How do I book an appointment?",
+                answer: "Call any of our branches directly, message us on social media, or use the Book Appointment button on this site to request a time that works for you.",
+            },
+            {
+                id: "faq3",
+                question: "Do you accept insurance, and which providers are covered?",
+                answer: "Yes — we partner with major providers including GHIC, Glico, Acacia, Nationwide, ACE, Star, Premier, Phoenix, Metro, and Equity. Bring your insurance ID to your visit.",
+            },
+            {
+                id: "faq4",
+                question: "Is Dentoc Dental Clinic a good option for cosmetic dentistry?",
+                answer: "Yes — our cosmetic services include whitening, veneers, bonding, Invisalign, and full smile makeovers, tailored to your goals.",
+            },
+            {
+                id: "faq5",
+                question: "What should I do if I have a dental emergency?",
+                answer: "Call your nearest branch right away — we prioritize emergency cases such as severe pain, trauma, swelling, or broken teeth.",
+            },
+            {
+                id: "faq6",
+                question: "What are your clinic hours?",
+                answer: "Hours vary slightly by branch — contact your nearest location directly for exact opening times.",
             },
         ],
         insurancePartners: [

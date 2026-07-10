@@ -3,9 +3,12 @@ import type { Metadata } from "next";
 import { getClientData } from "@/lib/client-demo/config";
 import ClientDemoHero from "@/components/client-demo/ClientDemoHero";
 import ClientDemoInsurance from "@/components/client-demo/ClientDemoInsurance";
+import ClientDemoStats from "@/components/client-demo/ClientDemoStats";
 import ClientDemoServices from "@/components/client-demo/ClientDemoServices";
+import ClientDemoComfort from "@/components/client-demo/ClientDemoComfort";
 import ClientDemoAbout from "@/components/client-demo/ClientDemoAbout";
 import ClientDemoTestimonials from "@/components/client-demo/ClientDemoTestimonials";
+import ClientDemoFAQ from "@/components/client-demo/ClientDemoFAQ";
 import ClientDemoContact from "@/components/client-demo/ClientDemoContact";
 
 export async function generateMetadata({
@@ -36,10 +39,13 @@ export default async function ClientDemoPage({
     return (
         <>
             <ClientDemoHero client={client} />
+            <ClientDemoStats client={client} />
             <ClientDemoInsurance client={client} />
             <ClientDemoServices client={client} />
+            <ClientDemoComfort client={client} />
             <ClientDemoAbout client={client} />
             <ClientDemoTestimonials client={client} />
+            <ClientDemoFAQ client={client} />
             <ClientDemoContact client={client} />
         </>
     );

@@ -1,5 +1,7 @@
 import {
     Cross,
+    HeartHandshake,
+    ShieldCheck,
     ShieldPlus,
     SmilePlus,
     Sparkles,
@@ -13,6 +15,8 @@ export const CLIENT_ICON_MAP: Record<string, LucideIcon> = {
     SmilePlus,
     Cross,
     Stethoscope,
+    HeartHandshake,
+    ShieldCheck,
 };
 
 export function getClientIcon(name: string): LucideIcon {
