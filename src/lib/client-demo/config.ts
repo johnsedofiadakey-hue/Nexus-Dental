@@ -3,7 +3,13 @@ export interface ClientService {
     name: string;
     description: string;
     icon: string;
-    image: string;
+    image?: string;
+}
+
+export interface ClientServiceCategory {
+    id: string;
+    label: string;
+    services: ClientService[];
 }
 
 export interface ClientTestimonial {
@@ -13,10 +19,16 @@ export interface ClientTestimonial {
     rating: number;
 }
 
+export interface ClientBranch {
+    name: string;
+}
+
 export interface ClientContact {
     email: string;
     phone: string;
+    website: string;
     address: string;
+    branches: ClientBranch[];
     social?: Record<string, string>;
 }
 
@@ -25,17 +37,21 @@ export interface ClientData {
     name: string;
     tagline: string;
     description: string;
+    aboutText: string;
     mission: string;
     vision: string;
     heroImage: string;
     logo: string;
-    colors?: {
-        primary?: string;
-        accent?: string;
-        text?: string;
+    reviewBadge: string;
+    colors: {
+        primary: string;
+        accent: string;
+        text: string;
     };
-    services: ClientService[];
+    featuredServices: ClientService[];
+    serviceCategories: ClientServiceCategory[];
     testimonials: ClientTestimonial[];
+    insurancePartners: string[];
     contact: ClientContact;
     sourceUrl: string;
 }
@@ -47,52 +63,98 @@ const CLIENTS: Record<string, ClientData> = {
         tagline: "Your smile, our priority.",
         description:
             "Dentoc Dental Clinic is a leading provider of comprehensive dental care in Ghana, offering a wide range of services with state-of-the-art technology and a team of highly skilled professionals — from general dentistry to advanced implants and root canals.",
+        aboutText:
+            "Dentoc Dental Clinic is a private dental clinic based in Accra, offering high quality dental services across General Dentistry, Advanced Dentistry, and Cosmetic Dentistry. We take great pride in the professionalism and innovation of our highly skilled team and in the quality of the treatments we deliver to our patients. At the heart of our treatment is the need for you to leave with the best positive experience.",
         mission:
-            "To provide exceptional and comprehensive dental care to our patients in a welcoming and professional environment.",
+            "To provide exceptional and comprehensive dental care to our patients in a welcoming and professional environment, while educating and encouraging them towards a state of optimal oral health.",
         vision:
             "To deliver an exceptional personal experience in dental care predicated on good quality service and to promote a relationship built on trust.",
         heroImage: "/client-demos/dentocdental/images/T8.jpg",
         logo: "/client-demos/dentocdental/images/Logo_dentoc_new.png",
+        reviewBadge: "/client-demos/dentocdental/images/dentoc_reviews.png",
         colors: {
             primary: "#FF9700",
             accent: "#FF9700",
             text: "#004551",
         },
-        services: [
+        featuredServices: [
             {
                 id: "teeth-whitening",
                 name: "Teeth Whitening",
-                description: "Designed to brighten your smile. We remove stains caused by food, drinks, and aging, using professional-grade whitening products that deliver safe and effective results.",
+                description:
+                    "Designed to brighten your smile. We remove stains caused by food, drinks, and aging, using professional-grade whitening products that deliver safe and effective results.",
                 icon: "Sparkles",
                 image: "/client-demos/dentocdental/images/whitening.jpg",
             },
             {
                 id: "periodontal",
                 name: "Periodontal",
-                description: "Healthy gums are key to overall oral health. Our periodontal treatments address gum diseases like gingivitis or periodontitis, with deep cleaning and other treatments that help restore gum health and prevent tooth loss.",
+                description:
+                    "Healthy gums are key to overall oral health. Our periodontal treatments address gum diseases like gingivitis or periodontitis, with deep cleaning that helps restore gum health and prevent tooth loss.",
                 icon: "ShieldPlus",
                 image: "/client-demos/dentocdental/images/gum_dentoc.jpg",
             },
             {
                 id: "orthodontics",
                 name: "Orthodontics",
-                description: "Whether you go with traditional braces or prefer the discreet option of Invisalign, our orthodontic treatments will straighten your teeth and improve your bite for a healthier, more beautiful smile.",
+                description:
+                    "Whether you go with traditional braces or prefer the discreet option of Invisalign, our orthodontic treatments will straighten your teeth and improve your bite for a healthier smile.",
                 icon: "SmilePlus",
                 image: "/client-demos/dentocdental/images/dentoc_serv.jpg",
             },
             {
                 id: "extractions",
                 name: "Tooth Extractions",
-                description: "Sometimes a tooth can't be saved. Our tooth extraction service ensures that any severely damaged or decayed teeth are gently removed, helping prevent further issues.",
+                description:
+                    "Sometimes a tooth can't be saved. Our extraction service ensures severely damaged or decayed teeth are gently removed, helping prevent further issues.",
                 icon: "Cross",
                 image: "/client-demos/dentocdental/images/Tooth.jpg",
             },
             {
                 id: "implants",
                 name: "Dental Implants",
-                description: "Our dental implants are the perfect solution for missing teeth. We place a titanium post into the jawbone to support a crown or bridge, creating a natural-looking, permanent replacement.",
+                description:
+                    "Our dental implants are the perfect solution for missing teeth. We place a titanium post into the jawbone to support a crown or bridge, creating a natural-looking, permanent replacement.",
                 icon: "Stethoscope",
                 image: "/client-demos/dentocdental/images/cosmeti_dentoc.jpg",
+            },
+        ],
+        serviceCategories: [
+            {
+                id: "general",
+                label: "General & Preventive",
+                services: [
+                    { id: "checkups", name: "Routine Check-ups & Cleanings", description: "Examination for signs of issues plus a professional clean to remove plaque and tartar, keeping your smile fresh and healthy.", icon: "Stethoscope" },
+                    { id: "cavity-fillings", name: "Cavity Fillings", description: "Durable, tooth-colored materials that blend seamlessly with your natural teeth for a discreet solution.", icon: "ShieldPlus" },
+                    { id: "preventive-care", name: "Preventive Care", description: "Tips, treatments, and exams to help you avoid cavities, gum disease, and other oral health issues long-term.", icon: "ShieldPlus" },
+                    { id: "digital-xrays", name: "Digital X-rays", description: "Fast, accurate assessment of teeth and gums with clear imaging that helps diagnose problems early while minimizing radiation exposure.", icon: "Stethoscope" },
+                    { id: "fluoride", name: "Fluoride Treatments", description: "Strengthen teeth and prevent cavities — an easy, effective way to protect your smile if you're at higher risk of decay.", icon: "Sparkles" },
+                    { id: "sealants", name: "Sealants", description: "A protective coating applied to the chewing surfaces of your molars, shielding hard-to-reach teeth from decay.", icon: "ShieldPlus" },
+                ],
+            },
+            {
+                id: "cosmetic",
+                label: "Cosmetic Dentistry",
+                services: [
+                    { id: "teeth-whitening-2", name: "Teeth Whitening", description: "Professional-grade whitening that removes stains from food, drinks, and aging for a brighter smile.", icon: "Sparkles" },
+                    { id: "veneers", name: "Veneers", description: "Thin shells placed over teeth to correct discoloration, chips, or misalignment for a flawless, natural look.", icon: "SmilePlus" },
+                    { id: "bonding", name: "Bonding", description: "Tooth-colored resin applied to repair small chips or gaps, giving teeth a smoother, more uniform appearance.", icon: "SmilePlus" },
+                    { id: "invisalign", name: "Invisalign", description: "Discreet, comfortable, custom-made clear aligners that gradually shift teeth into place without traditional braces.", icon: "SmilePlus" },
+                    { id: "smile-makeovers", name: "Smile Makeovers", description: "Multiple cosmetic treatments tailored to your needs — whitening, veneers, and more — for your dream smile.", icon: "Sparkles" },
+                    { id: "contouring", name: "Contouring & Reshaping", description: "A quick procedure that addresses minor imperfections and makes your teeth look more balanced.", icon: "SmilePlus" },
+                ],
+            },
+            {
+                id: "restorative",
+                label: "Advanced & Restorative",
+                services: [
+                    { id: "implants-2", name: "Dental Implants", description: "A permanent solution for missing teeth — a titanium post supports a crown, bridge, or denture that feels just like your own teeth.", icon: "Stethoscope" },
+                    { id: "crowns", name: "Crowns", description: "Restore strength and function to a damaged tooth with a crown matched to the color and shape of your natural teeth.", icon: "ShieldPlus" },
+                    { id: "bridges", name: "Bridges", description: "Fill the gap from missing teeth by anchoring artificial teeth to adjacent natural teeth or implants.", icon: "ShieldPlus" },
+                    { id: "root-canals", name: "Root Canals", description: "Remove infected tissue, clean, and seal a damaged tooth to save it and restore function, preventing extraction.", icon: "Cross" },
+                    { id: "dentures", name: "Partial & Full Dentures", description: "Custom-made dentures that restore your smile and make it easier to eat and speak, with a natural look and feel.", icon: "SmilePlus" },
+                    { id: "fillings-2", name: "Fillings", description: "Durable, tooth-colored fillings that restore the integrity of teeth affected by cavities or minor decay.", icon: "ShieldPlus" },
+                ],
             },
         ],
         testimonials: [
@@ -114,11 +176,37 @@ const CLIENTS: Record<string, ClientData> = {
                 text: "Very good service with friendly staff. I did teeth cleaning and my son also had his tooth filled. The process was smooth and the quality is good.",
                 rating: 5,
             },
+            {
+                id: "t4",
+                author: "Rehana Yusif",
+                text: "Dr. Emmanuel took his time to explain everything to me and made sure that I was well taken care of. Everyone was very professional and friendly. My results were more than what I expected.",
+                rating: 5,
+            },
+        ],
+        insurancePartners: [
+            "/client-demos/dentocdental/images/acacia.png",
+            "/client-demos/dentocdental/images/GHIC.png",
+            "/client-demos/dentocdental/images/glico.png",
+            "/client-demos/dentocdental/images/nationwide.png",
+            "/client-demos/dentocdental/images/ace.png",
+            "/client-demos/dentocdental/images/star.png",
+            "/client-demos/dentocdental/images/premier.png",
+            "/client-demos/dentocdental/images/phoenix.png",
+            "/client-demos/dentocdental/images/metro.png",
+            "/client-demos/dentocdental/images/equity.png",
         ],
         contact: {
             email: "contact@dentocdental.com",
             phone: "+233244881961",
+            website: "www.dentocdental.com",
             address: "Numo Tetteh Kwao St, Adjiringanor, East Legon, Accra, Ghana",
+            branches: [
+                { name: "East Legon Branch" },
+                { name: "Ashiaman Branch" },
+                { name: "Weija Branch" },
+                { name: "Nkawkaw Branch" },
+                { name: "Sunyani Branch" },
+            ],
             social: {
                 facebook: "https://facebook.com/dentocdentalclinic",
                 instagram: "https://instagram.com/dentocdentalclinic",

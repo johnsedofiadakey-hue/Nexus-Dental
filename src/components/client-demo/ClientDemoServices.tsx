@@ -1,32 +1,43 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
+import { ArrowRight } from "lucide-react";
 import { getClientIcon } from "./iconMap";
 import type { ClientData } from "@/lib/client-demo/config";
 
 export default function ClientDemoServices({ client }: { client: ClientData }) {
     const ref = useRef(null);
     const isInView = useInView(ref, { once: true, margin: "-80px" });
+    const primary = client.colors.primary;
 
     return (
         <section id="services" className="section-padding bg-bg" ref={ref}>
-            <div className="mx-auto max-w-7xl">
+            <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
                 <motion.div
                     initial={{ opacity: 0, y: 18 }}
                     animate={isInView ? { opacity: 1, y: 0 } : {}}
                     transition={{ duration: 0.55 }}
-                    className="mb-12 max-w-2xl"
+                    className="mb-12 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between"
                 >
-                    <span className="eyebrow">What we offer</span>
-                    <h2 className="mt-4 font-[family-name:var(--font-heading)] text-4xl leading-tight tracking-[-0.025em] text-secondary sm:text-5xl">
-                        Complete care for {client.name.split(" ")[0]} patients.
-                    </h2>
+                    <div className="max-w-2xl">
+                        <span className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold uppercase tracking-wide" style={{ backgroundColor: `${primary}18`, color: primary }}>
+                            What we offer
+                        </span>
+                        <h2 className="mt-4 font-[family-name:var(--font-heading)] text-4xl leading-tight tracking-[-0.025em] sm:text-5xl" style={{ color: client.colors.text }}>
+                            Complete care for every smile.
+                        </h2>
+                    </div>
+                    <Link href={`/client-demo/${client.id}/services`} className="inline-flex items-center gap-2 text-sm font-bold no-underline" style={{ color: primary }}>
+                        Explore all services
+                        <ArrowRight className="h-4 w-4" />
+                    </Link>
                 </motion.div>
 
                 <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-                    {client.services.map((service, index) => {
+                    {client.featuredServices.map((service, index) => {
                         const Icon = getClientIcon(service.icon);
                         return (
                             <motion.article
@@ -38,7 +49,7 @@ export default function ClientDemoServices({ client }: { client: ClientData }) {
                             >
                                 <div className="relative h-44 w-full overflow-hidden">
                                     <Image
-                                        src={service.image}
+                                        src={service.image ?? client.heroImage}
                                         alt={service.name}
                                         fill
                                         sizes="(max-width: 768px) 100vw, 33vw"
