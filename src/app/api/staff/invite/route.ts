@@ -120,12 +120,21 @@ export async function DELETE(request: NextRequest) {
         if ("error" in authResult) return authResult.error;
         const { user } = authResult;
 
+        const staffUser = user as JWTPayload;
+        if (!["CLINIC_OWNER", "ADMIN"].includes(staffUser.role)) {
+            return apiError("Only clinic owners and admins can revoke staff invites", 403);
+        }
+
         const { searchParams } = new URL(request.url);
         const id = searchParams.get("id");
         if (!id) return apiError("id is required", 400);
 
         const invite = await prisma.staffInvite.findUnique({ where: { id } });
         if (!invite) return apiError("Invite not found", 404);
+
+        if (invite.tenantId !== staffUser.tenantId) {
+            return apiError("Invite not found", 404);
+        }
 
         await prisma.staffInvite.delete({ where: { id } });
         return apiSuccess({ revoked: true });

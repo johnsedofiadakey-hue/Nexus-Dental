@@ -5,7 +5,13 @@
 import jwt from "jsonwebtoken";
 import { JWTPayload, PatientJWTPayload, AUTH_CONFIG } from "./types";
 
-const JWT_SECRET = process.env.JWT_SECRET || "nexus-dental-jwt-secret-change-in-production";
+if (!process.env.JWT_SECRET) {
+    throw new Error(
+        "JWT_SECRET environment variable is not set. Refusing to start with a hardcoded fallback secret."
+    );
+}
+
+const JWT_SECRET = process.env.JWT_SECRET;
 
 /**
  * Sign a JWT token for staff or system owner.

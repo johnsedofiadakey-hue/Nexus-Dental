@@ -36,7 +36,10 @@ export async function GET(
                         doctor: {
                             select: { id: true, firstName: true, lastName: true },
                         },
-                        services: {
+                        service: {
+                            select: { id: true, name: true, category: true },
+                        },
+                        additionalServices: {
                             select: { id: true, name: true, category: true },
                         },
                     },
@@ -68,7 +71,12 @@ export async function GET(
             return apiError("Patient not found", 404);
         }
 
-        return apiSuccess(patient);
+        const appointments = patient.appointments.map(({ service, additionalServices, ...appt }: any) => ({
+            ...appt,
+            services: [service, ...(additionalServices || [])].filter(Boolean),
+        }));
+
+        return apiSuccess({ ...patient, appointments });
     } catch (error) {
         console.error("[Patient] Detail error:", error);
         return apiError("Internal server error", 500);
@@ -92,6 +100,10 @@ export async function PATCH(
 
         const patient = await prisma.patient.findUnique({ where: { id } });
         if (!patient) {
+            return apiError("Patient not found", 404);
+        }
+
+        if (patient.tenantId !== staffUser.tenantId) {
             return apiError("Patient not found", 404);
         }
 

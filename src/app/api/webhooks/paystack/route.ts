@@ -34,8 +34,10 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ received: true });
     } catch (error) {
         console.error("[Paystack Webhook] Handler error:", error);
-        // Return 200 anyway — Paystack will retry on 4xx/5xx
-        return NextResponse.json({ received: true, warning: "Handler error, check logs" });
+        // Return a real failure so Paystack actually retries — a 200 here would
+        // tell Paystack the webhook succeeded and it would never retry, silently
+        // leaving the invoice unpaid.
+        return NextResponse.json({ received: false, error: "Handler error, check logs" }, { status: 500 });
     }
 }
 

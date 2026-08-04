@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
-import { requireAuth, apiError, apiSuccess, JWTPayload } from "@/lib/auth";
+import { requireAuth, requirePermission, PERMISSIONS, apiError, apiSuccess, JWTPayload } from "@/lib/auth";
 import { logAudit, getClientIP, getUserAgent } from "@/lib/audit/logger";
 
 export async function POST(
@@ -16,6 +16,9 @@ export async function POST(
         const { id } = await params;
         const auth = requireAuth(request);
         if ("error" in auth) return auth.error;
+
+        const permCheck = requirePermission(auth.user, PERMISSIONS.PRESCRIPTIONS_DISPENSE);
+        if (permCheck) return permCheck;
 
         const tenantId = auth.user.tenantId;
         if (!tenantId) {

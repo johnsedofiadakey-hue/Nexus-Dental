@@ -107,6 +107,7 @@ export const PERMISSIONS = {
     PRESCRIPTIONS_VIEW: "prescriptions:view",
     PRESCRIPTIONS_CREATE: "prescriptions:create",
     PRESCRIPTIONS_UPDATE: "prescriptions:update",
+    PRESCRIPTIONS_DISPENSE: "prescriptions:dispense",
 
     // Support
     SUPPORT_VIEW: "support:view",
@@ -176,6 +177,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRoleType, string[]> = {
         PERMISSIONS.PRESCRIPTIONS_VIEW,
         PERMISSIONS.PRESCRIPTIONS_CREATE,
         PERMISSIONS.PRESCRIPTIONS_UPDATE,
+        PERMISSIONS.PRESCRIPTIONS_DISPENSE,
         PERMISSIONS.SUPPORT_VIEW,
         PERMISSIONS.SUPPORT_RESPOND,
         PERMISSIONS.SUPPORT_ESCALATE,
@@ -188,6 +190,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRoleType, string[]> = {
         PERMISSIONS.STAFF_DELETE,
         PERMISSIONS.SETTINGS_VIEW,
         PERMISSIONS.SETTINGS_UPDATE,
+        PERMISSIONS.SERVICES_VIEW,
+        PERMISSIONS.SERVICES_MANAGE,
         PERMISSIONS.AUDIT_VIEW,
     ],
 
@@ -199,6 +203,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRoleType, string[]> = {
         PERMISSIONS.PRESCRIPTIONS_VIEW,
         PERMISSIONS.PRESCRIPTIONS_CREATE,
         PERMISSIONS.PRESCRIPTIONS_UPDATE,
+        PERMISSIONS.PRESCRIPTIONS_DISPENSE,
         PERMISSIONS.SUPPORT_VIEW,
         PERMISSIONS.SUPPORT_RESPOND,
         PERMISSIONS.REPORTS_VIEW,
@@ -210,6 +215,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<UserRoleType, string[]> = {
         PERMISSIONS.APPOINTMENTS_UPDATE,
         PERMISSIONS.PATIENTS_VIEW,
         PERMISSIONS.PATIENTS_UPDATE,
+        PERMISSIONS.PRESCRIPTIONS_DISPENSE,
         PERMISSIONS.PRESCRIPTIONS_VIEW,
         PERMISSIONS.SUPPORT_VIEW,
         PERMISSIONS.INVENTORY_VIEW,
@@ -256,10 +262,19 @@ export const VALID_APPOINTMENT_TRANSITIONS: Record<string, string[]> = {
     IN_IMAGING: ["IN_CHAIR"],
     IN_CHAIR: ["COMPLETED"],
     COMPLETED: ["CHECKOUT"],
-    CHECKOUT: [],
-    CANCELLED: [],
-    NO_SHOW: [],
+    // Terminal states can be reopened back to SCHEDULED to recover from a
+    // mis-click — restricted to ADMIN/CLINIC_OWNER, enforced in the status
+    // route handler alongside this transition map (see REOPENABLE_STATUSES).
+    CHECKOUT: ["SCHEDULED"],
+    CANCELLED: ["SCHEDULED"],
+    NO_SHOW: ["SCHEDULED"],
 };
+
+// Statuses that require elevated (ADMIN/CLINIC_OWNER) permission to reopen —
+// kept separate from VALID_APPOINTMENT_TRANSITIONS so the general transition
+// check stays role-agnostic and this one extra rule is explicit and easy to find.
+export const REOPENABLE_STATUSES = ["CHECKOUT", "CANCELLED", "NO_SHOW"] as const;
+export const REOPEN_ALLOWED_ROLES = ["ADMIN", "CLINIC_OWNER", "SYSTEM_OWNER"] as const;
 
 // ─────────────────────────────────────────────
 // Emergency Keywords for Support Triage
@@ -284,7 +299,11 @@ export const EMERGENCY_KEYWORDS = [
 
 export const AUTH_CONFIG = {
     JWT_EXPIRATION: "24h",
-    PATIENT_JWT_EXPIRATION: "7d",
+    // Patient sessions are renewed whenever /api/auth/me is successfully
+    // loaded. Keeping the JWT and cookie lifetimes identical prevents a
+    // stale cookie from surviving after its token has expired.
+    PATIENT_JWT_EXPIRATION: "30d",
+    PATIENT_SESSION_MAX_AGE_SECONDS: 60 * 60 * 24 * 30,
     OTP_TTL_SECONDS: 300, // 5 minutes
     OTP_LENGTH: 6,
     MAX_OTP_ATTEMPTS: 3,

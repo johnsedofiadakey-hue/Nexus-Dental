@@ -46,7 +46,8 @@ function getInitials(name: string): string {
 
 function statusColor(status: string) {
     switch (status) {
-        case "CONFIRMED": return "bg-teal-50 text-teal-700 border-teal-100";
+        case "CHECKED_IN": return "bg-blue-50 text-blue-700 border-blue-100";
+        case "IN_CHAIR": return "bg-amber-50 text-amber-700 border-amber-100";
         case "PENDING": return "bg-amber-50 text-amber-700 border-amber-100";
         case "CANCELLED": return "bg-red-50 text-red-700 border-red-100";
         case "COMPLETED": return "bg-slate-100 text-slate-600 border-slate-200";
@@ -141,7 +142,7 @@ export default function PatientPortal() {
             </div>
 
             {/* Quick Actions */}
-            <div className="grid grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-2 gap-3 mb-8 sm:grid-cols-3 sm:gap-4">
                 <Link href="/booking">
                     <div className="flex flex-col items-center justify-center gap-2 p-5 rounded-2xl bg-white ring-1 ring-slate-100 hover:shadow-md hover:ring-teal-200 transition-all cursor-pointer text-center">
                         <div className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center">
@@ -158,7 +159,7 @@ export default function PatientPortal() {
                         <span className="text-sm font-semibold text-slate-800">View Records</span>
                     </div>
                 </Link>
-                <Link href="/portal/prescriptions">
+                <Link href="/portal/prescriptions" className="col-span-2 sm:col-span-1">
                     <div className="flex flex-col items-center justify-center gap-2 p-5 rounded-2xl bg-white ring-1 ring-slate-100 hover:shadow-md hover:ring-teal-200 transition-all cursor-pointer text-center">
                         <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
                             <Pill className="w-5 h-5 text-purple-600" />
@@ -327,7 +328,7 @@ export default function PatientPortal() {
                                             {recentPrescription.items?.length ?? recentPrescription.medications?.length ?? 0} medication(s)
                                         </span>
                                         <Badge className={
-                                            recentPrescription.status === "DISPENSED"
+                                            recentPrescription.status === "FILLED"
                                                 ? "bg-emerald-50 text-emerald-700 border-emerald-100"
                                                 : recentPrescription.status === "CANCELLED"
                                                     ? "bg-red-50 text-red-700 border-red-100"
@@ -365,7 +366,10 @@ export default function PatientPortal() {
                             <p className="text-sm text-slate-600 mb-6">
                                 Need urgent advice? Our online dentists are available 24/7 for dental triage and emergency consultations.
                             </p>
-                            <Button className="w-full bg-amber-600 hover:bg-amber-700 shadow-amber-600/10 gap-2">
+                            <Button
+                                className="w-full bg-amber-600 hover:bg-amber-700 shadow-amber-600/10 gap-2"
+                                onClick={() => router.push("/portal/telehealth")}
+                            >
                                 Join Virtual Waiting Room <ArrowRight className="w-4 h-4" />
                             </Button>
                         </CardContent>

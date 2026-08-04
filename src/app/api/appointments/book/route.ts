@@ -10,6 +10,7 @@ import { getClinicId } from "@/lib/clinic";
 import { acquireSlotLock, confirmSlotLock } from "@/lib/booking";
 import { logAudit, getClientIP, getUserAgent } from "@/lib/audit/logger";
 import { appointmentQueue } from "@/lib/queue/queues";
+import { sendNotification } from "@/lib/sms/hubtel";
 import type { PatientJWTPayload, JWTPayload } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
@@ -68,13 +69,17 @@ export async function POST(request: NextRequest) {
         let finalPatientId: string;
         let isNewPatient = false;
 
-        if (user) {
-            if (user.type === "PATIENT") {
-                finalPatientId = (user as PatientJWTPayload).patientId;
-            } else {
-                if (!reqPatientId) return apiError("patientId is required when staff books for a patient", 400);
-                finalPatientId = reqPatientId;
+        if (user && user.type === "PATIENT") {
+            finalPatientId = (user as PatientJWTPayload).patientId;
+            const existingPatient = await prisma.patient.findFirst({
+                where: { id: finalPatientId, tenantId }
+            });
+            if (!existingPatient) {
+                return apiError("Patient not found", 404);
             }
+        } else if (user && reqPatientId) {
+            // Staff booking for a specific, already-identified patient
+            finalPatientId = reqPatientId;
             const existingPatient = await prisma.patient.findFirst({
                 where: { id: finalPatientId, tenantId }
             });
@@ -82,9 +87,9 @@ export async function POST(request: NextRequest) {
                 return apiError("Patient not found", 404);
             }
         } else {
-            // Guest booking -> auto-onboard patient
+            // Guest booking, or staff booking a walk-in/returning patient by name & phone -> find or create
             if (!firstName || !lastName || !phone) {
-                return apiError("firstName, lastName, and phone are required for guest booking. Please log in or provide details.", 401);
+                return apiError("firstName, lastName, and phone are required when no patientId is provided.", 400);
             }
             let normalizedPhone = phone.trim();
             if (normalizedPhone.startsWith("0")) normalizedPhone = normalizedPhone.substring(1);
@@ -98,7 +103,11 @@ export async function POST(request: NextRequest) {
                     data: { tenantId, phone: normalizedPhone, firstName, lastName }
                 });
                 isNewPatient = true;
-                console.log(`[SMS Simulation] Sent to ${normalizedPhone}: "Welcome to Nexus Dental! Your portal is ready. Login with this phone number to manage your appointments."`);
+                await sendNotification(
+                    normalizedPhone,
+                    "Welcome to Nexus Dental! Your portal is ready. Login with this phone number to manage your appointments.",
+                    "sms"
+                ).catch((err) => console.error("[Booking] Welcome SMS failed:", err));
             }
             finalPatientId = patient.id;
         }

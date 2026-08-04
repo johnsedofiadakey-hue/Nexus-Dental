@@ -10,6 +10,8 @@ import {
     requirePermission,
     PERMISSIONS,
     VALID_APPOINTMENT_TRANSITIONS,
+    REOPENABLE_STATUSES,
+    REOPEN_ALLOWED_ROLES,
     apiError,
     apiSuccess,
 } from "@/lib/auth";
@@ -49,6 +51,10 @@ export async function PATCH(
             return apiError("Appointment not found", 404);
         }
 
+        if (appointment.tenantId !== staffUser.tenantId) {
+            return apiError("Appointment not found", 404);
+        }
+
         // Validate state transition
         const currentStatus = appointment.status;
         const allowedTransitions = VALID_APPOINTMENT_TRANSITIONS[currentStatus];
@@ -57,6 +63,19 @@ export async function PATCH(
             return apiError(
                 `Invalid transition: ${currentStatus} → ${newStatus}. Allowed: ${(allowedTransitions || []).join(", ") || "none"}`,
                 422
+            );
+        }
+
+        // Reopening a terminal status (CHECKOUT/CANCELLED/NO_SHOW back to
+        // SCHEDULED) is restricted to elevated roles — a mis-click shouldn't
+        // be silently reversible by just anyone with APPOINTMENTS_UPDATE.
+        if (
+            (REOPENABLE_STATUSES as readonly string[]).includes(currentStatus) &&
+            !(REOPEN_ALLOWED_ROLES as readonly string[]).includes(staffUser.role)
+        ) {
+            return apiError(
+                `Only ${REOPEN_ALLOWED_ROLES.join("/")} can reopen an appointment from ${currentStatus}`,
+                403
             );
         }
 
@@ -78,7 +97,10 @@ export async function PATCH(
                     doctor: {
                         select: { id: true, firstName: true, lastName: true },
                     },
-                    services: {
+                    service: {
+                        select: { name: true, duration: true },
+                    },
+                    additionalServices: {
                         select: { name: true, duration: true },
                     },
                 },
@@ -95,7 +117,8 @@ export async function PATCH(
                 },
             });
 
-            return updatedAppointment;
+            const { service, additionalServices, ...rest } = updatedAppointment;
+            return { ...rest, services: [service, ...(additionalServices || [])].filter(Boolean) };
         });
 
         // Audit log

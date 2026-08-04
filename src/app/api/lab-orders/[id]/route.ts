@@ -44,6 +44,21 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
             notes,
         } = body;
 
+        // Validate status transitions against the defined progression — a lab
+        // order can only move to the next stage in sequence, or be cancelled
+        // outright (matching the DELETE handler's soft-cancel semantics).
+        if (status && status !== existing.status) {
+            const allowedNext = STATUS_PROGRESSION[existing.status];
+            const isValidProgression = status === allowedNext;
+            const isCancellation = status === "CANCELLED";
+            if (!isValidProgression && !isCancellation) {
+                return apiError(
+                    `Invalid transition: ${existing.status} → ${status}. Expected: ${allowedNext ?? "no further progression"} or CANCELLED.`,
+                    422
+                );
+            }
+        }
+
         // Auto-set timestamps
         const autoTimestamps: { receivedAt?: Date; fittedAt?: Date } = {};
         if (status === "LAB_RECEIVED" && !existing.receivedAt) {

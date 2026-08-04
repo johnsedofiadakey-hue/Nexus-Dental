@@ -1,9 +1,17 @@
 import { AuthUser } from "./auth";
 
-// Single-clinic configuration. Set CLINIC_ID in your .env to the tenant ID
-// created when you first ran the seed script.
+// Single-clinic-per-deployment configuration. Set CLINIC_ID in your .env to
+// the tenant ID created when you first ran the seed script.
+//
+// No hardcoded fallback: a deployment with CLINIC_ID unset must fail to
+// start rather than silently resolving to some other clinic's tenant ID.
 export function getClinicId(): string {
-    const id = process.env.CLINIC_ID || "airport-hills-dental";
+    const id = process.env.CLINIC_ID;
+    if (!id) {
+        throw new Error(
+            "CLINIC_ID environment variable is not set. Refusing to fall back to a hardcoded clinic ID."
+        );
+    }
     return id;
 }
 
@@ -18,7 +26,7 @@ export function getClinicId(): string {
 export function getTenantIdFromUser(user: AuthUser): string {
     if (user.type === "SYSTEM_OWNER") {
         // System owners can access any clinic, but default to env var
-        return process.env.CLINIC_ID || "airport-hills-dental";
+        return getClinicId();
     }
 
     // Staff and patients have tenantId in JWT
@@ -28,5 +36,5 @@ export function getTenantIdFromUser(user: AuthUser): string {
 
     // Fallback (should not reach here if JWT is valid)
     console.warn("[getTenantIdFromUser] User missing tenantId; falling back to CLINIC_ID");
-    return process.env.CLINIC_ID || "airport-hills-dental";
+    return getClinicId();
 }
