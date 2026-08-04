@@ -103,8 +103,14 @@ env:
   - variable: BACKUP_WEBHOOK_SECRET
     secret: BACKUP_WEBHOOK_SECRET
 
-  - variable: GITHUB_ACTIONS_TOKEN
-    secret: GITHUB_ACTIONS_TOKEN
+  # GITHUB_ACTIONS_TOKEN intentionally omitted — only needed for the optional
+  # manual "run backup now" dispatch button (src/lib/system/backups.ts,
+  # triggerManualBackup). Add it back here once that secret actually exists:
+  #   firebase apphosting:secrets:set GITHUB_ACTIONS_TOKEN --project nexusdentalsystem
+  #   firebase apphosting:secrets:grantaccess GITHUB_ACTIONS_TOKEN --backend nexusdental --project nexusdentalsystem
+  # then re-add:
+  #   - variable: GITHUB_ACTIONS_TOKEN
+  #     secret: GITHUB_ACTIONS_TOKEN
 
   - variable: GITHUB_REPO
     value: johnsedofiadakey-hue/Nexus-Dental
