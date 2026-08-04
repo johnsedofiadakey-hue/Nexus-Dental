@@ -1,5 +1,12 @@
 export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
+    const Sentry = await import('@sentry/nextjs');
+    Sentry.init({
+      dsn: process.env.SENTRY_DSN,
+      tracesSampleRate: 0.1,
+      debug: false,
+    });
+
     console.log('[Instrumentation] Initializing workers...');
 
     try {
@@ -7,6 +14,7 @@ export async function register() {
       const appointmentWorker = await import('@/lib/queue/workers/appointment.worker');
       const notificationWorker = await import('@/lib/queue/workers/notification.worker');
       const recallWorker = await import('@/lib/queue/workers/recall.worker');
+      const insuranceReminderWorker = await import('@/lib/queue/workers/insurance-reminder.worker');
       const { registerWorker } = await import('@/lib/queue/manager');
 
       // Register workers for lifecycle management
@@ -18,6 +26,9 @@ export async function register() {
       }
       if (recallWorker.recallWorker) {
         registerWorker('recall', recallWorker.recallWorker);
+      }
+      if (insuranceReminderWorker.insuranceReminderWorker) {
+        registerWorker('insurance-reminder', insuranceReminderWorker.insuranceReminderWorker);
       }
 
       console.log('[Instrumentation] Workers initialized successfully');
@@ -38,4 +49,18 @@ export async function register() {
     process.on('SIGTERM', () => handleShutdown('SIGTERM'));
     process.on('SIGINT', () => handleShutdown('SIGINT'));
   }
+
+  if (process.env.NEXT_RUNTIME === 'edge') {
+    const Sentry = await import('@sentry/nextjs');
+    Sentry.init({
+      dsn: process.env.SENTRY_DSN,
+      tracesSampleRate: 0.1,
+      debug: false,
+    });
+  }
 }
+
+export const onRequestError = async (...args: Parameters<typeof import('@sentry/nextjs').captureRequestError>) => {
+  const Sentry = await import('@sentry/nextjs');
+  Sentry.captureRequestError(...args);
+};

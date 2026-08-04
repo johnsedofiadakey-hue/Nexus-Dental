@@ -99,3 +99,15 @@ env:
 
   - variable: HUBTEL_WHATSAPP_NUMBER
     secret: HUBTEL_WHATSAPP_NUMBER
+
+  - variable: BACKUP_WEBHOOK_SECRET
+    secret: BACKUP_WEBHOOK_SECRET
+
+  - variable: GITHUB_ACTIONS_TOKEN
+    secret: GITHUB_ACTIONS_TOKEN
+
+  - variable: GITHUB_REPO
+    value: johnsedofiadakey-hue/Nexus-Dental
+    availability:
+      - BUILD
+      - RUNTIME

@@ -1,163 +1,171 @@
 // ============================================
 // NEXUS DENTAL — System Owner: Backup System
-// Trigger, list, metadata for database backups
+// Real backups run nightly via .github/workflows/backup.yml
+// (scripts/run-backup.js), which calls POST /api/system/backups/complete
+// to record each run here. This module only reads/writes BackupLog —
+// it does not perform the dump itself (see scripts/run-backup.js).
 // ============================================
 
 import prisma from "@/lib/db/prisma";
 import { logAudit } from "@/lib/audit/logger";
 
-export interface BackupMetadata {
-    id: string;
-    tenantId: string | null; // null = full system backup
+export interface BackupRecordInput {
     type: "FULL" | "INCREMENTAL" | "TENANT";
+    tenantId?: string | null;
     status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "FAILED";
-    size?: number;
+    filePath?: string;
+    fileSize?: number;
+    triggeredBy: string;
     startedAt: Date;
     completedAt?: Date;
-    storagePath?: string;
-    retention: string;
-    triggeredBy: string;
-    error?: string;
+    errorMessage?: string;
 }
 
-// In-memory backup registry (in production, this would be a DB table or S3 metadata)
-const backupRegistry: BackupMetadata[] = [];
-
 /**
- * Trigger a database backup.
- *
- * In production, this would:
- * 1. pg_dump to a temp file
- * 2. Encrypt with AES-256
- * 3. Upload to S3 with lifecycle policy
- * 4. Record metadata
+ * Record the outcome of a backup run (called from
+ * POST /api/system/backups/complete, authenticated by shared secret —
+ * this is the only writer of BackupLog).
  */
-export async function triggerBackup(
-    type: "FULL" | "INCREMENTAL" | "TENANT",
-    systemOwnerId: string,
-    tenantId?: string,
-    retention: string = "30d"
-): Promise<BackupMetadata> {
-    const backupId = `bkp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-
-    const backup: BackupMetadata = {
-        id: backupId,
-        tenantId: tenantId || null,
-        type,
-        status: "IN_PROGRESS",
-        startedAt: new Date(),
-        retention,
-        triggeredBy: systemOwnerId,
-    };
-
-    backupRegistry.push(backup);
-
-    try {
-        // Simulate backup process
-        // In production: pg_dump → encrypt → S3 upload
-        console.log(
-            `[Backup] Starting ${type} backup${tenantId ? ` for tenant ${tenantId}` : ""}`
-        );
-
-        if (type === "TENANT" && tenantId) {
-            // Get tenant data counts for size estimation
-            const [users, patients, appointments] = await Promise.all([
-                prisma.user.count({ where: { tenantId } }),
-                prisma.patient.count({ where: { tenantId } }),
-                prisma.appointment.count({ where: { tenantId } }),
-            ]);
-            backup.size = (users + patients + appointments) * 1024; // Rough estimate
-        } else {
-            // Full system stats
-            const [tenants, users, patients] = await Promise.all([
-                prisma.tenant.count(),
-                prisma.user.count(),
-                prisma.patient.count(),
-            ]);
-            backup.size = (tenants + users + patients) * 2048;
-        }
-
-        // Simulate S3 path
-        const dateStr = new Date().toISOString().split("T")[0];
-        backup.storagePath = `s3://nexus-dental-backups/${dateStr}/${backupId}.enc`;
-        backup.status = "COMPLETED";
-        backup.completedAt = new Date();
-
-        console.log(
-            `[Backup] Completed: ${backup.storagePath} (${formatBytes(backup.size || 0)})`
-        );
-    } catch (error) {
-        backup.status = "FAILED";
-        backup.error =
-            error instanceof Error ? error.message : "Backup failed";
-        backup.completedAt = new Date();
-    }
-
-    // Audit
-    await logAudit({
-        tenantId: null,
-        userId: systemOwnerId,
-        action: "BACKUP_TRIGGERED",
-        entity: "Backup",
-        entityId: backupId,
-        newValue: {
-            type,
-            status: backup.status,
-            size: backup.size,
-            storagePath: backup.storagePath,
-            retention,
+export async function recordBackup(input: BackupRecordInput) {
+    const backup = await prisma.backupLog.create({
+        data: {
+            type: input.type,
+            tenantId: input.tenantId ?? undefined,
+            status: input.status,
+            filePath: input.filePath,
+            fileSize: input.fileSize ? BigInt(input.fileSize) : undefined,
+            triggeredBy: input.triggeredBy,
+            startedAt: input.startedAt,
+            completedAt: input.completedAt,
+            errorMessage: input.errorMessage,
         },
     });
 
-    return backup;
+    await logAudit({
+        tenantId: null,
+        userId: null,
+        action: input.status === "FAILED" ? "BACKUP_FAILED" : "BACKUP_COMPLETED",
+        entity: "Backup",
+        entityId: backup.id,
+        newValue: {
+            type: input.type,
+            status: input.status,
+            fileSize: input.fileSize,
+            filePath: input.filePath,
+        },
+    });
+
+    return serializeBackup(backup);
 }
 
 /**
- * List backup history.
+ * Dispatch a manual "run now" backup via the GitHub Actions workflow.
+ * Does not write a BackupLog row itself — the workflow calls recordBackup()
+ * via the /complete endpoint once it finishes. Requires GITHUB_ACTIONS_TOKEN
+ * (a PAT with `actions:write` on this repo) and GITHUB_REPO to be set.
  */
-export function listBackups(
-    filters?: {
-        type?: "FULL" | "INCREMENTAL" | "TENANT";
-        status?: string;
-        tenantId?: string;
-        page?: number;
-        limit?: number;
+export async function triggerManualBackup(systemOwnerId: string): Promise<{ dispatched: boolean; message: string }> {
+    const token = process.env.GITHUB_ACTIONS_TOKEN;
+    const repo = process.env.GITHUB_REPO; // "owner/name"
+
+    if (!token || !repo) {
+        return {
+            dispatched: false,
+            message:
+                "Manual dispatch isn't configured (GITHUB_ACTIONS_TOKEN/GITHUB_REPO missing). " +
+                "The nightly backup still runs automatically at 03:00 UTC — trigger it directly " +
+                "from the Actions tab in GitHub if you need one right now.",
+        };
     }
-): { backups: BackupMetadata[]; pagination: { page: number; limit: number; total: number } } {
-    let filtered = [...backupRegistry];
+
+    const res = await fetch(`https://api.github.com/repos/${repo}/actions/workflows/backup.yml/dispatches`, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/vnd.github+json",
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ref: "main" }),
+    });
+
+    if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`GitHub workflow dispatch failed (${res.status}): ${text}`);
+    }
+
+    await logAudit({
+        tenantId: null,
+        userId: systemOwnerId,
+        action: "BACKUP_MANUAL_DISPATCH",
+        entity: "Backup",
+        entityId: "manual",
+        newValue: { dispatchedAt: new Date().toISOString() },
+    });
+
+    return {
+        dispatched: true,
+        message: "Backup workflow dispatched — it takes a few minutes to appear in the list below once it completes.",
+    };
+}
+
+/**
+ * List backup history from BackupLog.
+ */
+export async function listBackups(filters?: {
+    type?: "FULL" | "INCREMENTAL" | "TENANT";
+    status?: string;
+    tenantId?: string;
+    page?: number;
+    limit?: number;
+}) {
     const page = filters?.page || 1;
     const limit = filters?.limit || 20;
 
-    if (filters?.type) filtered = filtered.filter((b) => b.type === filters.type);
-    if (filters?.status) filtered = filtered.filter((b) => b.status === filters.status);
-    if (filters?.tenantId) filtered = filtered.filter((b) => b.tenantId === filters.tenantId);
+    const where = {
+        ...(filters?.type ? { type: filters.type } : {}),
+        ...(filters?.status ? { status: filters.status as "PENDING" | "IN_PROGRESS" | "COMPLETED" | "FAILED" } : {}),
+        ...(filters?.tenantId ? { tenantId: filters.tenantId } : {}),
+    };
 
-    // Sort by most recent first
-    filtered.sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime());
-
-    const total = filtered.length;
-    const paginated = filtered.slice((page - 1) * limit, page * limit);
+    const [rows, total] = await Promise.all([
+        prisma.backupLog.findMany({
+            where,
+            orderBy: { startedAt: "desc" },
+            skip: (page - 1) * limit,
+            take: limit,
+        }),
+        prisma.backupLog.count({ where }),
+    ]);
 
     return {
-        backups: paginated,
+        backups: rows.map(serializeBackup),
         pagination: { page, limit, total },
     };
 }
 
 /**
- * Get backup by ID.
+ * Get a single backup by ID.
  */
-export function getBackupById(id: string): BackupMetadata | undefined {
-    return backupRegistry.find((b) => b.id === id);
+export async function getBackupById(id: string) {
+    const row = await prisma.backupLog.findUnique({ where: { id } });
+    return row ? serializeBackup(row) : null;
 }
 
-/**
- * Format bytes to human-readable.
- */
-function formatBytes(bytes: number): string {
-    if (bytes === 0) return "0 B";
-    const k = 1024;
-    const sizes = ["B", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+// BigInt isn't JSON-serializable — convert file size to a plain number for API responses.
+function serializeBackup(row: {
+    id: string;
+    type: string;
+    tenantId: string | null;
+    status: string;
+    filePath: string | null;
+    fileSize: bigint | null;
+    triggeredBy: string;
+    startedAt: Date;
+    completedAt: Date | null;
+    errorMessage: string | null;
+}) {
+    return {
+        ...row,
+        fileSize: row.fileSize !== null ? Number(row.fileSize) : null,
+    };
 }

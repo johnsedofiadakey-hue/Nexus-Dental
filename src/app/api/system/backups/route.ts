@@ -1,12 +1,16 @@
 // ============================================
 // NEXUS DENTAL — System: Backups API
-// GET  /api/system/backups — List backups
-// POST /api/system/backups — Trigger backup
+// GET  /api/system/backups — List real backup history (BackupLog)
+// POST /api/system/backups — Manually dispatch the backup workflow
+//
+// Actual backups run nightly via .github/workflows/backup.yml, which
+// records each run through POST /api/system/backups/complete. This
+// route never performs a backup itself.
 // ============================================
 
 import { NextRequest } from "next/server";
 import { requireAuth, apiError, apiSuccess } from "@/lib/auth";
-import { triggerBackup, listBackups } from "@/lib/system";
+import { triggerManualBackup, listBackups } from "@/lib/system";
 
 function requireSystemOwner(request: NextRequest) {
     const authResult = requireAuth(request);
@@ -29,7 +33,7 @@ export async function GET(request: NextRequest) {
         const page = parseInt(searchParams.get("page") || "1");
         const limit = parseInt(searchParams.get("limit") || "20");
 
-        const result = listBackups({
+        const result = await listBackups({
             type: type || undefined,
             status,
             tenantId,
@@ -49,27 +53,11 @@ export async function POST(request: NextRequest) {
         const auth = requireSystemOwner(request);
         if ("error" in auth && auth.error) return auth.error;
 
-        const body = await request.json();
-        const { type, tenantId, retention } = body;
-
-        if (!type || !["FULL", "INCREMENTAL", "TENANT"].includes(type)) {
-            return apiError("type must be FULL, INCREMENTAL, or TENANT", 400);
-        }
-
-        if (type === "TENANT" && !tenantId) {
-            return apiError("tenantId is required for TENANT backups", 400);
-        }
-
-        const backup = await triggerBackup(
-            type,
-            auth.user!.userId,
-            tenantId,
-            retention
-        );
-
-        return apiSuccess(backup, 201);
+        const result = await triggerManualBackup(auth.user!.userId);
+        return apiSuccess(result, result.dispatched ? 202 : 200);
     } catch (error) {
-        console.error("[System] Backup trigger error:", error);
-        return apiError("Internal server error", 500);
+        console.error("[System] Backup dispatch error:", error);
+        const msg = error instanceof Error ? error.message : "Internal server error";
+        return apiError(msg, 500);
     }
 }

@@ -1,0 +1,33 @@
+name: Nightly Database Backup
+
+on:
+  schedule:
+    # 03:00 UTC daily
+    - cron: "0 3 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install postgresql-client (pg_dump)
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Install dependencies
+        run: npm ci --omit=dev --ignore-scripts
+
+      - name: Run backup
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
+          APP_URL: ${{ secrets.APP_URL }}
+          BACKUP_WEBHOOK_SECRET: ${{ secrets.BACKUP_WEBHOOK_SECRET }}
+        run: node scripts/run-backup.js

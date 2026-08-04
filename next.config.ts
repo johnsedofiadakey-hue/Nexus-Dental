@@ -1,10 +1,23 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
-  reactCompiler: true,
+  outputFileTracingRoot: process.cwd(),
   serverExternalPackages: ["@prisma/client", "@prisma/adapter-pg", "pg", "ioredis", "bcryptjs"],
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: false },
 };
 
-export default nextConfig;
+// Source-map upload only runs when SENTRY_AUTH_TOKEN is set (CI/production
+// build) — without it this just passes the config through unchanged, so
+// local dev and builds without Sentry configured aren't affected.
+export default withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  silent: true,
+  telemetry: false,
+  webpack: {
+    treeshake: { removeDebugLogging: true },
+  },
+});

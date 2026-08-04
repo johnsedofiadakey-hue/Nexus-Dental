@@ -30,6 +30,14 @@ const PUBLIC_API_ROUTES = [
     "/api/appointments/book",
     "/api/services",
     "/api/public",
+    // Payment provider webhooks — unauthenticated by design, verified via
+    // signature/shared-secret inside the handler, not a user JWT.
+    "/api/webhooks",
+    // System-to-system callback from .github/workflows/backup.yml —
+    // shared-secret authenticated inside the handler (X-Backup-Secret).
+    "/api/system/backups/complete",
+    // Unauthenticated liveness check for uptime monitors.
+    "/api/health",
 ];
 
 // Static file extensions to skip

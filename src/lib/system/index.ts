@@ -16,11 +16,12 @@ export {
 } from "./maintenance";
 
 export {
-    triggerBackup,
+    recordBackup,
+    triggerManualBackup,
     listBackups,
     getBackupById,
 } from "./backups";
-export type { BackupMetadata } from "./backups";
+export type { BackupRecordInput } from "./backups";
 
 export { getSystemHealth } from "./health";
 export type { HealthReport } from "./health";
