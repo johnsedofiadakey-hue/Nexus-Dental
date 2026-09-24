@@ -12,7 +12,11 @@ import {
     AlertCircle,
     ChevronDown,
     CreditCard,
-    Loader2
+    Loader2,
+    FileImage,
+    ClipboardList,
+    FlaskConical,
+    ShieldCheck,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,7 +32,25 @@ const fmtDate = (d: string) => new Date(d).toLocaleDateString("en-GB", { day: "n
 type TimelineItem =
     | { kind: "appointment"; date: string; data: any }
     | { kind: "prescription"; date: string; data: any }
-    | { kind: "invoice"; date: string; data: any };
+    | { kind: "invoice"; date: string; data: any }
+    | { kind: "treatment"; date: string; data: any }
+    | { kind: "file"; date: string; data: any }
+    | { kind: "lab"; date: string; data: any }
+    | { kind: "consent"; date: string; data: any };
+
+function ClinicalRecordCard({ kind, data }: { kind: "treatment" | "file" | "lab" | "consent"; data: any }) {
+    const config = {
+        treatment: { icon: ClipboardList, color: "bg-indigo-500", title: data.title || "Treatment plan", status: data.status },
+        file: { icon: FileImage, color: "bg-cyan-500", title: data.filename || "Clinical file", status: data.category },
+        lab: { icon: FlaskConical, color: "bg-orange-500", title: `${data.restoration || "Dental"} lab order`, status: data.status },
+        consent: { icon: ShieldCheck, color: "bg-emerald-500", title: data.template?.title || "Consent form", status: "SIGNED" },
+    }[kind];
+    const Icon = config.icon;
+    const content = <><span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${config.color}`}><Icon className="h-5 w-5 text-white" /></span><div className="min-w-0 flex-1"><p className="truncate font-bold text-slate-900">{config.title}</p><p className="mt-1 text-xs uppercase tracking-wide text-slate-500">{String(config.status || "RECORDED").replaceAll("_", " ")}</p></div></>;
+    return kind === "file"
+        ? <a href={`/api/patient-files/${data.id}?redirect=true`} target="_blank" rel="noreferrer" className="flex items-center gap-4 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100 transition hover:ring-cyan-200">{content}</a>
+        : <div className="flex items-center gap-4 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">{content}</div>;
+}
 
 function AppointmentCard({ data }: { data: any }) {
     const statusColors: Record<string, string> = {
@@ -69,7 +91,7 @@ function AppointmentCard({ data }: { data: any }) {
 
 function PrescriptionCard({ data }: { data: any }) {
     const statusColors: Record<string, string> = {
-        DISPENSED: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        FILLED: "bg-emerald-50 text-emerald-700 border-emerald-200",
         PENDING: "bg-amber-50 text-amber-700 border-amber-200",
         CANCELLED: "bg-red-50 text-red-700 border-red-200",
     };
@@ -123,23 +145,21 @@ function InvoiceCard({ data }: { data: any }) {
     const handlePayment = async () => {
         setPaying(true);
         try {
-            const res = await fetch("/api/payments", {
+            const res = await fetch(`/api/invoices/${data.id}/paystack-init`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ invoiceId: data.id, phone: data.appointment?.patient?.phone })
+                credentials: "include",
             });
             const result = await res.json();
-            
+
             if (!result.success) {
                 toast.error(result.error || "Failed to initiate payment");
                 return;
             }
 
-            if (result.checkoutUrl) {
-                window.location.href = result.checkoutUrl;
+            if (result.data?.authorizationUrl) {
+                window.location.href = result.data.authorizationUrl;
             } else {
-                toast.success(result.message || "Payment successful!");
-                window.location.reload(); // Quick refresh to update status
+                toast.error("Payment checkout is currently unavailable");
             }
         } catch (error) {
             toast.error("Network error. Please try again.");
@@ -148,8 +168,13 @@ function InvoiceCard({ data }: { data: any }) {
         }
     };
 
+    // Invoices are created as "UNPAID"; "PENDING"/"OVERDUE" are accepted for older records.
+    const isPayable = ["UNPAID", "PENDING", "OVERDUE"].includes(data.status);
+    const total = data.totalAmount ?? data.amount;
+
     const statusColors: Record<string, string> = {
         PAID: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        UNPAID: "bg-amber-50 text-amber-700 border-amber-200",
         PENDING: "bg-amber-50 text-amber-700 border-amber-200",
         OVERDUE: "bg-red-50 text-red-700 border-red-200",
         CANCELLED: "bg-slate-100 text-slate-500 border-slate-200",
@@ -168,13 +193,13 @@ function InvoiceCard({ data }: { data: any }) {
                         <Badge className={`border text-[10px] py-0 hidden sm:inline-flex ${color}`}>{data.status}</Badge>
                     </div>
                     <p className="text-xs text-slate-500 mt-0.5">
-                        {data.amount != null ? `GHS ${Number(data.amount).toFixed(2)}` : "Amount pending"}
+                        {total != null ? `GHS ${Number(total).toFixed(2)}` : "Amount pending"}
                     </p>
                     <Badge className={`border text-[10px] py-0 mt-1 sm:hidden inline-flex ${color}`}>{data.status}</Badge>
                 </div>
             </div>
             
-            {data.status === "PENDING" && (
+            {isPayable && (
                 <Button 
                     onClick={handlePayment} 
                     disabled={paying}
@@ -185,7 +210,7 @@ function InvoiceCard({ data }: { data: any }) {
                     ) : (
                         <CreditCard className="w-4 h-4 mr-2" />
                     )}
-                    Pay with Hubtel
+                    Pay now
                 </Button>
             )}
         </div>
@@ -216,6 +241,10 @@ export default function RecordsPage() {
     const appointments: any[] = history?.appointments ?? [];
     const prescriptions: any[] = history?.prescriptions ?? [];
     const invoices: any[] = history?.invoices ?? [];
+    const treatmentPlans: any[] = history?.treatmentPlans ?? [];
+    const files: any[] = history?.files ?? [];
+    const labOrders: any[] = history?.labOrders ?? [];
+    const consents: any[] = history?.consents ?? [];
 
     // Build unified timeline
     const timeline: TimelineItem[] = [
@@ -234,12 +263,20 @@ export default function RecordsPage() {
             date: inv.createdAt ?? inv.date,
             data: inv,
         })),
+        ...treatmentPlans.map((plan) => ({ kind: "treatment" as const, date: plan.createdAt, data: plan })),
+        ...files.map((file) => ({ kind: "file" as const, date: file.createdAt, data: file })),
+        ...labOrders.map((lab) => ({ kind: "lab" as const, date: lab.createdAt, data: lab })),
+        ...consents.map((consent) => ({ kind: "consent" as const, date: consent.signedAt, data: consent })),
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     const dotColor = {
         appointment: "bg-teal-500 ring-teal-100",
         prescription: "bg-blue-500 ring-blue-100",
         invoice: "bg-emerald-500 ring-emerald-100",
+        treatment: "bg-indigo-500 ring-indigo-100",
+        file: "bg-cyan-500 ring-cyan-100",
+        lab: "bg-orange-500 ring-orange-100",
+        consent: "bg-emerald-500 ring-emerald-100",
     };
 
     return (
@@ -248,7 +285,7 @@ export default function RecordsPage() {
                 {/* Header */}
                 <div className="mb-8">
                     <h2 className="text-2xl font-bold text-slate-900">Medical History</h2>
-                    <p className="text-slate-500 mt-1">Your complete health timeline — appointments, prescriptions, and invoices.</p>
+                    <p className="text-slate-500 mt-1">Your complete timeline across visits, treatment, prescriptions, scans, labs, consent, and billing.</p>
                 </div>
 
                 {/* Legend */}
@@ -256,7 +293,8 @@ export default function RecordsPage() {
                     {[
                         { label: "Appointment", color: "bg-teal-500" },
                         { label: "Prescription", color: "bg-blue-500" },
-                        { label: "Invoice", color: "bg-emerald-500" },
+                            { label: "Invoice", color: "bg-emerald-500" },
+                            { label: "Clinical record", color: "bg-indigo-500" },
                     ].map(({ label, color }) => (
                         <div key={label} className="flex items-center gap-2 text-sm text-slate-600">
                             <span className={`w-2.5 h-2.5 rounded-full ${color}`} />
@@ -321,6 +359,7 @@ export default function RecordsPage() {
                                         {item.kind === "appointment" && <AppointmentCard data={item.data} />}
                                         {item.kind === "prescription" && <PrescriptionCard data={item.data} />}
                                         {item.kind === "invoice" && <InvoiceCard data={item.data} />}
+                                        {(item.kind === "treatment" || item.kind === "file" || item.kind === "lab" || item.kind === "consent") && <ClinicalRecordCard kind={item.kind} data={item.data} />}
                                     </div>
                                 </div>
                             );
