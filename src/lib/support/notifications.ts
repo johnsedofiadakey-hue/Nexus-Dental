@@ -9,6 +9,7 @@ import {
     sendSMS as hubtelSMS,
     sendWhatsApp as hubtelWhatsApp,
 } from "@/lib/sms/hubtel";
+import { sendEmail } from "@/lib/email/sender";
 
 export interface NotificationPayload {
     tenantId: string;
@@ -142,10 +143,34 @@ async function resolvePhone(recipientId: string): Promise<string | null> {
 }
 
 /**
+ * Resolve the recipient's email address from their patient record.
+ * Returns null if the patient cannot be found or has no email.
+ */
+async function resolveEmail(recipientId: string): Promise<string | null> {
+    try {
+        const patient = await prisma.patient.findUnique({
+            where: { id: recipientId },
+            select: { email: true },
+        });
+        return patient?.email ?? null;
+    } catch {
+        return null;
+    }
+}
+
+function escapeHtml(value: string): string {
+    return value
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+}
+
+/**
  * Deliver notification via a specific channel.
  *
- * SMS + WhatsApp are routed through the Hubtel service.
- * Email and Push remain stubbed until dedicated providers are wired in.
+ * SMS + WhatsApp are routed through the Hubtel service; Email through Resend.
+ * Push has no provider yet and always reports failure rather than a false "sent".
  */
 async function deliverViaChannel(
     channel: NotificationChannel,
@@ -176,19 +201,33 @@ async function deliverViaChannel(
             return true;
         }
 
-        case "EMAIL":
-            // TODO: Integrate with email provider (Resend / SendGrid)
-            console.log(
-                `[Notification] Email → ${payload.recipientId}: ${payload.title}`
-            );
+        case "EMAIL": {
+            // Without a configured provider nothing can be delivered. Report
+            // failure (not success) so the notification is recorded as FAILED
+            // and the fallback chain / alerting can react.
+            if (!process.env.RESEND_API_KEY) {
+                console.warn("[Notification] Email: RESEND_API_KEY is not configured; not sent");
+                return false;
+            }
+            const email = await resolveEmail(payload.recipientId);
+            if (!email) {
+                console.warn(
+                    `[Notification] Email: no email address for recipient ${payload.recipientId}`
+                );
+                return false;
+            }
+            await sendEmail({
+                to: email,
+                subject: payload.title,
+                html: `<p>${escapeHtml(payload.content).replace(/\n/g, "<br />")}</p>`,
+            });
             return true;
+        }
 
         case "PUSH":
-            // TODO: Integrate with FCM
-            console.log(
-                `[Notification] Push → ${payload.recipientId}: ${payload.title}`
-            );
-            return true;
+            // No push provider (e.g. FCM) is integrated yet. Never claim success.
+            console.warn("[Notification] Push: no provider configured; not sent");
+            return false;
 
         default:
             return false;

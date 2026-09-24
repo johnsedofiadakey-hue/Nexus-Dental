@@ -60,6 +60,18 @@ async function handleChargeSuccess(data: Record<string, unknown>) {
 
     if (invoice.status === "PAID") return; // idempotent — already marked
 
+    // Never trust "success" alone: the money received must match what this
+    // invoice is owed, in the right currency. Otherwise a cheap transaction
+    // could be replayed against an expensive invoice.
+    const expectedPesewas = Math.round(invoice.totalAmount * 100);
+    if (txn.currency !== "GHS" || txn.amount !== expectedPesewas) {
+        console.error(
+            `[Paystack Webhook] Amount/currency mismatch for invoice ${invoice.id}: ` +
+            `expected GHS ${expectedPesewas} pesewas, got ${txn.currency} ${txn.amount}. Invoice NOT marked paid.`
+        );
+        return;
+    }
+
     await prisma.invoice.update({
         where: { id: invoice.id },
         data: {

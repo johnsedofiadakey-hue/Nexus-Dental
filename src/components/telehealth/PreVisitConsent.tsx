@@ -101,22 +101,22 @@ export function PreVisitConsent({
                 disabled={isLoading}
               />
               <span>
-                I consent to <strong>data privacy & HIPAA compliance</strong>
+                I consent to the <strong>collection and use of my health data</strong>
               </span>
             </label>
             <div className={styles.consentText}>
               <p>
                 I acknowledge that my health information will be collected, stored, and processed in accordance
-                with HIPAA regulations. My data will not be shared with third parties without my consent except
-                as required by law.
+                with Ghana&apos;s Data Protection Act, 2012 (Act 843). My data will not be shared with third parties
+                without my consent except as required by law or to deliver this service.
               </p>
             </div>
           </div>
 
           {/* Privacy Notice */}
           <div className={styles.privacyNotice}>
-            <strong>Privacy Notice:</strong> Your consultation is confidential and transmitted with end-to-end
-            encryption. Only you and Dr. {doctorName} can access this session.
+            <strong>Privacy Notice:</strong> Your consultation is confidential. The video connection is encrypted
+            in transit, and access to this session is limited to you and Dr. {doctorName}.
           </div>
         </div>
 
