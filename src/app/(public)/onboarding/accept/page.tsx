@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { ShieldCheck, Loader2, XCircle, CheckCircle2, Building2 } from "lucide-react";
+import { ShieldCheck, Loader2, XCircle, Building2 } from "lucide-react";
 import { toast } from "sonner";
-
-// Window.google is declared in src/app/(public)/auth/staff/page.tsx
 
 interface InviteInfo {
     email: string;
@@ -20,21 +18,35 @@ function roleLabel(r: string) {
     return r.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 }
 
-export default function AcceptInvitePage() {
+// Mirrors validatePasswordStrength() on the server so users get instant feedback.
+function passwordProblems(pw: string): string[] {
+    const problems: string[] = [];
+    if (pw.length < 8) problems.push("at least 8 characters");
+    if (!/[A-Z]/.test(pw)) problems.push("an uppercase letter");
+    if (!/[a-z]/.test(pw)) problems.push("a lowercase letter");
+    if (!/[0-9]/.test(pw)) problems.push("a number");
+    if (!/[!@#$%^&*()_+\-=[\]{};':"|,.<>?/]/.test(pw)) problems.push("a special character");
+    return problems;
+}
+
+function AcceptInviteContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const token = searchParams.get("token");
 
     const [invite, setInvite] = useState<InviteInfo | null>(null);
-    const [status, setStatus] = useState<"loading" | "ready" | "signing-in" | "error" | "expired">("loading");
+    const [status, setStatus] = useState<"loading" | "ready" | "submitting" | "error" | "expired">("loading");
     const [errorMsg, setErrorMsg] = useState("");
-    const googleBtnRef = useRef<HTMLDivElement>(null);
 
-    // Load invite details
+    const [firstName, setFirstName] = useState("");
+    const [lastName, setLastName] = useState("");
+    const [password, setPassword] = useState("");
+    const [confirm, setConfirm] = useState("");
+
     useEffect(() => {
         if (!token) { setStatus("error"); setErrorMsg("No invite token found."); return; }
 
-        fetch(`/api/staff/invite/${token}`)
+        fetch(`/api/staff/invite/${encodeURIComponent(token)}`)
             .then(r => r.json())
             .then(json => {
                 if (json.success) {
@@ -48,70 +60,42 @@ export default function AcceptInvitePage() {
             .catch(() => { setStatus("error"); setErrorMsg("Failed to load invite."); });
     }, [token]);
 
-    const handleGoogleCredential = useCallback(async (credential: string) => {
-        setStatus("signing-in");
+    const problems = passwordProblems(password);
+    const mismatch = confirm.length > 0 && confirm !== password;
+    const canSubmit =
+        status === "ready" && firstName.trim() && lastName.trim() && problems.length === 0 && confirm === password;
+
+    async function handleSubmit(e: React.FormEvent) {
+        e.preventDefault();
+        if (!canSubmit || !token) return;
+        setStatus("submitting");
         try {
-            const res = await fetch("/api/auth/google", {
+            const res = await fetch(`/api/staff/invite/${encodeURIComponent(token)}/accept`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
-                body: JSON.stringify({ idToken: credential, inviteToken: token }),
+                body: JSON.stringify({ firstName, lastName, password }),
             });
             const data = await res.json();
-
             if (data.success) {
                 toast.success(`Welcome to ${data.data.user.clinicName}, ${data.data.user.firstName}!`);
                 router.push("/dashboard");
             } else {
                 setStatus("ready");
-                toast.error(data.error || "Sign-in failed. Try again.");
+                toast.error(data.error || "Could not create your account. Try again.");
             }
         } catch {
             setStatus("ready");
             toast.error("Network error. Please try again.");
         }
-    }, [token, router]);
+    }
 
-    // Render Google button once invite is confirmed ready
-    useEffect(() => {
-        if (status !== "ready") return;
-        const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-        if (!clientId || !googleBtnRef.current) return;
-
-        const init = () => {
-            window.google?.accounts.id.initialize({
-                client_id: clientId,
-                callback: (r) => handleGoogleCredential(r.credential),
-            });
-            if (googleBtnRef.current) {
-                window.google?.accounts.id.renderButton(googleBtnRef.current, {
-                    type: "standard",
-                    shape: "rectangular",
-                    theme: "outline",
-                    text: "continue_with",
-                    size: "large",
-                    logo_alignment: "left",
-                    width: "100%",
-                });
-            }
-        };
-
-        if (window.google) { init(); return; }
-
-        const script = document.createElement("script");
-        script.src = "https://accounts.google.com/gsi/client";
-        script.async = true;
-        script.defer = true;
-        script.onload = init;
-        document.body.appendChild(script);
-        return () => { document.body.removeChild(script); };
-    }, [status, handleGoogleCredential]);
+    const inputClass =
+        "w-full h-11 rounded-xl border border-slate-200 px-3 text-sm text-slate-900 outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100";
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-slate-50 flex flex-col items-center justify-center p-6">
             <div className="w-full max-w-md">
-
-                {/* Brand */}
                 <div className="text-center mb-8">
                     <Link href="/" className="inline-flex items-center gap-2">
                         <div className="w-10 h-10 rounded-xl bg-teal-600 flex items-center justify-center">
@@ -122,8 +106,6 @@ export default function AcceptInvitePage() {
                 </div>
 
                 <div className="bg-white rounded-2xl shadow-xl ring-1 ring-slate-100 p-8">
-
-                    {/* Loading */}
                     {status === "loading" && (
                         <div className="flex flex-col items-center py-8 gap-4">
                             <Loader2 className="w-8 h-8 text-teal-600 animate-spin" />
@@ -131,7 +113,6 @@ export default function AcceptInvitePage() {
                         </div>
                     )}
 
-                    {/* Error */}
                     {(status === "error" || status === "expired") && (
                         <div className="flex flex-col items-center py-8 gap-4 text-center">
                             <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center">
@@ -154,12 +135,10 @@ export default function AcceptInvitePage() {
                         </div>
                     )}
 
-                    {/* Ready to accept */}
-                    {(status === "ready" || status === "signing-in") && invite && (
-                        <>
-                            {/* Clinic info */}
+                    {(status === "ready" || status === "submitting") && invite && (
+                        <form onSubmit={handleSubmit} noValidate>
                             <div className="flex items-center gap-3 mb-6 p-4 rounded-xl bg-teal-50 ring-1 ring-teal-100">
-                                <div className="w-12 h-12 rounded-xl bg-teal-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
+                                <div className="w-12 h-12 rounded-xl bg-teal-600 flex items-center justify-center text-white shrink-0">
                                     {invite.clinic.logo
                                         ? <img src={invite.clinic.logo} alt="" className="w-12 h-12 rounded-xl object-cover" />
                                         : <Building2 className="w-6 h-6" />}
@@ -170,31 +149,76 @@ export default function AcceptInvitePage() {
                                 </div>
                             </div>
 
-                            <h1 className="text-2xl font-bold text-slate-900 mb-2">Accept your invitation</h1>
+                            <h1 className="text-2xl font-bold text-slate-900 mb-1">Set up your account</h1>
                             <p className="text-slate-500 text-sm mb-1">
-                                You've been invited to join as a{" "}
+                                You&apos;ve been invited to join as a{" "}
                                 <span className="font-semibold text-teal-700">{roleLabel(invite.role)}</span>.
                             </p>
-                            <p className="text-slate-400 text-xs mb-6">
-                                Sign in with the Google account for <strong>{invite.email}</strong>.
+                            <p className="text-slate-400 text-xs mb-5">
+                                Signing up as <strong>{invite.email}</strong>. Invitation expires{" "}
+                                {new Date(invite.expiresAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}.
                             </p>
 
-                            {status === "signing-in" ? (
-                                <div className="flex items-center justify-center gap-3 h-11 rounded-xl border border-slate-200 text-sm text-slate-500">
-                                    <Loader2 className="w-4 h-4 animate-spin" /> Setting up your account…
-                                </div>
-                            ) : (
-                                <div ref={googleBtnRef} className="w-full flex justify-center" />
+                            <div className="grid grid-cols-2 gap-3 mb-3">
+                                <input
+                                    className={inputClass}
+                                    placeholder="First name"
+                                    autoComplete="given-name"
+                                    value={firstName}
+                                    onChange={e => setFirstName(e.target.value)}
+                                />
+                                <input
+                                    className={inputClass}
+                                    placeholder="Last name"
+                                    autoComplete="family-name"
+                                    value={lastName}
+                                    onChange={e => setLastName(e.target.value)}
+                                />
+                            </div>
+                            <input
+                                className={`${inputClass} mb-2`}
+                                type="password"
+                                placeholder="Create a password"
+                                autoComplete="new-password"
+                                value={password}
+                                onChange={e => setPassword(e.target.value)}
+                            />
+                            {password.length > 0 && problems.length > 0 && (
+                                <p className="text-xs text-amber-600 mb-2">Needs {problems.join(", ")}.</p>
                             )}
+                            <input
+                                className={`${inputClass} mb-1`}
+                                type="password"
+                                placeholder="Confirm password"
+                                autoComplete="new-password"
+                                value={confirm}
+                                onChange={e => setConfirm(e.target.value)}
+                            />
+                            {mismatch && <p className="text-xs text-red-600 mb-2">Passwords do not match.</p>}
 
-                            <p className="text-center text-xs text-slate-400 mt-4">
-                                You must use the Google account for <strong>{invite.email}</strong>.
-                                <br />Invitation expires {new Date(invite.expiresAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}.
-                            </p>
-                        </>
+                            <button
+                                type="submit"
+                                disabled={!canSubmit}
+                                className="mt-4 w-full h-11 rounded-xl bg-teal-600 text-white text-sm font-semibold hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+                            >
+                                {status === "submitting" ? (
+                                    <><Loader2 className="w-4 h-4 animate-spin" /> Creating your account…</>
+                                ) : (
+                                    "Create account"
+                                )}
+                            </button>
+                        </form>
                     )}
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function AcceptInvitePage() {
+    return (
+        <Suspense fallback={null}>
+            <AcceptInviteContent />
+        </Suspense>
     );
 }

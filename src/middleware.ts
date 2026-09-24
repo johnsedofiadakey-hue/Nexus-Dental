@@ -30,6 +30,10 @@ const PUBLIC_API_ROUTES = [
     "/api/appointments/book",
     "/api/services",
     "/api/public",
+    // Staff invitation acceptance (validate + accept) — the single-use invite
+    // token is the credential. The trailing slash is deliberate: the
+    // authenticated list/create/revoke routes at /api/staff/invite stay protected.
+    "/api/staff/invite/",
     // Payment provider webhooks — unauthenticated by design, verified via
     // signature/shared-secret inside the handler, not a user JWT.
     "/api/webhooks",

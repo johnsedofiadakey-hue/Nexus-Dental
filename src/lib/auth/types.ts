@@ -311,3 +311,28 @@ export const AUTH_CONFIG = {
     SANITIZATION_BUFFER_MINUTES: 15,
     BCRYPT_ROUNDS: 12,
 } as const;
+
+// ─────────────────────────────────────────────
+// Primary role selection
+// ─────────────────────────────────────────────
+
+// Highest authority first. Used to pick a deterministic "primary" role for
+// users holding several roles, so the JWT role and post-login landing page do
+// not depend on database row order.
+export const ROLE_PRIORITY: readonly UserRoleType[] = [
+    "SYSTEM_OWNER",
+    "CLINIC_OWNER",
+    "ADMIN",
+    "DOCTOR",
+    "NURSE",
+    "BILLING_STAFF",
+    "INVENTORY_MANAGER",
+    "RECEPTIONIST",
+];
+
+export function pickPrimaryRole(roles: readonly UserRoleType[]): UserRoleType {
+    for (const role of ROLE_PRIORITY) {
+        if (roles.includes(role)) return role;
+    }
+    return "RECEPTIONIST";
+}

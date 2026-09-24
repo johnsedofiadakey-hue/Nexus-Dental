@@ -23,10 +23,7 @@ export default function NewEmployeePage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
-        firstName: "",
-        lastName: "",
         email: "",
-        phone: "",
         role: "",
     });
 
@@ -35,26 +32,27 @@ export default function NewEmployeePage() {
         setLoading(true);
 
         try {
-            const res = await fetch("/api/staff", {
+            const res = await fetch("/api/staff/invite", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
+                credentials: "include",
                 body: JSON.stringify(formData),
             });
 
             const data = await res.json();
 
-            if (res.ok) {
-                toast.success("Employee created successfully!", {
-                    description: `Temporary password: ${data.tempPassword}`,
+            if (res.ok && data.success) {
+                toast.success("Invitation sent", {
+                    description: `${formData.email} will receive a link to set their own password. It expires in 48 hours.`,
                 });
                 router.push("/dashboard/staff");
             } else {
-                toast.error("Failed to create employee", {
-                    description: data.message || "An error occurred",
+                toast.error("Could not send invitation", {
+                    description: data.error || data.message || "An error occurred",
                 });
             }
         } catch (error) {
-            toast.error("Failed to create employee", {
+            toast.error("Could not send invitation", {
                 description: "Network error. Please try again.",
             });
         } finally {
@@ -72,44 +70,21 @@ export default function NewEmployeePage() {
                     </Button>
                 </Link>
                 <div>
-                    <h1 className="text-3xl font-bold">Add New Employee</h1>
-                    <p className="text-muted-foreground">Create a new staff account and assign a role</p>
+                    <h1 className="text-3xl font-bold">Invite Staff Member</h1>
+                    <p className="text-muted-foreground">Invite a new staff member and assign their role</p>
                 </div>
             </div>
 
             {/* Form */}
             <Card className="max-w-2xl">
                 <CardHeader>
-                    <CardTitle>Employee Information</CardTitle>
+                    <CardTitle>Invitation</CardTitle>
                     <CardDescription>
-                        Enter the employee's details. A temporary password will be generated and sent to their email.
+                        Enter their work email and role. They will receive a single-use link to set their own password — no password is ever shared with you.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="firstName">First Name *</Label>
-                                <Input
-                                    id="firstName"
-                                    required
-                                    value={formData.firstName}
-                                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                                    placeholder="John"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="lastName">Last Name *</Label>
-                                <Input
-                                    id="lastName"
-                                    required
-                                    value={formData.lastName}
-                                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                                    placeholder="Doe"
-                                />
-                            </div>
-                        </div>
-
                         <div className="space-y-2">
                             <Label htmlFor="email">Email Address *</Label>
                             <Input
@@ -118,22 +93,11 @@ export default function NewEmployeePage() {
                                 required
                                 value={formData.email}
                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                placeholder="john.doe@airporthills.com"
+                                placeholder="name@yourclinic.com"
                             />
                             <p className="text-xs text-muted-foreground">
-                                This will be used for login and receiving notifications
+                                Where the invitation link is sent, and their login email
                             </p>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="phone">Phone Number (Optional)</Label>
-                            <Input
-                                id="phone"
-                                type="tel"
-                                value={formData.phone}
-                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                placeholder="+233 24 123 4567"
-                            />
                         </div>
 
                         <div className="space-y-2">
@@ -162,7 +126,7 @@ export default function NewEmployeePage() {
                         <div className="flex gap-3 pt-4">
                             <Button type="submit" disabled={loading} className="gap-2">
                                 <Save className="w-4 h-4" />
-                                {loading ? "Creating..." : "Create Employee"}
+                                {loading ? "Sending..." : "Send Invitation"}
                             </Button>
                             <Link href="/dashboard/staff">
                                 <Button type="button" variant="outline">

@@ -40,76 +40,16 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * POST /api/staff - Create new employee
+ * POST /api/staff — RETIRED.
+ *
+ * Creating an active account with a generated temporary password (and no way to
+ * deliver it) was insecure and incomplete. Staff are now onboarded exclusively
+ * through the invitation flow: POST /api/staff/invite emails a single-use link,
+ * and the invitee sets their own password at /onboarding/accept.
  */
-export async function POST(request: NextRequest) {
-    try {
-        const authResult = requireAuth(request);
-        if ("error" in authResult) return authResult.error;
-        const user = authResult.user as JWTPayload;
-
-        // Only Owners and Admins can create staff
-        const staffUser = user as JWTPayload;
-        const allowedCreators = ["SYSTEM_OWNER", "CLINIC_OWNER", "ADMIN"];
-        if (!staffUser.roles.some(r => allowedCreators.includes(r))) {
-            return apiError("Forbidden: You do not have permission to manage staff", 403);
-        }
-
-
-        const body = await request.json();
-        const { firstName, lastName, email, phone, role } = body;
-
-        // Validation
-        if (!firstName || !lastName || !email || !role) {
-            return apiError("First name, last name, email, and role are required", 400);
-        }
-
-        // Check if email already exists
-        const existing = await prisma.user.findUnique({ where: { email } });
-        if (existing) {
-            return apiError("Email already in use", 400);
-        }
-
-        // Generate temporary password
-        const tempPassword = `Temp${Math.random().toString(36).slice(-8)}!`;
-        const passwordHash = await bcrypt.hash(tempPassword, 12);
-
-        // Create employee
-        const employee = await prisma.user.create({
-            data: {
-                email,
-                passwordHash,
-                firstName,
-                lastName,
-                phone: phone || null,
-                status: "ACTIVE",
-                tenantId: getTenantIdFromUser(user),
-                roles: {
-                    create: {
-                        systemRole: role,
-                    }
-                }
-            },
-            select: {
-                id: true,
-                email: true,
-                firstName: true,
-                lastName: true,
-                status: true,
-                roles: true,
-            },
-        });
-
-        return apiSuccess(
-            {
-                employee,
-                tempPassword,
-            },
-            201
-        );
-    } catch (error) {
-        console.error("[Staff API] Creation error:", error);
-        return apiError("Failed to create employee", 500);
-    }
+export async function POST() {
+    return apiError(
+        "Direct staff creation has been retired. Invite the employee instead (POST /api/staff/invite).",
+        410
+    );
 }
-

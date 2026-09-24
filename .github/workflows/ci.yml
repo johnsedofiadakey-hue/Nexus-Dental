@@ -1,0 +1,59 @@
+name: CI
+
+# Quality gate for every pull request and every push to main.
+# Deployment is still manual (`firebase deploy --only apphosting`); this only
+# proves the exact commit type-checks, builds and has no critical runtime
+# dependency vulnerabilities before anyone deploys it.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # Placeholders so the build can run without any real secrets. None of these
+      # connect to a real service — the build only needs them to be present
+      # (jwt.ts / clinic.ts intentionally throw when unset, and the Firebase
+      # client SDK refuses to initialise without a config).
+      JWT_SECRET: ci-placeholder-secret-not-used-at-runtime
+      CLINIC_ID: ci-clinic
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      NEXT_PUBLIC_FIREBASE_API_KEY: ci-placeholder
+      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ci.firebaseapp.com
+      NEXT_PUBLIC_FIREBASE_PROJECT_ID: ci-project
+      NEXT_PUBLIC_FIREBASE_APP_ID: 1:1:web:ci
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Production build
+        run: npm run build
+
+      - name: Dependency audit (fail on critical runtime vulnerabilities)
+        run: npm audit --omit=dev --audit-level=critical
+
+      # Lint is intentionally not a gate yet: the codebase currently has ~350
+      # findings (mostly `any` and unused variables). Tracked in the hardening
+      # plan; promote this to a required step once the backlog is cleared.

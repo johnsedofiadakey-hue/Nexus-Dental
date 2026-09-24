@@ -38,6 +38,8 @@ export {
     VALID_APPOINTMENT_TRANSITIONS,
     REOPENABLE_STATUSES,
     REOPEN_ALLOWED_ROLES,
+    ROLE_PRIORITY,
+    pickPrimaryRole,
     EMERGENCY_KEYWORDS,
     AUTH_CONFIG,
 } from "./types";

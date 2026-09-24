@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
-import { signToken, verifyPassword, resolveUserPermissions, apiError, apiSuccess } from "@/lib/auth";
+import { signToken, verifyPassword, resolveUserPermissions, pickPrimaryRole, apiError, apiSuccess } from "@/lib/auth";
 import { logAudit, getClientIP, getUserAgent } from "@/lib/audit/logger";
 import type { JWTPayload, AuthResponse, UserRoleType } from "@/lib/auth";
 
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
 
         // Map roles to enums (prioritizing systemRole)
         const userRoles = user.roles.map((r: { systemRole: UserRoleType | null }) => r.systemRole).filter(Boolean) as UserRoleType[];
-        const primaryRole = userRoles[0] || "RECEPTIONIST"; // Fallback to a safe default if no roles
+        const primaryRole = pickPrimaryRole(userRoles); // deterministic, highest-authority role
 
         // Resolve permissions (base role + overrides)
         const permissions = await resolveUserPermissions(
