@@ -48,6 +48,11 @@ jobs:
       - name: Type check
         run: npx tsc --noEmit
 
+      # Tests are excluded from the app's tsconfig (the hosting build must not
+      # depend on test tooling), so they are type-checked separately here.
+      - name: Type check tests
+        run: npx tsc --noEmit -p tsconfig.tests.json
+
       # Authorization regression tests: run the real route handlers with signed
       # tokens against a mocked database to prove clinics and patients cannot
       # reach each other's data, and that role/permission rules hold.
