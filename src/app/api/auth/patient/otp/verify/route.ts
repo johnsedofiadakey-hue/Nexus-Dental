@@ -4,6 +4,7 @@ import { signPatientToken } from "@/lib/auth";
 import { AUTH_CONFIG } from "@/lib/auth/types";
 import { getClinicId } from "@/lib/clinic";
 import { adminAuth } from "@/lib/firebase/server";
+import { consumeRateLimit, clientIp } from "@/lib/security/rate-limit";
 
 export async function POST(request: NextRequest) {
     try {
@@ -18,6 +19,15 @@ export async function POST(request: NextRequest) {
         let normalizedPhone = phone.replace(/\s+/g, "");
         if (normalizedPhone.startsWith("0")) normalizedPhone = normalizedPhone.substring(1);
         if (!normalizedPhone.startsWith("+233")) normalizedPhone = `+233${normalizedPhone}`;
+
+        // Throttle verification attempts: 15 / 15 min per IP.
+        const verifyLimit = await consumeRateLimit(`otp-verify:ip:${clientIp(request.headers)}`, 15, 15 * 60);
+        if (!verifyLimit.allowed) {
+            return NextResponse.json(
+                { success: false, error: "Too many attempts. Try again later." },
+                { status: 429, headers: { "Retry-After": String(verifyLimit.retryAfterSeconds) } }
+            );
+        }
 
         // The Firebase token proves control of *a* phone number. It must be the
         // same number the caller is asking to log in as, otherwise anyone with

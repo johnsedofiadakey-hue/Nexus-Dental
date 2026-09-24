@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { signToken, verifyPassword, resolveUserPermissions, pickPrimaryRole, apiError, apiSuccess } from "@/lib/auth";
 import { logAudit, getClientIP, getUserAgent } from "@/lib/audit/logger";
+import { consumeRateLimit, resetRateLimit, clientIp } from "@/lib/security/rate-limit";
 import type { JWTPayload, AuthResponse, UserRoleType } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
@@ -18,6 +19,23 @@ export async function POST(request: NextRequest) {
         // Validate input
         if (!email || !password) {
             return apiError("Email and password are required", 400);
+        }
+
+        // Brute-force protection (durable, shared across instances):
+        //  - 8 attempts / 15 min per IP + account
+        //  - 20 attempts / 15 min per account from anywhere (distributed guessing)
+        const ipKey = `login:ip:${clientIp(request.headers)}:${email}`;
+        const acctKey = `login:acct:${email}`;
+        const [ipLimit, acctLimit] = await Promise.all([
+            consumeRateLimit(ipKey, 8, 15 * 60),
+            consumeRateLimit(acctKey, 20, 15 * 60),
+        ]);
+        if (!ipLimit.allowed || !acctLimit.allowed) {
+            const retry = Math.max(ipLimit.retryAfterSeconds, acctLimit.retryAfterSeconds);
+            return NextResponse.json(
+                { success: false, message: "Too many sign-in attempts. Please wait and try again.", error: "Too many sign-in attempts. Please wait and try again." },
+                { status: 429, headers: { "Retry-After": String(retry) } }
+            );
         }
 
 
@@ -91,6 +109,10 @@ export async function POST(request: NextRequest) {
 
         // Sign token
         const token = signToken(tokenPayload);
+
+        // Successful sign-in: clear this IP's failure counter (the per-account
+        // counter is left to expire so a shared account can't be reset by an attacker).
+        await resetRateLimit(ipKey);
 
         // Update last login
         await prisma.user.update({
