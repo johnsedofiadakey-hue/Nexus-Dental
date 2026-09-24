@@ -9,7 +9,8 @@
     "lint": "eslint",
     "db:setup": "prisma generate && prisma db push && node scripts/seed-users.js",
     "seed": "node scripts/seed-users.js",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "test": "vitest run"
   },
   "dependencies": {
     "@daily-co/daily-js": "^0.91.0",
@@ -60,7 +61,8 @@
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.7"
   },
   "engines": {
     "node": ">=22.12.0"

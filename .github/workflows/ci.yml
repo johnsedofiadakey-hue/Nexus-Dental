@@ -48,6 +48,12 @@ jobs:
       - name: Type check
         run: npx tsc --noEmit
 
+      # Authorization regression tests: run the real route handlers with signed
+      # tokens against a mocked database to prove clinics and patients cannot
+      # reach each other's data, and that role/permission rules hold.
+      - name: Tests
+        run: npm test
+
       - name: Production build
         run: npm run build
 

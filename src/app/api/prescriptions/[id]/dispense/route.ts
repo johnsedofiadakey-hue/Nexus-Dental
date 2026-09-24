@@ -58,8 +58,10 @@ export async function POST(
             // 1. Process each medication for inventory deduction
             for (const med of medications) {
                 if (med.inventoryId) {
-                    const item = await tx.inventoryItem.findUnique({
-                        where: { id: med.inventoryId }
+                    // Scoped to this clinic: a prescription must never deduct another
+                    // clinic's stock by naming its inventory id.
+                    const item = await tx.inventoryItem.findFirst({
+                        where: { id: med.inventoryId, tenantId }
                     });
 
                     if (!item) {
