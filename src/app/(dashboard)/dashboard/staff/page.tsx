@@ -176,6 +176,26 @@ export default function StaffManagementPage() {
         onError: () => toast.error("Failed to revoke invite"),
     });
 
+    const updateStaff = useMutation({
+        mutationFn: async (vars: { id: string; status?: "ACTIVE" | "SUSPENDED"; role?: string }) => {
+            const { id, ...body } = vars;
+            const res = await fetch(`/api/staff/${id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify(body),
+            });
+            const json = await res.json();
+            if (!json.success) throw new Error(json.error || "Update failed");
+            return json.data;
+        },
+        onSuccess: (_data, vars) => {
+            qc.invalidateQueries({ queryKey: ["staff"] });
+            toast.success(vars.status === "SUSPENDED" ? "Access suspended" : vars.status === "ACTIVE" ? "Access restored" : "Role updated");
+        },
+        onError: (err: Error) => toast.error(err.message),
+    });
+
     const staff = staffData?.staff ?? [];
     const invites = inviteData?.invites ?? [];
     const filteredStaff = staff.filter(s =>
@@ -307,6 +327,36 @@ export default function StaffManagementPage() {
                                                 <p className="text-xs text-slate-400 hidden lg:block">
                                                     Last login {formatDate(member.lastLoginAt)}
                                                 </p>
+                                            )}
+                                            {member.id !== currentUser?.id &&
+                                                primaryRole !== "CLINIC_OWNER" &&
+                                                primaryRole !== "SYSTEM_OWNER" && (
+                                                <>
+                                                    <select
+                                                        aria-label={`Role for ${member.firstName} ${member.lastName}`}
+                                                        value={primaryRole}
+                                                        disabled={updateStaff.isPending}
+                                                        onChange={e => updateStaff.mutate({ id: member.id, role: e.target.value })}
+                                                        className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700"
+                                                    >
+                                                        {["ADMIN", "DOCTOR", "NURSE", "RECEPTIONIST", "INVENTORY_MANAGER", "BILLING_STAFF"].map(r => (
+                                                            <option key={r} value={r}>{roleLabel(r)}</option>
+                                                        ))}
+                                                    </select>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        disabled={updateStaff.isPending}
+                                                        onClick={() => {
+                                                            const suspending = member.status === "ACTIVE";
+                                                            if (!suspending || window.confirm(`Suspend ${member.firstName} ${member.lastName}? They will be unable to sign in.`)) {
+                                                                updateStaff.mutate({ id: member.id, status: suspending ? "SUSPENDED" : "ACTIVE" });
+                                                            }
+                                                        }}
+                                                    >
+                                                        {member.status === "ACTIVE" ? "Suspend" : "Reactivate"}
+                                                    </Button>
+                                                </>
                                             )}
                                         </div>
                                     </CardContent>

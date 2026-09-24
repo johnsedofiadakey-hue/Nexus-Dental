@@ -108,7 +108,7 @@ export default function StaffLoginPage() {
                     </form>
 
                     <div className="mt-10 pt-6 border-t border-slate-100 flex justify-between items-center text-xs">
-                        <Link href="/contact" className="text-slate-500 hover:text-secondary font-medium">Forgot password?</Link>
+                        <Link href="/auth/forgot-password" className="text-slate-500 hover:text-secondary font-medium">Forgot password?</Link>
                         <span className="text-slate-300">|</span>
                         <Link href="/onboarding" className="text-teal-600 hover:text-teal-700 font-medium">Register your clinic →</Link>
                     </div>

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
-import { requireAuth, apiError, apiSuccess } from "@/lib/auth";
+import { requireAuth, requirePermission, PERMISSIONS, apiError, apiSuccess } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 import { JWTPayload } from "@/lib/auth/types";
 import { getTenantIdFromUser } from "@/lib/clinic";
@@ -13,6 +13,9 @@ export async function GET(request: NextRequest) {
     try {
         const authResult = requireAuth(request);
         if ("error" in authResult) return authResult.error;
+
+        const permissionError = requirePermission(authResult.user, PERMISSIONS.STAFF_VIEW);
+        if (permissionError) return permissionError;
         const user = authResult.user as JWTPayload;
 
         const employees = await prisma.user.findMany({

@@ -23,6 +23,9 @@ const PUBLIC_ROUTES = [
 const PUBLIC_API_ROUTES = [
     "/api/auth/login",
     "/api/auth/logout",
+    // Password recovery — the emailed single-use token is the credential.
+    "/api/auth/forgot-password",
+    "/api/auth/reset-password",
     "/api/auth/patient/otp/request",
     "/api/auth/patient/otp/verify",
     "/api/appointments/doctors",

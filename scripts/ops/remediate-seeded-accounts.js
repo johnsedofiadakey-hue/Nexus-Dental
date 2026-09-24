@@ -8,8 +8,9 @@
  *
  *   1. Finds active users whose password hash still matches a known seed
  *      password (bcrypt comparison — no plaintext is ever stored or read back).
- *   2. With --apply: replaces each such password with a fresh random one and
- *      prints it ONCE so the owner can hand it over securely.
+ *   2. With --apply: replaces each such password with a fresh random one. It is
+ *      not printed (accounts are effectively locked until reset) unless
+ *      --show-passwords is passed.
  *   3. Finds audit_logs rows whose old/new value contains a password hash
  *      (written by the old audit extension) and redacts those fields.
  *
@@ -18,6 +19,7 @@
  *
  *   node scripts/ops/remediate-seeded-accounts.js            # dry run
  *   node scripts/ops/remediate-seeded-accounts.js --apply    # make the changes
+ *   ... --apply --show-passwords   # also print the new one-time passwords
  *
  * IMPORTANT — this does not by itself sign anyone out. Existing sessions remain
  * valid until they expire (24h staff / 30d patients). To force every session to
@@ -34,6 +36,9 @@ const { PrismaPg } = require("@prisma/adapter-pg");
 const { Pool } = require("pg");
 
 const APPLY = process.argv.includes("--apply");
+// By default rotated passwords are NOT printed: the accounts are locked with a
+// random secret nobody knows and recovered through the password-reset flow.
+const SHOW_PASSWORDS = process.argv.includes("--show-passwords");
 
 // Passwords that were previously committed to the repository.
 const KNOWN_SEED_PASSWORDS = ["dev123", "admin123", "staff123", "doc123", "doctor123"];
@@ -143,8 +148,12 @@ async function main() {
   console.log(`\nAudit log rows containing password fields: ${dirty} of ${logs.length}`);
 
   if (APPLY && issued.length) {
-    console.log("\nNEW PASSWORDS — shown once, store them securely and have each person change theirs:");
-    for (const i of issued) console.log(`  ${i.email}: ${i.password}`);
+    if (SHOW_PASSWORDS) {
+      console.log("\nNEW PASSWORDS — shown once, store them securely and have each person change theirs:");
+      for (const i of issued) console.log(`  ${i.email}: ${i.password}`);
+    } else {
+      console.log(`\nRotated ${issued.length} account(s). Passwords were not printed; use the password-reset flow to regain access.`);
+    }
   }
 
   if (!APPLY) console.log("\nNothing was changed. Re-run with --apply to remediate.");
