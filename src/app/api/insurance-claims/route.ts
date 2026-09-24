@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { requireAuth, isStaffUser, apiError, apiSuccess } from "@/lib/auth";
+import { requireAuth, requirePermission, PERMISSIONS, isStaffUser, apiError, apiSuccess } from "@/lib/auth";
 import type { JWTPayload } from "@/lib/auth";
 import prisma from "@/lib/db/prisma";
 import { getTenantIdFromUser } from "@/lib/clinic";
@@ -11,6 +11,9 @@ export async function GET(request: NextRequest) {
         const { user } = authResult;
         
         if (!isStaffUser(user)) return apiError("Staff access required", 403);
+
+        const permissionError = requirePermission(user, PERMISSIONS.BILLING_VIEW);
+        if (permissionError) return permissionError;
 
         const { searchParams } = new URL(request.url);
         const status = searchParams.get("status");
@@ -60,6 +63,9 @@ export async function POST(request: NextRequest) {
         const { user } = authResult;
         
         if (!isStaffUser(user)) return apiError("Staff access required", 403);
+
+        const permissionError = requirePermission(user, PERMISSIONS.BILLING_CREATE);
+        if (permissionError) return permissionError;
 
         const body = await request.json();
         const { invoiceId, provider, policyNo, claimedAmount, notes } = body;
@@ -113,6 +119,9 @@ export async function PATCH(request: NextRequest) {
         const { user } = authResult;
         
         if (!isStaffUser(user)) return apiError("Staff access required", 403);
+
+        const permissionError = requirePermission(user, PERMISSIONS.BILLING_UPDATE);
+        if (permissionError) return permissionError;
 
         const body = await request.json();
         const { id, status, approvedAmount, claimRef, notes } = body;

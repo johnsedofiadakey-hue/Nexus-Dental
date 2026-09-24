@@ -3,6 +3,30 @@ const { PrismaClient } = require('@prisma/client');
 const { PrismaPg } = require('@prisma/adapter-pg');
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
+
+// ─── Safety guards ──────────────────────────────────────────────────────────
+// This script DELETES existing patients, appointments, inventory, support
+// tickets and users before re-creating demo data. It must never run against a
+// database that holds real data.
+if (process.env.NODE_ENV === 'production') {
+  console.error('Refusing to seed: NODE_ENV=production.');
+  process.exit(1);
+}
+if (process.env.SEED_ALLOW_DESTRUCTIVE !== 'yes') {
+  console.error(
+    'Refusing to seed: this script deletes data. Point DATABASE_URL at a disposable ' +
+    'development database and re-run with SEED_ALLOW_DESTRUCTIVE=yes.'
+  );
+  process.exit(1);
+}
+
+// Random per-run passwords — never commit or reuse fixed credentials.
+const generated = {};
+function newPassword(label) {
+  generated[label] = crypto.randomBytes(15).toString('base64url');
+  return generated[label];
+}
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -39,7 +63,7 @@ async function main() {
     console.log('Cleared old user accounts and services...');
 
     // 2. Create System Owner
-    const hashedDevPassword = await bcrypt.hash('dev123', 12);
+    const hashedDevPassword = await bcrypt.hash(newPassword('system-owner'), 12);
     await prisma.user.create({
       data: {
         id: 'sys-admin',
@@ -54,7 +78,7 @@ async function main() {
     console.log('Created System Owner: dev@nexusdental.com');
 
     // 3. Create Clinic Owner
-    const hashedAdminPassword = await bcrypt.hash('admin123', 12);
+    const hashedAdminPassword = await bcrypt.hash(newPassword('clinic-owner'), 12);
     await prisma.user.create({
       data: {
         id: 'owner-airport-hills',
@@ -70,7 +94,7 @@ async function main() {
     console.log('Created Clinic Owner: admin@nexusdental.com');
 
     // 4. Create Receptionist
-    const hashedStaffPassword = await bcrypt.hash('staff123', 12);
+    const hashedStaffPassword = await bcrypt.hash(newPassword('receptionist'), 12);
     await prisma.user.create({
       data: {
         id: 'staff-receptionist',
@@ -86,7 +110,7 @@ async function main() {
     console.log('Created Receptionist: sarah@airporthills.com');
 
     // 5. Create Doctors
-    const hashedDocPassword = await bcrypt.hash('doc123', 12);
+    const hashedDocPassword = await bcrypt.hash(newPassword('doctors'), 12);
     await prisma.user.create({
       data: {
         id: 'doc-1',
@@ -115,6 +139,9 @@ async function main() {
       }
     });
     console.log('Created Doctors: Kwame Asante, Ama Mensah');
+    console.log('\nGenerated passwords (shown once, not stored anywhere):');
+    for (const [label, pw] of Object.entries(generated)) console.log(`  ${label}: ${pw}`);
+
 
     // 6. Create Services
     const services = [
@@ -276,14 +303,11 @@ By clicking "I Agree", I confirm that:
     });
     console.log('Created Support Ticket.');
 
-    console.log('\n✅ Seed complete! Default credentials:');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('System Owner:  dev@nexusdental.com     / dev123');
-    console.log('Clinic Admin:  admin@nexusdental.com   / admin123');
-    console.log('Receptionist:  sarah@airporthills.com  / staff123');
-    console.log('Doctors:       kwame@airporthills.com  / doc123');
-    console.log('               ama@airporthills.com    / doc123');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+    console.log('\n✅ Seed complete. Accounts (passwords were printed above, once):');
+    console.log('  System Owner:  dev@nexusdental.com');
+    console.log('  Clinic Owner:  admin@nexusdental.com');
+    console.log('  Receptionist:  sarah@airporthills.com');
+    console.log('  Doctors:       kwame@airporthills.com, ama@airporthills.com');
 
   } catch (err) {
     console.error('Seed failed:', err.message);

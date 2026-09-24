@@ -7,9 +7,13 @@ import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
 import {
   requireAuth,
+  requirePermission,
+  PERMISSIONS,
+  isPatientUser,
   apiError,
   apiSuccess,
 } from "@/lib/auth";
+import type { PatientJWTPayload } from "@/lib/auth";
 import { getTenantIdFromUser } from "@/lib/clinic";
 
 export async function GET(request: NextRequest) {
@@ -23,6 +27,16 @@ export async function GET(request: NextRequest) {
     const patientId = searchParams.get("patientId");
 
     if (!patientId) return apiError("patientId is required", 400);
+
+    if (isPatientUser(user)) {
+      // A patient may only read their own consent records.
+      if ((user as PatientJWTPayload).patientId !== patientId) {
+        return apiError("Forbidden", 403);
+      }
+    } else {
+      const permissionError = requirePermission(user, PERMISSIONS.PATIENTS_VIEW);
+      if (permissionError) return permissionError;
+    }
 
     const consents = await prisma.patientConsent.findMany({
       where: { patientId, tenantId },

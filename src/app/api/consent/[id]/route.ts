@@ -8,6 +8,8 @@ import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
 import {
   requireAuth,
+  requirePermission,
+  PERMISSIONS,
   apiError,
   apiSuccess,
 } from "@/lib/auth";
@@ -63,6 +65,9 @@ export async function DELETE(
     const authResult = requireAuth(request);
     if ("error" in authResult) return authResult.error;
     const { user } = authResult;
+
+    const permissionError = requirePermission(user, PERMISSIONS.SETTINGS_UPDATE);
+    if (permissionError) return permissionError;
 
     const { id } = await params;
     const tenantId = getTenantIdFromUser(user);

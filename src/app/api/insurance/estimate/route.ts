@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { requireAuth, apiError, apiSuccess } from "@/lib/auth";
+import { requireAuth, requirePermission, PERMISSIONS, apiError, apiSuccess } from "@/lib/auth";
 import { InsuranceService } from "@/lib/services/insurance.service";
 
 /**
@@ -10,6 +10,9 @@ export async function POST(request: NextRequest) {
   try {
     const authResult = requireAuth(request);
     if ("error" in authResult) return authResult.error;
+
+    const permissionError = requirePermission(authResult.user, PERMISSIONS.BILLING_VIEW);
+    if (permissionError) return permissionError;
 
     const body = await request.json();
     const { provider, invoiceAmount, coveragePercentage } = body;

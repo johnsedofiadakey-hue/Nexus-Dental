@@ -10,6 +10,8 @@ import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
 import {
   requireAuth,
+  requirePermission,
+  PERMISSIONS,
   apiError,
   apiSuccess,
 } from "@/lib/auth";
@@ -57,6 +59,10 @@ export async function POST(request: NextRequest) {
     const authResult = requireAuth(request);
     if ("error" in authResult) return authResult.error;
     const { user } = authResult;
+
+    // Creating consent templates changes legal wording — clinic settings authority only.
+    const permissionError = requirePermission(user, PERMISSIONS.SETTINGS_UPDATE);
+    if (permissionError) return permissionError;
 
     const body = await request.json() as {
       tenantId?: string;

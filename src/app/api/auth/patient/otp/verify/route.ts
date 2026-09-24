@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { signPatientToken } from "@/lib/auth";
+import { AUTH_CONFIG } from "@/lib/auth/types";
 import { getClinicId } from "@/lib/clinic";
 import { adminAuth } from "@/lib/firebase/server";
 
@@ -18,8 +19,15 @@ export async function POST(request: NextRequest) {
         if (normalizedPhone.startsWith("0")) normalizedPhone = normalizedPhone.substring(1);
         if (!normalizedPhone.startsWith("+233")) normalizedPhone = `+233${normalizedPhone}`;
 
+        // The Firebase token proves control of *a* phone number. It must be the
+        // same number the caller is asking to log in as, otherwise anyone with
+        // any valid token could request a session for another patient.
         try {
-            await adminAuth.verifyIdToken(token);
+            const decoded = await adminAuth.verifyIdToken(token);
+            if (!decoded.phone_number || decoded.phone_number !== normalizedPhone) {
+                console.warn("[patient/otp/verify] Token phone does not match requested phone");
+                return NextResponse.json({ success: false, error: "Invalid token." }, { status: 401 });
+            }
         } catch (err) {
             console.error("Firebase token verification failed:", err);
             return NextResponse.json({ success: false, error: "Invalid token." }, { status: 401 });
@@ -59,7 +67,7 @@ export async function POST(request: NextRequest) {
             secure: process.env.NODE_ENV === "production",
             sameSite: "lax",
             path: "/",
-            maxAge: 60 * 60 * 24 * 30,
+            maxAge: AUTH_CONFIG.PATIENT_SESSION_MAX_AGE_SECONDS,
         });
 
         return response;

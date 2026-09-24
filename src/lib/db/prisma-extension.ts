@@ -1,5 +1,3 @@
-import { Prisma } from "@prisma/client";
-
 export function withAuditLogging(client: any) {
   return client.$extends({
     name: "audit-logger",
@@ -12,12 +10,19 @@ export function withAuditLogging(client: any) {
             // Only log for important models
             const auditedModels = ["Patient", "Appointment", "Invoice", "User", "Tenant", "TreatmentPlan", "Prescription"];
             if (auditedModels.includes(model)) {
-              
+
               // In a real app, you would extract userId from async local storage (Next.js server context)
               // Here we do a best effort or leave userId as "system" if not provided in args
               const userId = null;
               const tenantId = args.data?.tenantId || (result && result.tenantId) || null;
               const entityId = result?.id || "multiple";
+
+              // Record only WHICH fields changed — never the values. Serializing the
+              // full record would copy sensitive data (e.g. password hashes, medical
+              // notes) into the audit table. Detailed, redacted, actor-attributed
+              // entries are written explicitly via logAudit() in the route handlers.
+              const changedFields =
+                args?.data && typeof args.data === "object" ? Object.keys(args.data).sort() : [];
 
               // Don't await the audit log to avoid blocking the main query response
               client.auditLog.create({
@@ -27,7 +32,7 @@ export function withAuditLogging(client: any) {
                   action: operation.toUpperCase(),
                   entity: model,
                   entityId,
-                  newValue: operation !== "delete" ? JSON.stringify(result) : null,
+                  newValue: operation !== "delete" ? JSON.stringify({ changedFields }) : null,
                   ipAddress: "internal",
                 }
               }).catch((e: any) => console.error("Audit log failed", e));

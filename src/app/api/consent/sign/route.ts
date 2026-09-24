@@ -8,6 +8,8 @@ import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
 import {
   requireAuth,
+  requirePermission,
+  PERMISSIONS,
   apiError,
   apiSuccess,
   isPatientUser,
@@ -42,6 +44,9 @@ export async function POST(request: NextRequest) {
       if ((user as PatientJWTPayload).patientId !== patientId) {
         return apiError("Forbidden: Cannot sign consent for another patient", 403);
       }
+    } else {
+      const permissionError = requirePermission(user, PERMISSIONS.PATIENTS_UPDATE);
+      if (permissionError) return permissionError;
     }
 
     // Verify template exists and is accessible by this tenant

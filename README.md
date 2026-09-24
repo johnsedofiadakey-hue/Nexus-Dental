@@ -38,13 +38,9 @@ Nexus Dental is a multi-tenant dental clinic SaaS. This repository contains the 
    npm run dev
    ```
 
-## Default Seed Credentials
+## Demo Accounts
 
-After running `npm run db:setup`, the following accounts are available:
-- **System Owner:** `dev@nexusdental.com` / `dev123`
-- **Clinic Owner (Admin):** `admin@nexusdental.com` / `admin123`
-- **Receptionist:** `sarah@airporthills.com` / `staff123`
-- **Doctor:** `dr.smith@airporthills.com` / `doctor123`
+Demo accounts are created by `npm run seed` with **random, one-time passwords printed to the console** (see `scripts/seed-users.js`). Seeding deletes data and refuses to run unless `SEED_ALLOW_DESTRUCTIVE=yes` is set against a disposable development database. Never seed a database that holds real data.
 
 ## Architecture
 - **Framework:** Next.js (App Router)

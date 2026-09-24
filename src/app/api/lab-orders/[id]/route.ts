@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { requireAuth, apiError, apiSuccess } from "@/lib/auth";
+import { requireAuth, requirePermission, PERMISSIONS, apiError, apiSuccess } from "@/lib/auth";
 import type { JWTPayload } from "@/lib/auth";
 import { prisma } from "@/lib/db/prisma";
 import { getTenantIdFromUser } from "@/lib/clinic";
@@ -20,6 +20,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     try {
         const authResult = requireAuth(request);
         if ("error" in authResult) return authResult.error;
+        const permissionError = requirePermission(authResult.user, PERMISSIONS.PATIENTS_UPDATE);
+        if (permissionError) return permissionError;
         const user = authResult.user as JWTPayload;
 
         const { id } = await params;
@@ -106,6 +108,8 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     try {
         const authResult = requireAuth(request);
         if ("error" in authResult) return authResult.error;
+        const permissionError = requirePermission(authResult.user, PERMISSIONS.PATIENTS_UPDATE);
+        if (permissionError) return permissionError;
         const user = authResult.user as JWTPayload;
 
         const { id } = await params;

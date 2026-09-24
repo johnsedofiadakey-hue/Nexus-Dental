@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { requireAuth, apiError, apiSuccess } from "@/lib/auth";
+import { requireAuth, requirePermission, PERMISSIONS, apiError, apiSuccess } from "@/lib/auth";
 import { getTenantIdFromUser } from "@/lib/clinic";
 import { InsuranceService } from "@/lib/services/insurance.service";
 import prisma from "@/lib/db/prisma";
@@ -14,6 +14,9 @@ export async function POST(request: NextRequest) {
   try {
     const authResult = requireAuth(request);
     if ("error" in authResult) return authResult.error;
+
+    const permissionError = requirePermission(authResult.user, PERMISSIONS.PATIENTS_UPDATE);
+    if (permissionError) return permissionError;
     const user = authResult.user as any;
     const tenantId = getTenantIdFromUser(user);
 
@@ -100,6 +103,9 @@ export async function GET(request: NextRequest) {
   try {
     const authResult = requireAuth(request);
     if ("error" in authResult) return authResult.error;
+
+    const permissionError = requirePermission(authResult.user, PERMISSIONS.PATIENTS_VIEW);
+    if (permissionError) return permissionError;
     const user = authResult.user as any;
     const tenantId = getTenantIdFromUser(user);
 

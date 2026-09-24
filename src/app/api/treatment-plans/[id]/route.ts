@@ -2,9 +2,14 @@ import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
 import {
     requireAuth,
+    requirePermission,
+    PERMISSIONS,
     apiError,
     apiSuccess,
 } from "@/lib/auth";
+
+const PLAN_STATUSES = ["ACTIVE", "COMPLETED", "CANCELLED", "ON_HOLD"];
+const STEP_STATUSES = ["PENDING", "IN_PROGRESS", "COMPLETED", "SKIPPED"];
 
 export async function GET(
     request: NextRequest,
@@ -14,6 +19,9 @@ export async function GET(
         const authResult = requireAuth(request);
         if ("error" in authResult) return authResult.error;
         const { user } = authResult;
+
+        const permissionError = requirePermission(user, PERMISSIONS.PATIENTS_VIEW);
+        if (permissionError) return permissionError;
 
         const tenantId = user.tenantId;
         if (!tenantId) return apiError("No tenant associated with user", 400);
@@ -47,12 +55,19 @@ export async function PATCH(
         if ("error" in authResult) return authResult.error;
         const { user } = authResult;
 
+        const permissionError = requirePermission(user, PERMISSIONS.PATIENTS_UPDATE);
+        if (permissionError) return permissionError;
+
         const tenantId = user.tenantId;
         if (!tenantId) return apiError("No tenant associated with user", 400);
 
         const { id } = await params;
         const body = await request.json();
         const { status, title, description, notes } = body;
+
+        if (status && !PLAN_STATUSES.includes(status)) {
+            return apiError(`status must be one of: ${PLAN_STATUSES.join(", ")}`, 400);
+        }
 
         const existing = await prisma.treatmentPlan.findFirst({
             where: { id, tenantId, deletedAt: null },
