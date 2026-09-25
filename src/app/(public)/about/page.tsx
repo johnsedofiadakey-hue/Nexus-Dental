@@ -1,108 +1,124 @@
 "use client";
 
+import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Shield, Users, Award, Heart, Loader2 } from "lucide-react";
+import {
+    ArrowRight,
+    HeartHandshake,
+    Loader2,
+    MessagesSquare,
+    ScanLine,
+    ShieldCheck,
+} from "lucide-react";
+
+const values = [
+    { icon: ShieldCheck, title: "Safety first", text: "Careful clinical protocols and a consistent focus on patient wellbeing." },
+    { icon: MessagesSquare, title: "Clarity always", text: "Plain-language explanations before decisions are made." },
+    { icon: HeartHandshake, title: "Human care", text: "A calm, respectful experience shaped around the person—not just the procedure." },
+    { icon: ScanLine, title: "Modern thinking", text: "Thoughtful use of digital tools to support accurate planning and continuity of care." },
+];
 
 export default function AboutPage() {
     const [loading, setLoading] = useState(true);
     const [content, setContent] = useState({
-        aboutPage: "Nexus Dental was founded with a single mission: to redefine the dental experience. We combine cutting-edge technology with a human-centered approach to ensure your comfort and precision in every procedure.",
-        mission: "Uncompromising safety, elite expertise, and a patient-first approach to oral health.",
-        vision: "To be the leading provider of personalized dental excellence in our community."
+        aboutPage: "We combine modern dental practice with a warm, patient-centred approach to make each visit more comfortable and understandable.",
+        mission: "To provide clear, respectful dental care that helps every patient make confident decisions about their health.",
+        vision: "A community where professional dental care feels accessible, calm, and built around long-term wellbeing.",
     });
 
     useEffect(() => {
+        let active = true;
+
         const fetchContent = async () => {
             try {
-                const res = await fetch("/api/public/clinic/content");
-                const data = await res.json();
-                if (data.success && data.data) {
-                    setContent({
-                        aboutPage: data.data.aboutPage || content.aboutPage,
-                        mission: data.data.mission || content.mission,
-                        vision: data.data.vision || content.vision
-                    });
+                const response = await fetch("/api/public/clinic/content");
+                const payload = await response.json();
+                if (active && payload.success && payload.data) {
+                    setContent((current) => ({
+                        aboutPage: payload.data.aboutPage || current.aboutPage,
+                        mission: payload.data.mission || current.mission,
+                        vision: payload.data.vision || current.vision,
+                    }));
                 }
-            } catch (error) {
-                console.error("Failed to load dynamic about content:", error);
+            } catch {
+                // The locally defined clinic copy remains available when content storage is offline.
             } finally {
-                setLoading(false);
+                if (active) setLoading(false);
             }
         };
 
         fetchContent();
+        return () => {
+            active = false;
+        };
     }, []);
 
     return (
-        <div className="flex flex-col">
-            {/* Hero Section */}
-            <section className="relative py-24 bg-bg overflow-hidden">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="max-w-3xl">
-                        <span className="inline-block px-4 py-1.5 mb-6 text-xs font-semibold tracking-wider text-primary uppercase bg-primary/10 rounded-full">
-                            Our Story
-                        </span>
-                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading text-secondary leading-tight mb-8">
-                            World-Class Dental Care. <br />
-                            <span className="text-primary font-serif italic">Personalized</span> for You.
+        <div className="bg-white">
+            <section className="relative overflow-hidden bg-[linear-gradient(135deg,#f7fbfa,#edf8f6)] px-5 py-14 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
+                <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-2 lg:gap-16">
+                    <div>
+                        <span className="eyebrow">Our approach</span>
+                        <h1 className="mt-5 font-[family-name:var(--font-heading)] text-5xl leading-[1.02] tracking-[-0.035em] text-secondary sm:text-6xl">
+                            Dentistry built around <span className="text-primary">people.</span>
                         </h1>
                         {loading ? (
-                            <div className="py-10">
-                                <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                            </div>
+                            <Loader2 className="mt-8 h-7 w-7 animate-spin text-primary" />
                         ) : (
-                            <p className="text-lg text-text-secondary leading-relaxed mb-10">
-                                {content.aboutPage}
-                            </p>
+                            <p className="mt-7 max-w-xl text-lg leading-8 text-text-secondary">{content.aboutPage}</p>
                         )}
+                        <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+                            <Link href="/booking" className="btn-primary min-h-13 px-6 no-underline">
+                                Book a visit
+                                <ArrowRight className="h-4 w-4" />
+                            </Link>
+                            <Link href="/services" className="btn-secondary min-h-13 bg-white px-6 no-underline">Explore services</Link>
+                        </div>
+                    </div>
+
+                    <div className="relative aspect-[4/3] overflow-hidden rounded-[2rem] border-[6px] border-white shadow-[var(--shadow-hero)]">
+                        <Image
+                            src="/images/patient-consultation.jpg"
+                            alt="Dentist having a calm consultation with a patient"
+                            fill
+                            sizes="(max-width: 1024px) 100vw, 50vw"
+                            className="object-cover object-[68%_center]"
+                        />
                     </div>
                 </div>
             </section>
 
-            {/* Values */}
-            <section className="py-24 bg-white">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
-                        {[
-                            { icon: Shield, title: "Uncompromising Safety", desc: "Rigorous sterilization and the advanced clinical protocols." },
-                            { icon: Award, title: "Elite Expertise", desc: "Our team of specialists brings decades of collective experience." },
-                            { icon: Users, title: "Patient First", desc: "We listen, we care, and we tailor every treatment to your needs." },
-                            { icon: Heart, title: "Compassion", desc: "Gentle techniques designed to eliminate dental anxiety." },
-                        ].map((value, i) => (
-                            <div key={i} className="flex flex-col">
-                                <div className="w-12 h-12 rounded-2xl bg-primary/5 flex items-center justify-center text-primary mb-6">
+            <section className="section-padding">
+                <div className="mx-auto max-w-7xl">
+                    <div className="mx-auto mb-12 max-w-2xl text-center">
+                        <span className="eyebrow">What guides us</span>
+                        <h2 className="section-title mt-4">Professional care can still feel personal.</h2>
+                    </div>
+                    <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+                        {values.map((value) => (
+                            <article key={value.title} className="rounded-3xl border border-border-light bg-bg/60 p-6">
+                                <span className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                                     <value.icon className="h-6 w-6" />
-                                </div>
-                                <h3 className="text-xl font-heading text-secondary mb-4">{value.title}</h3>
-                                <p className="text-sm text-text-secondary leading-relaxed">{value.desc}</p>
-                            </div>
+                                </span>
+                                <h3 className="text-xl text-secondary">{value.title}</h3>
+                                <p className="mt-3 text-sm leading-7 text-text-secondary">{value.text}</p>
+                            </article>
                         ))}
                     </div>
                 </div>
             </section>
 
-            {/* Team Preview Placeholder */}
-            <section className="py-24 bg-bg">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="text-center max-w-2xl mx-auto mb-16">
-                        <h2 className="text-3xl md:text-4xl font-heading text-secondary mb-6">Meet Our Specialists</h2>
-                        <p className="text-text-secondary">
-                            A dedicated team of experts committed to delivering the highest level of clinical excellence.
-                        </p>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {[1, 2, 3].map((id) => (
-                            <div key={id} className="group overflow-hidden rounded-3xl bg-white border border-border shadow-soft hover:shadow-hover transition-all duration-500">
-                                <div className="aspect-[4/5] bg-slate-100 relative overflow-hidden">
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                </div>
-                                <div className="p-8">
-                                    <h4 className="text-xl font-heading text-secondary">Specialist {id}</h4>
-                                    <p className="text-sm text-primary font-medium">Senior Clinician</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+            <section className="section-padding bg-bg">
+                <div className="mx-auto grid max-w-7xl gap-5 lg:grid-cols-2">
+                    <article className="rounded-[2rem] bg-secondary p-8 text-white sm:p-10">
+                        <span className="eyebrow !text-primary-light">Our mission</span>
+                        <p className="mt-5 font-[family-name:var(--font-heading)] text-3xl leading-snug">{content.mission}</p>
+                    </article>
+                    <article className="rounded-[2rem] border border-border bg-white p-8 sm:p-10">
+                        <span className="eyebrow">Our vision</span>
+                        <p className="mt-5 font-[family-name:var(--font-heading)] text-3xl leading-snug text-secondary">{content.vision}</p>
+                    </article>
                 </div>
             </section>
         </div>

@@ -1,73 +1,45 @@
 "use client";
 
+import Link from "next/link";
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
-import Link from "next/link";
-import { Calendar, ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, CalendarDays, MessageCircle } from "lucide-react";
 
 export default function CTASection() {
     const ref = useRef(null);
-    const isInView = useInView(ref, { once: true, margin: "-100px" });
+    const isInView = useInView(ref, { once: true, margin: "-80px" });
 
     return (
-        <section className="section-padding" ref={ref}>
-            <div className="mx-auto max-w-7xl">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={isInView ? { opacity: 1, y: 0 } : {}}
-                    transition={{ duration: 0.7 }}
-                    className="relative rounded-3xl overflow-hidden"
-                >
-                    {/* Background */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary-dark to-secondary" />
-
-                    {/* Decorative */}
-                    <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-white/5 blur-2xl" />
-                    <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full bg-accent/10 blur-2xl" />
-
-                    {/* Content */}
-                    <div className="relative py-16 sm:py-20 px-8 sm:px-16 text-center">
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={isInView ? { opacity: 1, scale: 1 } : {}}
-                            transition={{ delay: 0.2, duration: 0.5 }}
-                        >
-                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 text-white/90 text-sm font-medium mb-8 border border-white/10">
-                                <Sparkles className="h-4 w-4" />
-                                Start Your Journey Today
-                            </div>
-
-                            <h2 className="font-[family-name:var(--font-heading)] text-3xl sm:text-4xl lg:text-5xl text-white mb-6 max-w-2xl mx-auto leading-tight">
-                                Your Perfect Smile{" "}
-                                <span className="text-accent-light">Awaits</span>
-                            </h2>
-
-                            <p className="text-lg text-white/70 max-w-lg mx-auto mb-10 leading-relaxed">
-                                Take the first step towards the smile you&apos;ve always wanted.
-                                Book your appointment today and experience world-class dental care.
-                            </p>
-
-                            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                                <Link
-                                    href="/booking"
-                                    className="btn-primary text-base px-8 py-4 no-underline"
-                                >
-                                    <Calendar className="h-5 w-5" />
-                                    Book Your Appointment
-                                    <ArrowRight className="h-5 w-5" />
-                                </Link>
-                                <Link
-                                    href="/contact"
-                                    className="inline-flex items-center gap-2 text-white/80 hover:text-white text-sm font-medium transition-colors no-underline"
-                                >
-                                    Or contact us for questions
-                                    <ArrowRight className="h-4 w-4" />
-                                </Link>
-                            </div>
-                        </motion.div>
+        <section className="section-padding bg-bg" ref={ref}>
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={isInView ? { opacity: 1, y: 0 } : {}}
+                transition={{ duration: 0.6 }}
+                className="relative mx-auto max-w-7xl overflow-hidden rounded-[2.25rem] bg-[linear-gradient(120deg,#0f9d8b_0%,#087466_55%,#102a43_100%)] px-6 py-14 text-center text-white shadow-[var(--shadow-hero)] sm:px-12 sm:py-20"
+            >
+                <div className="absolute -left-16 -top-24 h-64 w-64 rounded-full border border-white/10" />
+                <div className="absolute -bottom-36 -right-20 h-80 w-80 rounded-full bg-white/[0.06]" />
+                <div className="relative mx-auto max-w-3xl">
+                    <span className="eyebrow !text-white/80">Your next visit</span>
+                    <h2 className="mt-4 font-[family-name:var(--font-heading)] text-4xl leading-tight sm:text-5xl lg:text-6xl">
+                        Let’s make dental care feel easier.
+                    </h2>
+                    <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-white/75 sm:text-lg">
+                        Choose an appointment time online or speak with the team if you are unsure where to begin.
+                    </p>
+                    <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
+                        <Link href="/booking" className="inline-flex min-h-14 items-center justify-center gap-2 rounded-xl bg-white px-6 text-base font-bold text-primary-dark no-underline transition-transform hover:-translate-y-0.5">
+                            <CalendarDays className="h-5 w-5" />
+                            Book appointment
+                            <ArrowRight className="h-4 w-4" />
+                        </Link>
+                        <Link href="/contact" className="inline-flex min-h-14 items-center justify-center gap-2 rounded-xl border border-white/20 px-6 text-base font-bold text-white no-underline hover:bg-white/10">
+                            <MessageCircle className="h-5 w-5" />
+                            Ask a question
+                        </Link>
                     </div>
-                </motion.div>
-            </div>
+                </div>
+            </motion.div>
         </section>
     );
 }

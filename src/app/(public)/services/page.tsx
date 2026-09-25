@@ -128,16 +128,16 @@ const services = [
         title: "Emergency Care",
         tagline: "Immediate Relief When You Need It Most",
         description:
-            "Dental emergencies don't wait — and neither do we. Our emergency dental team provides immediate care for urgent dental situations, offering same-day appointments and after-hours availability.",
+            "Dental emergencies need prompt attention. Contact the clinic for the earliest available assessment and clear guidance on what to do while you arrange care.",
         features: [
-            "Same-day emergency appointments",
+            "Priority emergency assessment when available",
             "Severe toothache relief",
             "Broken or chipped tooth repair",
             "Lost filling or crown replacement",
             "Dental abscess treatment",
             "Knocked-out tooth management",
             "Post-surgical complications",
-            "After-hours emergency line",
+            "Clear guidance for urgent next steps",
         ],
         color: "text-danger",
         bg: "bg-danger/10",
@@ -149,7 +149,7 @@ const services = [
         title: "Online Consultation",
         tagline: "Expert Dental Care, Anywhere",
         description:
-            "Connect with our dental professionals from the comfort of your home through our secure, HIPAA-compliant video consultation platform. Get professional advice, treatment plans, prescriptions, and referrals without stepping out.",
+            "Connect with our dental professionals from the comfort of your home through a private video consultation. Explain a concern, receive practical guidance, and understand when an in-clinic examination is needed.",
         features: [
             "Secure HD video consultations",
             "Digital prescriptions",
@@ -170,31 +170,30 @@ export default function ServicesPage() {
     return (
         <>
             {/* Hero */}
-            <section className="relative pt-32 pb-16 bg-gradient-to-br from-slate-50 via-white to-teal-50/30">
-                <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-primary/5 blur-3xl" />
-                <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
+            <section className="relative overflow-hidden bg-[linear-gradient(135deg,#f7fbfa,#edf8f6)] px-5 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
+                <div className="absolute -right-24 -top-24 h-80 w-80 rounded-full border-[48px] border-white/60" />
+                <div className="relative mx-auto max-w-4xl text-center">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6 }}
                     >
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
+                        <div className="eyebrow mb-5">
                             <Stethoscope className="h-4 w-4" />
-                            Complete Dental Care
+                            Complete dental care
                         </div>
-                        <h1 className="font-[family-name:var(--font-heading)] text-4xl sm:text-5xl text-secondary mb-4">
-                            Our <span className="text-primary">Services</span>
+                        <h1 className="font-[family-name:var(--font-heading)] text-5xl leading-tight tracking-[-0.035em] text-secondary sm:text-6xl">
+                            Care for every stage of your <span className="text-primary">smile.</span>
                         </h1>
-                        <p className="text-lg text-text-secondary max-w-2xl mx-auto">
-                            Comprehensive dental care under one roof — from routine preventive
-                            care to advanced surgical procedures and virtual consultations.
+                        <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-text-secondary">
+                            From prevention and routine care to restorative treatment and urgent support, understand what each service includes before you book.
                         </p>
                     </motion.div>
                 </div>
             </section>
 
             {/* Service Detail Cards */}
-            <section className="section-padding">
+            <section className="section-padding bg-bg">
                 <div className="mx-auto max-w-7xl space-y-12">
                     {services.map((service, i) => (
                         <ServiceCard key={service.id} service={service} index={i} />
@@ -204,19 +203,19 @@ export default function ServicesPage() {
 
             {/* Bottom CTA */}
             <section className="section-padding bg-white">
-                <div className="mx-auto max-w-3xl text-center">
-                    <h2 className="font-[family-name:var(--font-heading)] text-3xl text-secondary mb-4">
-                        Ready to Get Started?
+                <div className="mx-auto max-w-3xl rounded-[2rem] bg-secondary p-8 text-center text-white sm:p-12">
+                    <h2 className="font-[family-name:var(--font-heading)] text-4xl text-white mb-4">
+                        Not sure which service to choose?
                     </h2>
-                    <p className="text-text-secondary mb-8">
-                        Book an appointment today and experience the Nexus Dental difference.
+                    <p className="text-slate-300 mb-8">
+                        Start with a general assessment or ask about an online consultation before booking.
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                         <Link href="/booking" className="btn-primary no-underline">
                             <Calendar className="h-5 w-5" />
                             Book Appointment
                         </Link>
-                        <Link href="/consultation" className="btn-secondary no-underline">
+                        <Link href="/consultation" className="inline-flex min-h-13 items-center justify-center gap-2 rounded-xl border border-white/20 px-6 font-semibold text-white no-underline hover:bg-white/10">
                             <Video className="h-5 w-5" />
                             Online Consultation
                         </Link>
@@ -249,11 +248,10 @@ function ServiceCard({
             className="scroll-mt-24"
         >
             <div
-                className={`rounded-3xl bg-white border border-border-light p-8 sm:p-10 lg:p-12 shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-card)] transition-shadow`}
+                className="rounded-[2rem] border border-border-light bg-white p-7 shadow-[var(--shadow-soft)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-card)] sm:p-10 lg:p-12"
             >
                 <div
-                    className={`grid lg:grid-cols-2 gap-10 items-center ${isEven ? "" : "lg:direction-rtl"
-                        }`}
+                    className="grid items-center gap-10 lg:grid-cols-2"
                 >
                     {/* Info */}
                     <div className={isEven ? "" : "lg:order-2"}>

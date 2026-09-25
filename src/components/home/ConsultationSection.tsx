@@ -1,150 +1,95 @@
 "use client";
 
+import Link from "next/link";
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
-import Link from "next/link";
-import { Video, Shield, FileText, ArrowRight, Clock, CheckCircle } from "lucide-react";
+import {
+    ArrowRight,
+    CalendarCheck2,
+    Camera,
+    ClipboardCheck,
+    LockKeyhole,
+    Video,
+} from "lucide-react";
 
-const features = [
-    {
-        icon: Video,
-        title: "HD Video Consultations",
-        description: "Crystal-clear video calls with our dental specialists from the comfort of your home.",
-    },
-    {
-        icon: Shield,
-        title: "HIPAA Compliant",
-        description: "End-to-end encrypted sessions ensuring your medical data stays private and secure.",
-    },
-    {
-        icon: FileText,
-        title: "Digital Prescriptions",
-        description: "Receive prescriptions and treatment plans digitally right after your session.",
-    },
-    {
-        icon: Clock,
-        title: "No Wait Times",
-        description: "Skip the waiting room. Connect with a dentist at your scheduled time instantly.",
-    },
+const steps = [
+    { icon: ClipboardCheck, title: "Share your concern", text: "Complete a short assessment before the call." },
+    { icon: Camera, title: "Meet securely online", text: "Speak with the care team from a private space." },
+    { icon: CalendarCheck2, title: "Plan the next step", text: "Know whether you need an in-clinic examination." },
 ];
 
 export default function ConsultationSection() {
     const ref = useRef(null);
-    const isInView = useInView(ref, { once: true, margin: "-100px" });
+    const isInView = useInView(ref, { once: true, margin: "-80px" });
 
     return (
         <section className="section-padding bg-white" ref={ref}>
-            <div className="mx-auto max-w-7xl">
-                <div className="grid lg:grid-cols-2 gap-16 items-center">
-                    {/* Visual */}
-                    <motion.div
-                        initial={{ opacity: 0, x: -30 }}
-                        animate={isInView ? { opacity: 1, x: 0 } : {}}
-                        transition={{ duration: 0.7 }}
-                        className="relative"
-                    >
-                        <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-primary to-secondary p-10 aspect-square flex items-center justify-center">
-                            {/* Decorative Circles */}
-                            <div className="absolute top-6 right-6 w-24 h-24 rounded-full border-2 border-white/10" />
-                            <div className="absolute bottom-10 left-10 w-32 h-32 rounded-full border-2 border-white/5" />
-
-                            <div className="text-center text-white relative z-10">
-                                <div className="w-24 h-24 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-6 border-2 border-white/20">
-                                    <Video className="h-12 w-12 text-white" />
-                                </div>
-                                <h3 className="font-[family-name:var(--font-heading)] text-2xl mb-3">
-                                    Virtual Dental Care
-                                </h3>
-                                <p className="text-white/70 text-sm max-w-xs mx-auto mb-6">
-                                    Professional dental consultations from anywhere, anytime.
-                                </p>
-                                <div className="flex items-center justify-center gap-3">
-                                    <div className="flex -space-x-2">
-                                        {[1, 2, 3, 4].map((i) => (
-                                            <div
-                                                key={i}
-                                                className="w-8 h-8 rounded-full bg-white/20 border-2 border-white/30 flex items-center justify-center"
-                                            >
-                                                <span className="text-xs">👨‍⚕️</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <span className="text-sm text-white/80">12 Doctors Online</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Floating Badge */}
-                        <motion.div
-                            animate={{ y: [0, -6, 0] }}
-                            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                            className="absolute -bottom-4 -right-4 glass rounded-2xl p-4 shadow-hero"
-                        >
+            <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-2 lg:gap-16">
+                <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={isInView ? { opacity: 1, x: 0 } : {}}
+                    transition={{ duration: 0.6 }}
+                    className="relative overflow-hidden rounded-[2rem] bg-[linear-gradient(145deg,#e7f7f4,#f7fbfa)] p-6 sm:p-10"
+                >
+                    <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full border-[32px] border-white/60" />
+                    <div className="relative rounded-[1.75rem] border border-white bg-white/85 p-6 shadow-[var(--shadow-card)] backdrop-blur sm:p-8">
+                        <div className="flex items-center justify-between border-b border-border-light pb-5">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-success/20 flex items-center justify-center">
-                                    <CheckCircle className="h-5 w-5 text-success" />
-                                </div>
+                                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-white">
+                                    <Video className="h-5 w-5" />
+                                </span>
                                 <div>
-                                    <p className="text-sm font-semibold text-secondary">Instant Access</p>
-                                    <p className="text-xs text-text-muted">Connect in minutes</p>
+                                    <p className="font-bold text-secondary">Virtual dental care</p>
+                                    <p className="text-xs text-text-muted">Private consultation</p>
                                 </div>
                             </div>
-                        </motion.div>
-                    </motion.div>
-
-                    {/* Content */}
-                    <motion.div
-                        initial={{ opacity: 0, x: 30 }}
-                        animate={isInView ? { opacity: 1, x: 0 } : {}}
-                        transition={{ duration: 0.7, delay: 0.2 }}
-                    >
-                        <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
-                            <Video className="h-4 w-4" />
-                            Telehealth Available
-                        </span>
-
-                        <h2 className="font-[family-name:var(--font-heading)] text-3xl sm:text-4xl text-secondary mb-4">
-                            Expert Dental Advice From{" "}
-                            <span className="text-primary">Anywhere</span>
-                        </h2>
-
-                        <p className="text-text-secondary leading-relaxed mb-8">
-                            Can&apos;t make it to the clinic? No problem. Our online consultation
-                            service connects you with qualified dental professionals via secure,
-                            HD video calls. Get diagnoses, treatment plans, prescriptions, and
-                            referrals — all from the comfort of your home.
-                        </p>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-                            {features.map((feature, i) => {
-                                const Icon = feature.icon;
-                                return (
-                                    <div
-                                        key={i}
-                                        className="flex items-start gap-3 p-4 rounded-xl bg-bg"
-                                    >
-                                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                                            <Icon className="h-5 w-5 text-primary" />
-                                        </div>
-                                        <div>
-                                            <h4 className="text-sm font-semibold text-secondary mb-1">
-                                                {feature.title}
-                                            </h4>
-                                            <p className="text-xs text-text-muted leading-relaxed">
-                                                {feature.description}
-                                            </p>
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                            <span className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">
+                                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                                Available
+                            </span>
                         </div>
+                        <div className="mt-6 grid gap-4">
+                            {steps.map((step, index) => (
+                                <div key={step.title} className="flex gap-4 rounded-2xl bg-bg p-4">
+                                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-primary shadow-sm">
+                                        <step.icon className="h-4.5 w-4.5" />
+                                    </span>
+                                    <div>
+                                        <p className="text-sm font-bold text-secondary">{index + 1}. {step.title}</p>
+                                        <p className="mt-1 text-xs leading-5 text-text-secondary">{step.text}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="mt-6 flex items-center gap-2 text-xs font-semibold text-text-secondary">
+                            <LockKeyhole className="h-4 w-4 text-primary" />
+                            Consent-led and designed for private conversations
+                        </div>
+                    </div>
+                </motion.div>
 
-                        <Link href="/consultation" className="btn-primary no-underline">
-                            Start Virtual Consultation
+                <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={isInView ? { opacity: 1, x: 0 } : {}}
+                    transition={{ duration: 0.6, delay: 0.1 }}
+                >
+                    <span className="eyebrow">Virtual care</span>
+                    <h2 className="mt-4 font-[family-name:var(--font-heading)] text-4xl leading-tight tracking-[-0.025em] text-secondary sm:text-5xl">
+                        Professional guidance, wherever you are.
+                    </h2>
+                    <p className="mt-6 text-base leading-8 text-text-secondary sm:text-lg">
+                        An online consultation can help you explain a concern, understand urgency, and prepare for an in-person visit. It does not replace a physical examination when one is clinically necessary.
+                    </p>
+                    <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                        <Link href="/consultation" className="btn-primary min-h-13 px-6 no-underline">
+                            Learn about virtual care
                             <ArrowRight className="h-4 w-4" />
                         </Link>
-                    </motion.div>
-                </div>
+                        <Link href="/booking" className="btn-secondary min-h-13 px-6 no-underline">
+                            Book a visit
+                        </Link>
+                    </div>
+                </motion.div>
             </div>
         </section>
     );

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { DM_Serif_Display, Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
@@ -18,9 +18,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Nexus Dental — World-Class Dental Care. Exceptional Smiles.",
+  title: "Nexus Dental — Modern, Patient-First Dental Care",
   description:
-    "Modern, painless dentistry delivered with precision, comfort, and care. Book appointments, consult online, and experience world-class dental services.",
+    "Modern dental care with clear communication, thoughtful technology, and a gentle patient-first approach. Book appointments or explore virtual care online.",
   keywords: [
     "dental care",
     "dentist",
@@ -31,10 +31,17 @@ export const metadata: Metadata = {
     "dental appointment",
   ],
   openGraph: {
-    title: "Nexus Dental — World-Class Dental Care",
-    description: "Modern, painless dentistry delivered with precision, comfort, and care.",
+    title: "Nexus Dental — Modern, Patient-First Dental Care",
+    description: "Clear, comfortable dental care with online booking and virtual consultation support.",
     type: "website",
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#0f9d8b",
 };
 
 export default function RootLayout({

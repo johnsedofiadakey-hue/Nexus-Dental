@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
-    Stethoscope, User, Calendar, CheckCircle, Clock, DollarSign, MapPin, Phone, Loader2, Info
+    Stethoscope, User, Calendar, CheckCircle, Loader2, Info
 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 interface Service { id: string; name: string; description: string; category: string; price: number; duration: number; }
 interface Doctor { id: string; firstName: string; lastName: string; specialty: string | null; avatar: string | null; }
@@ -61,7 +62,7 @@ export default function BookingPage() {
                 
                 if (servicesData.success) setServices(servicesData.data.services);
                 if (doctorsData.success) setDoctors(doctorsData.data.doctors);
-            } catch (error) {
+            } catch {
                 toast.error("Error loading initial data.");
             } finally {
                 setLoadingServices(false);
@@ -92,7 +93,7 @@ export default function BookingPage() {
                     } else {
                         toast.error(data.error || "Failed to load schedule");
                     }
-                } catch (error) {
+                } catch {
                     toast.error("Error fetching schedule");
                 } finally {
                     setLoadingSchedule(false);
@@ -100,7 +101,7 @@ export default function BookingPage() {
             }
             fetchSchedule();
         }
-    }, [selectedDoctor, totalDuration]);
+    }, [selectedDoctor, selectedServices.length, totalDuration]);
 
     const toggleService = (service: Service) => {
         setSelectedServices(prev => 
@@ -148,7 +149,7 @@ export default function BookingPage() {
             } else {
                 toast.error(data.error || "Failed to book appointment.");
             }
-        } catch (error) {
+        } catch {
             toast.error("Network error. Please try again.");
         } finally {
             setIsSubmitting(false);
@@ -159,16 +160,16 @@ export default function BookingPage() {
 
     if (isBooked) {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center p-4">
-                <div className="max-w-md w-full bg-white p-8 rounded-2xl shadow-xl text-center">
-                    <CheckCircle className="w-20 h-20 text-teal-500 mx-auto mb-6" />
-                    <h2 className="text-2xl font-bold mb-2 text-slate-800">Booking Confirmed!</h2>
-                    <p className="text-slate-500 mb-6">We've reserved your slot. You will receive an SMS shortly.</p>
+            <div className="min-h-[70vh] bg-[linear-gradient(135deg,#f7fbfa,#edf8f6)] flex flex-col items-center justify-center p-5">
+                <div className="surface-card max-w-md w-full p-8 rounded-[2rem] text-center">
+                    <CheckCircle className="w-16 h-16 text-primary mx-auto mb-6" />
+                    <h2 className="font-[family-name:var(--font-heading)] text-3xl mb-2 text-secondary">Booking confirmed</h2>
+                    <p className="text-text-secondary mb-6">Your appointment is reserved. We will send an SMS confirmation shortly.</p>
                     <button 
                         onClick={() => router.push("/auth/patient")}
-                        className="w-full bg-teal-600 text-white font-medium py-3 rounded-xl hover:bg-teal-700 transition"
+                        className="btn-primary w-full py-3"
                     >
-                        Go to Patient Portal
+                        Go to patient portal
                     </button>
                 </div>
             </div>
@@ -176,31 +177,41 @@ export default function BookingPage() {
     }
 
     return (
-        <div className="min-h-screen pb-32">
-            <div className="pt-28 pb-8 px-4 text-center">
-                <h1 className="text-3xl font-bold mb-2">Book Appointment</h1>
-                <p className="text-slate-500">Complete the steps below to reserve your slot.</p>
+        <div className="min-h-screen bg-bg pb-32">
+            <div className="bg-[linear-gradient(135deg,#f7fbfa,#edf8f6)] px-4 py-12 text-center sm:py-16">
+                <span className="eyebrow">Plan your visit</span>
+                <h1 className="mt-3 font-[family-name:var(--font-heading)] text-4xl text-secondary sm:text-5xl">Book an appointment</h1>
+                <p className="mt-3 text-text-secondary">Choose your care, clinician, and preferred time in four clear steps.</p>
             </div>
 
             {/* Stepper */}
-            <div className="max-w-3xl mx-auto px-4 mb-8 flex justify-between items-center relative">
-                {STEPS.map((step, idx) => (
+            <div className="relative mx-auto my-8 flex max-w-3xl items-center justify-between px-4 sm:my-10">
+                {STEPS.map((step) => (
                     <div key={step.id} className="flex-1 flex flex-col items-center relative z-10">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors ${currentStep >= step.id ? 'bg-teal-600 text-white' : 'bg-slate-200 text-slate-400'}`}>
+                        <div className={`mb-2 flex h-10 w-10 items-center justify-center rounded-full transition-colors ${currentStep >= step.id ? 'bg-primary text-white shadow-sm' : 'bg-white text-text-muted border border-border'}`}>
                             <step.icon className="w-5 h-5" />
                         </div>
-                        <span className={`text-xs font-medium ${currentStep >= step.id ? 'text-teal-600' : 'text-slate-400'}`}>{step.label}</span>
+                        <span className={`text-center text-[11px] font-semibold sm:text-xs ${currentStep >= step.id ? 'text-primary-dark' : 'text-text-muted'}`}>{step.label}</span>
                     </div>
                 ))}
-                <div className="absolute top-5 left-10 right-10 h-0.5 bg-slate-200 z-0">
-                    <div className="h-full bg-teal-600 transition-all duration-300" style={{ width: `${((currentStep - 1) / (STEPS.length - 1)) * 100}%` }} />
+                <div className="absolute top-5 left-10 right-10 h-0.5 bg-border z-0">
+                    <div className="h-full bg-primary transition-all duration-300" style={{ width: `${((currentStep - 1) / (STEPS.length - 1)) * 100}%` }} />
                 </div>
             </div>
 
-            <div className="max-w-4xl mx-auto px-4">
+            <div className="surface-card mx-auto max-w-4xl rounded-[2rem] p-5 sm:p-8 lg:p-10">
                 {currentStep === 1 && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                        <h2 className="text-xl font-bold mb-4">Select Services</h2>
+                        <h2 className="font-[family-name:var(--font-heading)] text-2xl text-secondary mb-5">Select services</h2>
+                        {loadingServices ? (
+                            <div className="flex justify-center py-14"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                        ) : services.length === 0 ? (
+                            <div className="rounded-2xl border border-dashed border-border bg-bg p-7 text-center">
+                                <p className="font-semibold text-secondary">Online service selection is temporarily unavailable.</p>
+                                <p className="mt-2 text-sm text-text-secondary">Contact the clinic for help arranging your visit.</p>
+                                <Link href="/contact" className="mt-4 inline-flex text-sm font-bold text-primary-dark">Get booking help</Link>
+                            </div>
+                        ) : (
                         <div className="grid md:grid-cols-2 gap-4">
                             {services.map(s => {
                                 const isSelected = selectedServices.some(sel => sel.id === s.id);
@@ -208,35 +219,45 @@ export default function BookingPage() {
                                     <button 
                                         key={s.id} 
                                         onClick={() => toggleService(s)}
-                                        className={`p-4 text-left border-2 rounded-xl transition ${isSelected ? 'border-teal-500 bg-teal-50' : 'border-slate-200 hover:border-teal-200'}`}
+                                        className={`rounded-2xl border p-5 text-left transition ${isSelected ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:border-primary/40 hover:bg-bg/60'}`}
                                     >
                                         <div className="flex justify-between items-start mb-2">
                                             <h3 className="font-semibold">{s.name}</h3>
-                                            <span className="text-xs bg-teal-100 text-teal-800 px-2 py-1 rounded-full">{s.category}</span>
+                                            <span className="text-xs bg-primary/10 text-primary-dark px-2 py-1 rounded-full">{s.category}</span>
                                         </div>
                                         <p className="text-sm text-slate-500 mb-3">{s.description}</p>
                                         <div className="flex gap-4 text-sm font-medium">
-                                            <span className="text-teal-700">{formatPrice(s.price)}</span>
+                                            <span className="text-primary-dark">{formatPrice(s.price)}</span>
                                             <span className="text-slate-500">{s.duration} min</span>
                                         </div>
                                     </button>
                                 );
                             })}
                         </div>
+                        )}
                     </motion.div>
                 )}
 
                 {currentStep === 2 && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                        <h2 className="text-xl font-bold mb-4">Select Doctor</h2>
+                        <h2 className="font-[family-name:var(--font-heading)] text-2xl text-secondary mb-5">Select a clinician</h2>
+                        {loadingDoctors ? (
+                            <div className="flex justify-center py-14"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                        ) : doctors.length === 0 ? (
+                            <div className="rounded-2xl border border-dashed border-border bg-bg p-7 text-center">
+                                <p className="font-semibold text-secondary">No clinicians are available for online selection right now.</p>
+                                <p className="mt-2 text-sm text-text-secondary">Contact the clinic and the team can help plan your visit.</p>
+                                <Link href="/contact" className="mt-4 inline-flex text-sm font-bold text-primary-dark">Contact the clinic</Link>
+                            </div>
+                        ) : (
                         <div className="grid md:grid-cols-2 gap-4">
                             {doctors.map(d => (
                                 <button 
                                     key={d.id} 
                                     onClick={() => setSelectedDoctor(d)}
-                                    className={`p-4 flex items-center gap-4 text-left border-2 rounded-xl transition ${selectedDoctor?.id === d.id ? 'border-teal-500 bg-teal-50' : 'border-slate-200 hover:border-teal-200'}`}
+                                    className={`p-5 flex items-center gap-4 text-left border rounded-2xl transition ${selectedDoctor?.id === d.id ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:border-primary/40 hover:bg-bg/60'}`}
                                 >
-                                    <div className="w-12 h-12 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center font-bold text-lg">
+                                    <div className="w-12 h-12 rounded-full bg-primary/10 text-primary-dark flex items-center justify-center font-bold text-lg">
                                         {d.firstName[0]}{d.lastName[0]}
                                     </div>
                                     <div>
@@ -246,14 +267,15 @@ export default function BookingPage() {
                                 </button>
                             ))}
                         </div>
+                        )}
                     </motion.div>
                 )}
 
                 {currentStep === 3 && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                        <h2 className="text-xl font-bold mb-4">Select Date & Time</h2>
+                        <h2 className="font-[family-name:var(--font-heading)] text-2xl text-secondary mb-5">Select date and time</h2>
                         {loadingSchedule ? (
-                            <Loader2 className="w-8 h-8 animate-spin text-teal-600 mx-auto my-12" />
+                            <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto my-12" />
                         ) : (
                             <>
                                 <div className="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-hide snap-x">
@@ -261,7 +283,7 @@ export default function BookingPage() {
                                         <button 
                                             key={day.date} 
                                             onClick={() => { setSelectedDate(day.date); setSelectedTime(null); }}
-                                            className={`shrink-0 snap-start p-3 w-20 text-center rounded-xl border transition ${selectedDate === day.date ? 'bg-teal-600 border-teal-600 text-white' : 'border-slate-200 hover:border-teal-300'}`}
+                                            className={`shrink-0 snap-start p-3 w-20 text-center rounded-xl border transition ${selectedDate === day.date ? 'bg-primary border-primary text-white' : 'border-border bg-white hover:border-primary/50'}`}
                                         >
                                             <div className="text-xs uppercase">{day.dayOfWeek.slice(0, 3)}</div>
                                             <div className="text-xl font-bold my-1">{new Date(day.date).getDate()}</div>
@@ -276,7 +298,7 @@ export default function BookingPage() {
                                                 key={slot.time}
                                                 disabled={!slot.available}
                                                 onClick={() => setSelectedTime(slot.time)}
-                                                className={`py-2 rounded-lg text-sm font-medium transition ${selectedTime === slot.time ? 'bg-teal-600 text-white border-teal-600' : slot.available ? 'border border-slate-200 hover:border-teal-400' : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-transparent'}`}
+                                                className={`py-2 rounded-lg text-sm font-medium transition ${selectedTime === slot.time ? 'bg-primary text-white border-primary' : slot.available ? 'border border-border hover:border-primary' : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-transparent'}`}
                                             >
                                                 {slot.time}
                                             </button>
@@ -290,16 +312,16 @@ export default function BookingPage() {
 
                 {currentStep === 4 && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                        <h2 className="text-xl font-bold mb-4">Finalize Details</h2>
+                        <h2 className="font-[family-name:var(--font-heading)] text-2xl text-secondary mb-5">Review and confirm</h2>
                         <div className="grid md:grid-cols-2 gap-8">
-                            <div className="space-y-4 bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                            <div className="space-y-4 bg-bg p-6 rounded-2xl border border-border-light">
                                 <h3 className="font-semibold border-b pb-2 mb-4">Summary</h3>
                                 <div><span className="text-slate-500 text-sm">Services:</span><br/><b>{selectedServices.map(s=>s.name).join(', ')}</b></div>
                                 <div><span className="text-slate-500 text-sm">Doctor:</span><br/><b>{selectedDoctor?.firstName} {selectedDoctor?.lastName}</b></div>
                                 <div><span className="text-slate-500 text-sm">Date & Time:</span><br/><b>{selectedDate} @ {selectedTime}</b></div>
                                 <div className="border-t pt-2 mt-4 flex justify-between">
                                     <span className="font-semibold">Total</span>
-                                    <span className="font-bold text-teal-700 text-lg">{formatPrice(totalPrice)}</span>
+                                    <span className="font-bold text-primary-dark text-lg">{formatPrice(totalPrice)}</span>
                                 </div>
                             </div>
                             <div className="space-y-4">
@@ -319,7 +341,7 @@ export default function BookingPage() {
                                             <span className="text-sm font-semibold text-slate-600">+233</span>
                                             <div className="h-4 w-[1px] bg-slate-300 mx-1"></div>
                                         </div>
-                                        <input type="tel" value={phone} onChange={e=>setPhone(e.target.value)} className="w-full border pl-[95px] pr-3 py-3 rounded-xl text-lg tracking-wide focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent" placeholder="24 000 0000" />
+                                        <input type="tel" value={phone} onChange={e=>setPhone(e.target.value)} className="w-full border pl-[95px] pr-3 py-3 rounded-xl text-lg tracking-wide focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="24 000 0000" />
                                     </div>
                                 </div>
                                 <div>
@@ -332,29 +354,31 @@ export default function BookingPage() {
                 )}
             </div>
 
-            <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 flex justify-between shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-50">
-                <button 
-                    onClick={() => currentStep > 1 ? setCurrentStep(s => s - 1) : router.back()} 
-                    className="px-6 py-3 font-medium text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200"
-                >
-                    Back
-                </button>
-                {currentStep < 4 ? (
-                    <button 
-                        onClick={handleNext} 
-                        className="px-8 py-3 font-medium text-white bg-teal-600 rounded-xl hover:bg-teal-700"
+            <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-white/95 p-3 shadow-[0_-8px_30px_rgba(16,42,67,0.08)] backdrop-blur sm:p-4">
+                <div className="mx-auto flex max-w-4xl justify-between gap-3">
+                    <button
+                        onClick={() => currentStep > 1 ? setCurrentStep(s => s - 1) : router.back()}
+                        className="min-h-12 rounded-xl bg-bg px-5 font-semibold text-secondary hover:bg-slate-100 sm:px-7"
                     >
-                        Next Step
+                        Back
                     </button>
-                ) : (
-                    <button 
-                        onClick={handleSubmit} 
-                        disabled={isSubmitting}
-                        className="px-8 py-3 font-medium text-white bg-teal-600 rounded-xl hover:bg-teal-700 flex items-center gap-2"
-                    >
-                        {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : "Confirm Booking"}
-                    </button>
-                )}
+                    {currentStep < 4 ? (
+                        <button
+                            onClick={handleNext}
+                            className="btn-primary min-h-12 px-6 sm:px-8"
+                        >
+                            Next step
+                        </button>
+                    ) : (
+                        <button
+                            onClick={handleSubmit}
+                            disabled={isSubmitting}
+                            className="btn-primary min-h-12 px-5 sm:px-8"
+                        >
+                            {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : "Confirm booking"}
+                        </button>
+                    )}
+                </div>
             </div>
         </div>
     );

@@ -1,204 +1,126 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Calendar, ArrowRight, CheckCircle2, Star, Shield } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
+import { motion, useReducedMotion } from "framer-motion";
+import {
+    ArrowRight,
+    CalendarDays,
+    CheckCircle2,
+    Clock3,
+    HeartHandshake,
+    ShieldCheck,
+    Stethoscope,
+    Video,
+} from "lucide-react";
+
+const assurances = [
+    { icon: ShieldCheck, label: "Clear treatment plans" },
+    { icon: HeartHandshake, label: "Gentle, patient-first care" },
+    { icon: Clock3, label: "Easy online booking" },
+];
 
 export default function HeroSection() {
+    const reduceMotion = useReducedMotion();
+
     return (
-        <section className="relative bg-white">
-            {/* Clean, minimal background */}
-            <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full py-20 lg:py-32">
-                <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-                    {/* Text Content - Left Side */}
+        <section className="relative isolate overflow-hidden bg-[linear-gradient(135deg,#f8fcfb_0%,#ffffff_45%,#edf8f6_100%)]">
+            <div className="absolute -left-36 top-24 -z-10 h-80 w-80 rounded-full bg-primary/10 blur-3xl" />
+            <div className="absolute -right-24 bottom-0 -z-10 h-96 w-96 rounded-full bg-primary-light/15 blur-3xl" />
+
+            <div className="mx-auto grid max-w-7xl items-center gap-12 px-5 py-12 sm:px-6 sm:py-16 lg:min-h-[760px] lg:grid-cols-[0.9fr_1.1fr] lg:gap-16 lg:px-8 lg:py-20">
+                <motion.div
+                    initial={reduceMotion ? false : { opacity: 0, y: 24 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.65, ease: "easeOut" }}
+                    className="relative z-10"
+                >
+                    <div className="eyebrow mb-5">
+                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10">
+                            <Stethoscope className="h-3.5 w-3.5" />
+                        </span>
+                        Modern care, made personal
+                    </div>
+
+                    <h1 className="max-w-3xl font-[family-name:var(--font-heading)] text-[clamp(3.35rem,7vw,6.25rem)] leading-[0.94] tracking-[-0.04em] text-secondary">
+                        Healthy smiles
+                        <span className="mt-2 block text-primary">start here.</span>
+                    </h1>
+
+                    <p className="mt-7 max-w-xl text-lg leading-8 text-text-secondary sm:text-xl">
+                        Thoughtful dentistry, modern technology, and a calm approach—so every visit feels clear, comfortable, and centred on you.
+                    </p>
+
+                    <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+                        <Link href="/booking" className="btn-primary min-h-14 w-full px-6 text-base no-underline sm:w-auto">
+                            <CalendarDays className="h-5 w-5" />
+                            Book appointment
+                            <ArrowRight className="h-4 w-4" />
+                        </Link>
+                        <Link href="/consultation" className="btn-secondary min-h-14 w-full bg-white/75 px-6 text-base no-underline sm:w-auto">
+                            <Video className="h-5 w-5" />
+                            Online consultation
+                        </Link>
+                    </div>
+
+                    <div className="mt-10 grid gap-3 border-t border-border pt-7 sm:grid-cols-3">
+                        {assurances.map((item) => (
+                            <div key={item.label} className="flex items-center gap-2.5 text-sm font-semibold text-secondary">
+                                <item.icon className="h-5 w-5 shrink-0 text-primary" />
+                                <span>{item.label}</span>
+                            </div>
+                        ))}
+                    </div>
+                </motion.div>
+
+                <motion.div
+                    initial={reduceMotion ? false : { opacity: 0, scale: 0.97, x: 18 }}
+                    animate={{ opacity: 1, scale: 1, x: 0 }}
+                    transition={{ duration: 0.8, delay: 0.12, ease: "easeOut" }}
+                    className="relative mx-auto w-full max-w-2xl lg:mx-0"
+                >
+                    <div className="relative aspect-[4/3] overflow-hidden rounded-[2rem] border-[6px] border-white bg-white shadow-[var(--shadow-hero)] sm:rounded-[2.5rem] lg:aspect-[1.02/1]">
+                        <Image
+                            src="/images/clinic-hero.jpg"
+                            alt="Bright modern dental treatment room with a teal dental chair and diagnostic equipment"
+                            fill
+                            priority
+                            sizes="(max-width: 1024px) 100vw, 55vw"
+                            className="object-cover object-[62%_center]"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-secondary/20 via-transparent to-white/10" />
+                    </div>
+
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={reduceMotion ? false : { opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, ease: "easeOut" }}
-                        className="flex flex-col justify-center"
+                        transition={{ delay: 0.7, duration: 0.45 }}
+                        className="surface-card absolute left-3 top-3 flex items-center gap-3 rounded-2xl p-3 sm:left-5 sm:top-6 sm:p-4"
                     >
-                        {/* Eyebrow Text */}
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.1, duration: 0.5 }}
-                            className="text-sm font-semibold uppercase tracking-wider text-primary mb-4"
-                        >
-                            First Impression 🦷
-                        </motion.div>
-
-                        {/* Main Headline */}
-                        <motion.h1
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.2, duration: 0.6 }}
-                            className="font-[family-name:var(--font-heading)] text-5xl sm:text-6xl lg:text-7xl text-secondary leading-tight mb-6"
-                        >
-                            Healthy Smiles <br /> Start Here
-                        </motion.h1>
-
-                        {/* Subheading */}
-                        <motion.p
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.3, duration: 0.6 }}
-                            className="text-lg lg:text-xl text-text-secondary leading-relaxed mb-10 max-w-xl"
-                        >
-                            Modern care, advanced technology, and a gentle approach — all in one place. Experience dentistry that builds trust instantly.
-                        </motion.p>
-
-                        {/* CTAs */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.4, duration: 0.6 }}
-                            className="flex flex-col sm:flex-row gap-4 mb-12"
-                        >
-                            <Link href="/booking" className="btn-primary no-underline inline-flex items-center justify-center gap-2">
-                                <Calendar className="h-5 w-5" />
-                                Book Appointment
-                                <ArrowRight className="h-4 w-4" />
-                            </Link>
-                            <Link href="/consultation" className="btn-secondary no-underline inline-flex items-center justify-center gap-2">
-                                Watch Our Video
-                            </Link>
-                        </motion.div>
-
-                        {/* Trust Indicators - Horizontal Row */}
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.5, duration: 0.6 }}
-                            className="flex flex-col sm:flex-row gap-8 pt-8 border-t border-slate-200"
-                        >
-                            <div className="flex items-center gap-3">
-                                <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0" />
-                                <div>
-                                    <p className="text-sm font-semibold text-secondary">Trusted by 1,000+ Patients</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <Star className="h-5 w-5 text-accent flex-shrink-0" />
-                                <div>
-                                    <p className="text-sm font-semibold text-secondary">5-Star Patient Rated</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <Shield className="h-5 w-5 text-primary flex-shrink-0" />
-                                <div>
-                                    <p className="text-sm font-semibold text-secondary">We Accept Insurance</p>
-                                </div>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-
-                    {/* Hero Visual - Right Side */}
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.98 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.8, delay: 0.3 }}
-                        className="relative hidden lg:block"
-                    >
-                        <div className="relative w-full aspect-square rounded-3xl overflow-hidden bg-gradient-to-br from-cyan-400 via-teal-500 to-teal-700 shadow-2xl border border-teal-400/30">
-                            {/* Dental Chair Illustration Area */}
-                            <div className="absolute inset-0 flex items-center justify-center">
-                                {/* Animated Background Circles */}
-                            <motion.div
-                                animate={{ scale: [1, 1.1, 1] }}
-                                transition={{ duration: 6, repeat: Infinity }}
-                                className="absolute inset-0 opacity-20"
-                            >
-                                <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-white/30 blur-3xl" />
-                                <div className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-white/20 blur-3xl" />
-                            </motion.div>
-
-                                {/* Main Visual - Dental Chair Representation */}
-                                <div className="relative flex flex-col items-center justify-center z-10 h-full">
-                                    {/* Premium Circular Design */}
-                                    <div className="mb-12 relative">
-                                        {/* Outer Ring */}
-                                        <div className="absolute inset-0 w-56 h-56 rounded-full border-2 border-white/40 blur-sm" />
-
-                                        {/* Middle Ring */}
-                                        <motion.div
-                                            animate={{ rotate: 360 }}
-                                            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                                            className="absolute inset-0 w-56 h-56 rounded-full border border-white/20"
-                                        />
-
-                                        {/* Inner Circle with Tooth */}
-                                        <div className="relative w-56 h-56 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center border border-white/30">
-                                            <span className="text-8xl drop-shadow-lg">🦷</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Text Content */}
-                                    <h3 className="font-[family-name:var(--font-heading)] text-3xl text-white text-center mb-4 font-bold drop-shadow-lg">
-                                        Modern Dental Care
-                                    </h3>
-                                    <p className="text-white/90 text-base text-center max-w-sm leading-relaxed drop-shadow">
-                                        Advanced technology meets compassionate care
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Feature Cards - Floating with Enhanced Styling */}
-                            <motion.div
-                                animate={{ y: [0, -10, 0] }}
-                                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                                className="absolute -left-8 top-16 bg-white rounded-2xl p-6 shadow-2xl border border-white/80 z-20 backdrop-blur-sm"
-                            >
-                                <div className="flex items-center gap-4">
-                                    <div className="w-14 h-14 bg-gradient-to-br from-emerald-100 to-emerald-50 rounded-xl flex items-center justify-center flex-shrink-0">
-                                        <svg className="w-7 h-7 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-bold text-secondary">Modern UI</p>
-                                        <p className="text-xs text-text-muted">Clean & intuitive</p>
-                                    </div>
-                                </div>
-                            </motion.div>
-
-                            <motion.div
-                                animate={{ y: [0, 10, 0] }}
-                                transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 0.7 }}
-                                className="absolute -right-8 top-1/3 bg-white rounded-2xl p-6 shadow-2xl border border-white/80 z-20 backdrop-blur-sm"
-                            >
-                                <div className="flex items-center gap-4">
-                                    <div className="w-14 h-14 bg-gradient-to-br from-amber-100 to-amber-50 rounded-xl flex items-center justify-center flex-shrink-0">
-                                        <svg className="w-7 h-7 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-bold text-secondary">Booking Ready</p>
-                                        <p className="text-xs text-text-muted">Simple & fast</p>
-                                    </div>
-                                </div>
-                            </motion.div>
-
-                            <motion.div
-                                animate={{ y: [0, -8, 0] }}
-                                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1.4 }}
-                                className="absolute -bottom-10 right-8 bg-white rounded-2xl p-6 shadow-2xl border border-white/80 z-20 backdrop-blur-sm"
-                            >
-                                <div className="flex items-center gap-4">
-                                    <div className="w-14 h-14 bg-gradient-to-br from-rose-100 to-rose-50 rounded-xl flex items-center justify-center flex-shrink-0">
-                                        <svg className="w-7 h-7 text-rose-600" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-bold text-secondary">Trust Focused</p>
-                                        <p className="text-xs text-text-muted">Your care matters</p>
-                                    </div>
-                                </div>
-                            </motion.div>
+                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary sm:h-12 sm:w-12">
+                            <CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6" />
+                        </span>
+                        <div>
+                            <p className="text-sm font-bold text-secondary">Comfort-led care</p>
+                            <p className="hidden text-xs text-text-muted sm:block">Your questions come first</p>
                         </div>
                     </motion.div>
-                </div>
+
+                    <motion.div
+                        initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.85, duration: 0.45 }}
+                        className="surface-card absolute bottom-3 right-3 flex items-center gap-3 rounded-2xl p-3 sm:bottom-5 sm:right-5 sm:p-4"
+                    >
+                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent sm:h-12 sm:w-12">
+                            <CalendarDays className="h-5 w-5 sm:h-6 sm:w-6" />
+                        </span>
+                        <div>
+                            <p className="text-sm font-bold text-secondary">Booking made simple</p>
+                            <p className="hidden text-xs text-text-muted sm:block">Choose a time that works</p>
+                        </div>
+                    </motion.div>
+                </motion.div>
             </div>
         </section>
     );

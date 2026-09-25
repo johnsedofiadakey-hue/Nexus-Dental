@@ -1,189 +1,74 @@
 "use client";
 
-import { motion, useInView } from "framer-motion";
-import { useRef, useState, useEffect } from "react";
-import { Star, ChevronLeft, ChevronRight, Quote, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Quote, Star } from "lucide-react";
 
 interface Testimonial {
     name: string;
-    role: string;
+    role?: string;
     content: string;
-    rating: number;
+    rating?: number;
     treatment?: string;
 }
 
-const defaultTestimonials = [
-    {
-        name: "Sarah Johnson",
-        role: "Marketing Executive",
-        content:
-            "Nexus Dental transformed my smile completely. The team was incredibly professional, and the results exceeded my expectations. I finally have the confidence to smile openly!",
-        rating: 5,
-        treatment: "Cosmetic Veneers",
-    },
-    {
-        name: "Michael Chen",
-        role: "Software Engineer",
-        content:
-            "The online consultation service is a game-changer. I got professional dental advice without leaving my home. The doctor was thorough and the follow-up was exceptional.",
-        rating: 5,
-        treatment: "Online Consultation",
-    },
-    {
-        name: "Amara Osei",
-        role: "Teacher",
-        content:
-            "My daughter used to be terrified of dentists. The pediatric team here made her feel so comfortable — she actually looks forward to her check-ups now!",
-        rating: 5,
-        treatment: "Pediatric Care",
-    },
-];
-
 export default function TestimonialsSection() {
-    const ref = useRef(null);
-    const isInView = useInView(ref, { once: true, margin: "-100px" });
-    const [current, setCurrent] = useState(0);
-    const [testimonialsList, setTestimonialsList] = useState<Testimonial[]>(defaultTestimonials);
-    const [loading, setLoading] = useState(true);
+    const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
 
     useEffect(() => {
-        const fetchContent = async () => {
-            try {
-                // In a real multi-tenant scenario, tenantId would come from hostname or context
-                // For demo/dev, we try to fetch from any active tenant or use defaults
-                const res = await fetch("/api/public/clinic/content");
-                const data = await res.json();
+        let active = true;
 
-                if (data.success && data.data.testimonials && data.data.testimonials.length > 0) {
-                    setTestimonialsList(data.data.testimonials);
-                }
-            } catch (error) {
-                console.error("Failed to load dynamic testimonials:", error);
-            } finally {
-                setLoading(false);
+        const fetchTestimonials = async () => {
+            try {
+                const response = await fetch("/api/public/clinic/content");
+                const payload = await response.json();
+                const published = payload?.success && Array.isArray(payload?.data?.testimonials)
+                    ? payload.data.testimonials
+                    : [];
+
+                if (active) setTestimonials(published);
+            } catch {
+                if (active) setTestimonials([]);
             }
         };
 
-        fetchContent();
+        fetchTestimonials();
+        return () => {
+            active = false;
+        };
     }, []);
 
-    useEffect(() => {
-        if (testimonialsList.length === 0) return;
-        const timer = setInterval(() => {
-            setCurrent((prev) => (prev + 1) % testimonialsList.length);
-        }, 8000);
-        return () => clearInterval(timer);
-    }, [testimonialsList]);
-
-    const prev = () =>
-        setCurrent((c) => (c - 1 + testimonialsList.length) % testimonialsList.length);
-    const next = () =>
-        setCurrent((c) => (c + 1) % testimonialsList.length);
-
-    if (testimonialsList.length === 0 && !loading) return null;
+    if (testimonials.length === 0) return null;
 
     return (
-        <section className="section-padding" ref={ref}>
+        <section className="section-padding bg-bg">
             <div className="mx-auto max-w-7xl">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={isInView ? { opacity: 1, y: 0 } : {}}
-                    transition={{ duration: 0.6 }}
-                >
-                    <h2 className="section-title">What Our Patients Say</h2>
-                    <p className="section-subtitle">
-                        Real stories from real patients who trust us with their dental health
-                        and smile transformations.
-                    </p>
-                </motion.div>
+                <div className="mx-auto mb-12 max-w-2xl text-center">
+                    <span className="eyebrow">Patient experiences</span>
+                    <h2 className="section-title mt-4">Words from our patients</h2>
+                    <p className="section-subtitle !mb-0">Published feedback from people who have chosen our care.</p>
+                </div>
 
-                {/* Carousel */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={isInView ? { opacity: 1, y: 0 } : {}}
-                    transition={{ duration: 0.6, delay: 0.2 }}
-                    className="relative max-w-3xl mx-auto"
-                >
-                    <div className="bg-white rounded-3xl p-8 sm:p-12 border border-border-light shadow-[var(--shadow-card)] relative overflow-hidden min-h-[400px] flex flex-col justify-center">
-                        {/* Quote Mark */}
-                        <div className="absolute top-6 right-8 opacity-5">
-                            <Quote className="h-24 w-24 text-primary" />
-                        </div>
-
-                        {loading ? (
-                            <div className="flex justify-center items-center py-12">
-                                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <div className="grid gap-5 lg:grid-cols-3">
+                    {testimonials.slice(0, 3).map((testimonial, index) => (
+                        <article key={`${testimonial.name}-${index}`} className="surface-card relative rounded-3xl p-7">
+                            <Quote className="absolute right-6 top-6 h-10 w-10 text-primary/10" />
+                            <div className="mb-5 flex gap-1" aria-label={`${testimonial.rating || 5} out of 5 stars`}>
+                                {Array.from({ length: Math.min(testimonial.rating || 5, 5) }).map((_, star) => (
+                                    <Star key={star} className="h-4 w-4 fill-accent text-accent" />
+                                ))}
                             </div>
-                        ) : (
-                            <>
-                                {/* Stars */}
-                                <div className="flex gap-1 mb-6">
-                                    {Array.from({ length: testimonialsList[current].rating || 5 }).map((_, i) => (
-                                        <Star
-                                            key={i}
-                                            className="h-5 w-5 text-accent fill-accent"
-                                        />
-                                    ))}
-                                </div>
-
-                                {/* Quote */}
-                                <blockquote className="font-[family-name:var(--font-heading)] text-xl sm:text-2xl text-secondary leading-relaxed mb-8">
-                                    &ldquo;{testimonialsList[current].content}&rdquo;
-                                </blockquote>
-
-                                {/* Author */}
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                                        <span className="text-lg font-bold text-primary">
-                                            {testimonialsList[current].name.charAt(0)}
-                                        </span>
-                                    </div>
-                                    <div>
-                                        <p className="font-semibold text-secondary">
-                                            {testimonialsList[current].name}
-                                        </p>
-                                        <p className="text-sm text-text-muted">
-                                            {testimonialsList[current].role} {testimonialsList[current].treatment && `· ${testimonialsList[current].treatment}`}
-                                        </p>
-                                    </div>
-                                </div>
-                            </>
-                        )}
-                    </div>
-
-                    {/* Navigation */}
-                    <div className="flex items-center justify-center gap-4 mt-8">
-                        <button
-                            onClick={prev}
-                            className="w-10 h-10 rounded-xl bg-white border border-border flex items-center justify-center hover:bg-bg transition-colors"
-                            aria-label="Previous testimonial"
-                        >
-                            <ChevronLeft className="h-5 w-5 text-text-secondary" />
-                        </button>
-
-                        <div className="flex gap-2">
-                            {testimonialsList.map((_, i) => (
-                                <button
-                                    key={i}
-                                    onClick={() => setCurrent(i)}
-                                    className={`h-2 rounded-full transition-all duration-300 ${i === current
-                                        ? "w-8 bg-primary"
-                                        : "w-2 bg-border hover:bg-text-muted"
-                                        }`}
-                                    aria-label={`Go to testimonial ${i + 1}`}
-                                />
-                            ))}
-                        </div>
-
-                        <button
-                            onClick={next}
-                            className="w-10 h-10 rounded-xl bg-white border border-border flex items-center justify-center hover:bg-bg transition-colors"
-                            aria-label="Next testimonial"
-                        >
-                            <ChevronRight className="h-5 w-5 text-text-secondary" />
-                        </button>
-                    </div>
-                </motion.div>
+                            <blockquote className="text-sm leading-7 text-text-secondary">“{testimonial.content}”</blockquote>
+                            <div className="mt-6 border-t border-border-light pt-5">
+                                <p className="font-bold text-secondary">{testimonial.name}</p>
+                                {(testimonial.role || testimonial.treatment) && (
+                                    <p className="mt-1 text-xs text-text-muted">
+                                        {[testimonial.role, testimonial.treatment].filter(Boolean).join(" · ")}
+                                    </p>
+                                )}
+                            </div>
+                        </article>
+                    ))}
+                </div>
             </div>
         </section>
     );

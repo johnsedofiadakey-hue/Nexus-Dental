@@ -1,165 +1,99 @@
 import Link from "next/link";
 import {
-    MapPin,
-    Phone,
-    Mail,
-    Clock,
-    Facebook,
-    Instagram,
-    Twitter,
+    ArrowUpRight,
+    CalendarDays,
+    HeartPulse,
+    LockKeyhole,
+    MessageCircle,
 } from "lucide-react";
 
-const quickLinks = [
-    { label: "Home", href: "/" },
-    { label: "About Us", href: "/about" },
-    { label: "Our Services", href: "/services" },
-    { label: "Book Appointment", href: "/booking" },
-    { label: "Online Consultation", href: "/consultation" },
+const links = [
+    { label: "About", href: "/about" },
+    { label: "Services", href: "/services" },
+    { label: "Virtual care", href: "/consultation" },
     { label: "Contact", href: "/contact" },
-    { label: "Staff Portal", href: "/auth/staff" },
 ];
 
-const services = [
-    { label: "General Dentistry", href: "/services#general" },
-    { label: "Cosmetic Dentistry", href: "/services#cosmetic" },
-    { label: "Orthodontics", href: "/services#orthodontics" },
-    { label: "Restorative & Surgical", href: "/services#restorative" },
-    { label: "Pediatric Dentistry", href: "/services#pediatric" },
-    { label: "Emergency Care", href: "/services#emergency" },
+const patientLinks = [
+    { label: "Book appointment", href: "/booking" },
+    { label: "Patient portal", href: "/auth/patient" },
+    { label: "Privacy", href: "/privacy" },
+    { label: "Accessibility", href: "/accessibility" },
 ];
 
 export default function Footer() {
+    const clinicName = process.env.NEXT_PUBLIC_CLINIC_NAME || "Nexus Dental";
+
     return (
         <footer className="bg-secondary text-white">
-            {/* Main Footer */}
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
-                    {/* Brand Column */}
+            <div className="mx-auto max-w-7xl px-5 py-14 sm:px-6 lg:px-8 lg:py-20">
+                <div className="mb-14 grid gap-10 rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 sm:p-8 lg:grid-cols-[1.2fr_auto] lg:items-center lg:p-10">
                     <div>
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
-                                <span className="text-lg font-bold text-white">N</span>
-                            </div>
-                            <div>
-                                <span className="font-[family-name:var(--font-heading)] text-xl text-white">
-                                    Nexus
-                                </span>
-                                <span className="font-[family-name:var(--font-heading)] text-xl text-primary-light ml-1">
-                                    Dental
-                                </span>
-                            </div>
+                        <span className="eyebrow !text-primary-light">Ready when you are</span>
+                        <h2 className="mt-4 max-w-2xl font-[family-name:var(--font-heading)] text-3xl leading-tight sm:text-4xl">
+                            A calmer dental visit starts with one simple booking.
+                        </h2>
+                    </div>
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                        <Link href="/contact" className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 px-5 py-3 text-sm font-semibold text-white no-underline hover:bg-white/10">
+                            <MessageCircle className="h-4 w-4" />
+                            Ask a question
+                        </Link>
+                        <Link href="/booking" className="btn-primary px-5 py-3 text-sm no-underline">
+                            <CalendarDays className="h-4 w-4" />
+                            Book appointment
+                        </Link>
+                    </div>
+                </div>
+
+                <div className="grid gap-10 border-b border-white/10 pb-12 sm:grid-cols-2 lg:grid-cols-[1.4fr_0.8fr_0.8fr]">
+                    <div className="max-w-md">
+                        <div className="mb-5 flex items-center gap-3">
+                            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-white">
+                                <HeartPulse className="h-5 w-5" />
+                            </span>
+                            <span className="font-[family-name:var(--font-heading)] text-2xl">{clinicName}</span>
                         </div>
-                        <p className="text-sm text-slate-400 leading-relaxed mb-6">
-                            Modern, painless dentistry delivered with precision, comfort, and
-                            care. Your smile is our mission.
+                        <p className="text-sm leading-7 text-slate-300">
+                            Modern dental care with clear communication, thoughtful technology, and a gentle patient-first approach.
                         </p>
-                        <div className="flex gap-3">
-                            {[Facebook, Instagram, Twitter].map((Icon, i) => (
-                                <a
-                                    key={i}
-                                    href="#"
-                                    className="flex items-center justify-center w-10 h-10 rounded-xl bg-secondary-light hover:bg-primary transition-colors text-slate-400 hover:text-white no-underline"
-                                >
-                                    <Icon className="h-4 w-4" />
-                                </a>
-                            ))}
-                        </div>
+                        <p className="mt-5 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-primary-light">
+                            <LockKeyhole className="h-4 w-4" />
+                            Private, consent-led care
+                        </p>
                     </div>
 
-                    {/* Quick Links */}
                     <div>
-                        <h4 className="font-[family-name:var(--font-heading)] text-lg mb-6">
-                            Quick Links
-                        </h4>
-                        <ul className="space-y-3 list-none p-0 m-0">
-                            {quickLinks.map((link) => (
+                        <h3 className="mb-5 text-sm font-bold uppercase tracking-[0.14em] text-white">Explore</h3>
+                        <ul className="m-0 grid list-none gap-3 p-0">
+                            {links.map((link) => (
                                 <li key={link.href}>
-                                    <Link
-                                        href={link.href}
-                                        className="text-sm text-slate-400 hover:text-primary-light transition-colors no-underline"
-                                    >
+                                    <Link href={link.href} className="inline-flex items-center gap-1 text-sm text-slate-300 no-underline hover:text-primary-light">
+                                        {link.label}
+                                        <ArrowUpRight className="h-3.5 w-3.5" />
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3 className="mb-5 text-sm font-bold uppercase tracking-[0.14em] text-white">For patients</h3>
+                        <ul className="m-0 grid list-none gap-3 p-0">
+                            {patientLinks.map((link) => (
+                                <li key={link.href}>
+                                    <Link href={link.href} className="text-sm text-slate-300 no-underline hover:text-primary-light">
                                         {link.label}
                                     </Link>
                                 </li>
                             ))}
                         </ul>
                     </div>
-
-                    {/* Services */}
-                    <div>
-                        <h4 className="font-[family-name:var(--font-heading)] text-lg mb-6">
-                            Our Services
-                        </h4>
-                        <ul className="space-y-3 list-none p-0 m-0">
-                            {services.map((service) => (
-                                <li key={service.href}>
-                                    <Link
-                                        href={service.href}
-                                        className="text-sm text-slate-400 hover:text-primary-light transition-colors no-underline"
-                                    >
-                                        {service.label}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    {/* Contact Info */}
-                    <div>
-                        <h4 className="font-[family-name:var(--font-heading)] text-lg mb-6">
-                            Contact Us
-                        </h4>
-                        <ul className="space-y-4 list-none p-0 m-0">
-                            <li className="flex items-start gap-3">
-                                <MapPin className="h-5 w-5 text-primary-light mt-0.5 shrink-0" />
-                                <span className="text-sm text-slate-400">
-                                    123 Dental Avenue, Suite 100
-                                    <br />
-                                    New York, NY 10001
-                                </span>
-                            </li>
-                            <li className="flex items-center gap-3">
-                                <Phone className="h-5 w-5 text-primary-light shrink-0" />
-                                <a
-                                    href="tel:+1234567890"
-                                    className="text-sm text-slate-400 hover:text-primary-light transition-colors no-underline"
-                                >
-                                    (123) 456-7890
-                                </a>
-                            </li>
-                            <li className="flex items-center gap-3">
-                                <Mail className="h-5 w-5 text-primary-light shrink-0" />
-                                <a
-                                    href="mailto:info@nexusdental.com"
-                                    className="text-sm text-slate-400 hover:text-primary-light transition-colors no-underline"
-                                >
-                                    info@nexusdental.com
-                                </a>
-                            </li>
-                            <li className="flex items-start gap-3">
-                                <Clock className="h-5 w-5 text-primary-light mt-0.5 shrink-0" />
-                                <span className="text-sm text-slate-400">
-                                    Mon – Fri: 8:00 AM – 6:00 PM
-                                    <br />
-                                    Sat: 9:00 AM – 2:00 PM
-                                </span>
-                            </li>
-                        </ul>
-                    </div>
                 </div>
-            </div>
 
-            {/* Bottom Bar */}
-            <div className="border-t border-white/10">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <p className="text-xs text-slate-500">
-                        © {new Date().getFullYear()} Nexus Dental. All rights reserved.
-                    </p>
-                    <div className="flex flex-wrap items-center gap-6">
-                        <Link href="/auth/staff" className="text-[10px] text-slate-600 hover:text-slate-400 opacity-30 hover:opacity-100 transition-all no-underline">
-                            Admin Login
-                        </Link>
-                    </div>
+                <div className="flex flex-col gap-3 pt-7 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between">
+                    <p>© {new Date().getFullYear()} {clinicName}. All rights reserved.</p>
+                    <Link href="/auth/staff" className="text-slate-400 no-underline hover:text-primary-light">Staff sign in</Link>
                 </div>
             </div>
         </footer>

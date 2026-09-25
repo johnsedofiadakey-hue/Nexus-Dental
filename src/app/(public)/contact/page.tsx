@@ -1,74 +1,88 @@
-import { MapPin, Phone, Mail, MessageSquare } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import Link from "next/link";
+import {
+    ArrowRight,
+    CalendarDays,
+    CircleUserRound,
+    MessageCircle,
+    ShieldAlert,
+    Video,
+} from "lucide-react";
+
+const routes = [
+    {
+        icon: CalendarDays,
+        title: "Book a clinic visit",
+        text: "Choose a service, clinician, date, and available time online.",
+        label: "Book appointment",
+        href: "/booking",
+    },
+    {
+        icon: Video,
+        title: "Ask about virtual care",
+        text: "Learn when an online consultation may help and when an examination is still needed.",
+        label: "View virtual care",
+        href: "/consultation",
+    },
+    {
+        icon: CircleUserRound,
+        title: "Existing patient support",
+        text: "Access appointments, records, messages, and prescriptions from your patient portal.",
+        label: "Open patient portal",
+        href: "/auth/patient",
+    },
+];
 
 export default function ContactPage() {
     return (
-        <div className="flex flex-col">
-            <section className="py-24 bg-bg">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
-                        {/* Contact Info */}
-                        <div>
-                            <span className="inline-block px-4 py-1.5 mb-6 text-xs font-semibold tracking-wider text-primary uppercase bg-primary/10 rounded-full">
-                                Get in Touch
+        <div className="bg-white">
+            <section className="relative overflow-hidden bg-[linear-gradient(135deg,#f7fbfa,#edf8f6)] px-5 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
+                <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full border-[42px] border-white/60" />
+                <div className="relative mx-auto max-w-4xl text-center">
+                    <span className="eyebrow">Get in touch</span>
+                    <h1 className="mt-5 font-[family-name:var(--font-heading)] text-5xl leading-tight tracking-[-0.035em] text-secondary sm:text-6xl">
+                        Start with the kind of help you need.
+                    </h1>
+                    <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-text-secondary">
+                        Whether you are booking your first visit, exploring virtual care, or managing an existing appointment, the right path is below.
+                    </p>
+                </div>
+            </section>
+
+            <section className="section-padding">
+                <div className="mx-auto grid max-w-7xl gap-5 lg:grid-cols-3">
+                    {routes.map((route) => (
+                        <article key={route.title} className="surface-card flex flex-col rounded-3xl p-7">
+                            <span className="mb-7 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                                <route.icon className="h-7 w-7" />
                             </span>
-                            <h1 className="text-4xl md:text-5xl font-heading text-secondary leading-tight mb-8">
-                                We're here to help you <br />
-                                <span className="text-primary font-serif italic">perfect</span> your smile.
-                            </h1>
+                            <h2 className="text-2xl text-secondary">{route.title}</h2>
+                            <p className="mt-3 flex-1 text-sm leading-7 text-text-secondary">{route.text}</p>
+                            <Link href={route.href} className="mt-7 inline-flex items-center gap-2 text-sm font-bold text-primary-dark no-underline">
+                                {route.label}
+                                <ArrowRight className="h-4 w-4" />
+                            </Link>
+                        </article>
+                    ))}
+                </div>
+            </section>
 
-                            <div className="space-y-8 mt-12">
-                                {[
-                                    { icon: MapPin, label: "Visit Us", value: "123 Dental Avenue, Suite 100, NY 10001" },
-                                    { icon: Phone, label: "Call Us", value: "(123) 456-7890" },
-                                    { icon: Mail, label: "Email Us", value: "info@nexusdental.com" },
-                                    { icon: MessageSquare, label: "Live Chat", value: "Available Mon-Fri, 9am - 5pm" },
-                                ].map((item, i) => (
-                                    <div key={i} className="flex gap-6">
-                                        <div className="w-12 h-12 shrink-0 rounded-2xl bg-white shadow-sm flex items-center justify-center text-primary">
-                                            <item.icon className="h-5 w-5" />
-                                        </div>
-                                        <div>
-                                            <p className="text-xs font-bold uppercase tracking-widest text-text-muted mb-1">{item.label}</p>
-                                            <p className="text-secondary font-medium">{item.value}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Contact Form */}
-                        <div className="bg-white rounded-[2rem] p-10 shadow-hero border border-border">
-                            <h3 className="text-2xl font-heading text-secondary mb-8">Send us a message</h3>
-                            <form className="space-y-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-bold uppercase tracking-wider text-text-secondary">Full Name</label>
-                                        <Input placeholder="John Doe" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-bold uppercase tracking-wider text-text-secondary">Email Address</label>
-                                        <Input type="email" placeholder="john@example.com" />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold uppercase tracking-wider text-text-secondary">Subject</label>
-                                    <Input placeholder="General Inquiry" />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold uppercase tracking-wider text-text-secondary">Message</label>
-                                    <textarea
-                                        className="flex min-h-[120px] w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm ring-offset-white placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all"
-                                        placeholder="How can we help you today?"
-                                    />
-                                </div>
-                                <Button className="w-full h-12 rounded-xl text-base font-medium">
-                                    Send Message
-                                </Button>
-                            </form>
+            <section className="px-5 pb-16 sm:px-6 lg:px-8 lg:pb-24">
+                <div className="mx-auto flex max-w-7xl flex-col gap-6 rounded-[2rem] bg-secondary p-7 text-white sm:p-9 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex gap-4">
+                        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-primary-light">
+                            <ShieldAlert className="h-6 w-6" />
+                        </span>
+                        <div>
+                            <h2 className="text-2xl text-white">Dental emergency?</h2>
+                            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
+                                Severe swelling, uncontrolled bleeding, facial trauma, or breathing difficulty may require immediate emergency medical care. For other urgent dental concerns, begin with an urgent-care booking.
+                            </p>
                         </div>
                     </div>
+                    <Link href="/services#emergency" className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-bold text-secondary no-underline">
+                        <MessageCircle className="h-4 w-4" />
+                        Urgent care guidance
+                    </Link>
                 </div>
             </section>
         </div>

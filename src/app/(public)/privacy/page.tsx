@@ -1,16 +1,17 @@
 export default function PrivacyPage() {
     return (
-        <div className="py-24 bg-white">
-            <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-                <h1 className="text-3xl font-heading text-secondary mb-8">Privacy Policy</h1>
-                <div className="prose prose-slate max-w-none space-y-6 text-text-secondary">
+        <div className="bg-[linear-gradient(180deg,#edf8f6_0%,#ffffff_18rem)] px-5 py-16 sm:px-6 sm:py-20 lg:px-8">
+            <div className="surface-card mx-auto max-w-3xl rounded-[2rem] p-7 sm:p-10">
+                <span className="eyebrow">Your information</span>
+                <h1 className="mt-4 text-4xl font-heading text-secondary mb-8">Privacy policy</h1>
+                <div className="max-w-none space-y-6 text-text-secondary">
                     <p className="text-sm">Effective Date: February 16, 2026</p>
 
                     <h2 className="text-xl font-heading text-secondary mt-10">1. Commitment to Privacy</h2>
                     <p>
                         At Nexus Dental, we take your privacy and the security of your health information seriously.
                         This policy describes how we collect, use, and protect your personal and medical data
-                        in compliance with international healthcare standards (GDPR/HIPAA).
+                        in line with applicable data-protection and health-record requirements.
                     </p>
 
                     <h2 className="text-xl font-heading text-secondary mt-10">2. Information Collection</h2>
