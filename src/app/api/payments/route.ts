@@ -1,35 +1,60 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
-import { getClinicId } from "@/lib/clinic";
+import {
+    requireAuth,
+    requirePermission,
+    isPatientUser,
+    PERMISSIONS,
+    apiError,
+    apiSuccess,
+} from "@/lib/auth";
+import type { PatientJWTPayload } from "@/lib/auth";
+import { getTenantIdFromUser } from "@/lib/clinic";
 import { initiateHubtelCheckout } from "@/lib/payments/hubtel";
 
 export async function POST(request: NextRequest) {
     try {
+        const authResult = requireAuth(request);
+        if ("error" in authResult) return authResult.error;
+        const { user } = authResult;
+
         const body = await request.json();
         const { invoiceId, phone } = body as { invoiceId: string; phone: string };
 
         if (!invoiceId) {
-            return NextResponse.json({ success: false, error: "Invoice ID is required." }, { status: 400 });
+            return apiError("Invoice ID is required", 400);
         }
 
-        const tenantId = getClinicId();
+        const tenantId = getTenantIdFromUser(user);
+        const patientId = isPatientUser(user)
+            ? (user as PatientJWTPayload).patientId
+            : undefined;
 
-        const invoice = await prisma.invoice.findUnique({
-            where: { id: invoiceId, tenantId },
+        if (!isPatientUser(user)) {
+            const permissionError = requirePermission(user, PERMISSIONS.BILLING_CREATE);
+            if (permissionError) return permissionError;
+        }
+
+        const invoice = await prisma.invoice.findFirst({
+            where: {
+                id: invoiceId,
+                tenantId,
+                ...(patientId ? { patientId } : {}),
+            },
             include: { appointment: { include: { patient: true } } }
         });
 
         if (!invoice) {
-            return NextResponse.json({ success: false, error: "Invoice not found." }, { status: 404 });
+            return apiError("Invoice not found", 404);
         }
 
         if (invoice.status === "PAID") {
-            return NextResponse.json({ success: false, error: "Invoice is already paid." }, { status: 400 });
+            return apiError("Invoice is already paid", 400);
         }
 
         // Call Hubtel
         const paymentResult = await initiateHubtelCheckout({
-            amount: invoice.amount,
+            amount: invoice.totalAmount,
             title: "Nexus Dental Payment",
             description: `Payment for Invoice #${invoice.id.substring(0, 8).toUpperCase()}`,
             clientReference: invoice.id,
@@ -38,27 +63,19 @@ export async function POST(request: NextRequest) {
         });
 
         if (!paymentResult.success) {
-            return NextResponse.json({ success: false, error: paymentResult.error }, { status: 500 });
+            return apiError(paymentResult.error || "Unable to initialize payment", 502);
         }
 
-        // If Demo Mode (no checkoutUrl, just transactionId)
-        if (paymentResult.success && !paymentResult.checkoutUrl) {
-            // Update immediately to PAID for demo purposes
-            await prisma.invoice.update({
-                where: { id: invoice.id },
-                data: { status: "PAID", updatedAt: new Date() }
-            });
-            return NextResponse.json({ success: true, message: "Payment processed successfully (Demo Mode)." });
+        if (!paymentResult.checkoutUrl) {
+            return apiError("Online payments are not configured", 503);
         }
 
-        // If Production Mode, return the checkout URL
-        return NextResponse.json({ 
-            success: true, 
+        return apiSuccess({
             checkoutUrl: paymentResult.checkoutUrl 
         });
 
     } catch (err) {
         console.error("[payments/post]", err);
-        return NextResponse.json({ success: false, error: "Internal server error." }, { status: 500 });
+        return apiError("Internal server error", 500);
     }
 }

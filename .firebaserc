@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "nexusdentalsystem"
-  }
+  },
+  "targets": {
+    "nexusdentalsystem": {
+      "storage": {
+        "default": [
+          "nexusdentalsystem.appspot.com"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

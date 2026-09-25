@@ -1,6 +1,14 @@
 import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
-import { requireAuth, apiError, apiSuccess } from "@/lib/auth";
+import {
+    requireAuth,
+    requirePermission,
+    isPatientUser,
+    PERMISSIONS,
+    apiError,
+    apiSuccess,
+} from "@/lib/auth";
+import type { PatientJWTPayload } from "@/lib/auth";
 import { initializePayment } from "@/lib/payments/paystack";
 import { randomUUID } from "crypto";
 
@@ -27,6 +35,16 @@ export async function POST(
 
         if (!invoice) return apiError("Invoice not found", 404);
 
+        if (isPatientUser(user)) {
+            if (invoice.patientId !== (user as PatientJWTPayload).patientId) {
+                return apiError("Invoice not found", 404);
+            }
+        } else {
+            if (invoice.tenantId !== user.tenantId) return apiError("Invoice not found", 404);
+            const permissionError = requirePermission(user, PERMISSIONS.BILLING_VIEW);
+            if (permissionError) return permissionError;
+        }
+
         if (invoice.status === "PAID") {
             return apiError("Invoice is already paid", 400);
         }
@@ -40,10 +58,9 @@ export async function POST(
         // Generate a stable reference tied to this invoice attempt
         const reference = `inv-${id}-${randomUUID().slice(0, 8)}`;
 
-        const { searchParams } = new URL(request.url);
-        const callbackUrl =
-            searchParams.get("callbackUrl") ||
-            `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/finance/invoices?paid=${id}`;
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
+        const callbackPath = isPatientUser(user) ? "/portal/records" : "/finance/invoices";
+        const callbackUrl = `${appUrl}${callbackPath}?paid=${encodeURIComponent(id)}`;
 
         const paystack = await initializePayment({
             email: payerEmail,

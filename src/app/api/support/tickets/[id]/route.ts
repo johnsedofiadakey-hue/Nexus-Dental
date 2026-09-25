@@ -9,6 +9,7 @@ import prisma from "@/lib/db/prisma";
 import {
     requireAuth,
     requirePermission,
+    enforceTenantScope,
     PERMISSIONS,
     apiError,
     apiSuccess,
@@ -50,6 +51,12 @@ export async function GET(
         ) {
             return apiError("Access denied", 403);
         }
+        if (user.type !== "PATIENT") {
+            const tenantError = enforceTenantScope(user, ticket.tenantId);
+            if (tenantError) return tenantError;
+            const permissionError = requirePermission(user, PERMISSIONS.SUPPORT_VIEW);
+            if (permissionError) return permissionError;
+        }
 
         // Check if escalation needed
         const escalation = shouldEscalate(
@@ -85,6 +92,8 @@ export async function PATCH(
 
         const ticket = await prisma.supportTicket.findUnique({ where: { id } });
         if (!ticket) return apiError("Ticket not found", 404);
+        const tenantError = enforceTenantScope(user, ticket.tenantId);
+        if (tenantError) return tenantError;
 
         const data: Record<string, unknown> = {};
         if (status) data.status = status;

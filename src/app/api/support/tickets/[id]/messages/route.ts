@@ -7,6 +7,9 @@ import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
 import {
     requireAuth,
+    requirePermission,
+    enforceTenantScope,
+    PERMISSIONS,
     apiError,
     apiSuccess,
 } from "@/lib/auth";
@@ -52,6 +55,10 @@ export async function POST(
             }
         } else {
             const staffUser = user as JWTPayload;
+            const tenantError = enforceTenantScope(user, ticket.tenantId);
+            if (tenantError) return tenantError;
+            const permissionError = requirePermission(user, PERMISSIONS.SUPPORT_RESPOND);
+            if (permissionError) return permissionError;
             senderId = staffUser.userId;
             senderRole = staffUser.role;
         }

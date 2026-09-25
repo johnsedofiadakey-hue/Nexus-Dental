@@ -1,14 +1,19 @@
 import * as admin from "firebase-admin";
 
-if (!admin.apps.length) {
-    admin.initializeApp({
-        // In Firebase App Hosting, credentials are automatically inferred from the environment.
-        // The default bucket is typically project-id.appspot.com or project-id.firebasestorage.app
-        storageBucket: process.env.FIREBASE_STORAGE_BUCKET || "nexusdentalsystem.appspot.com",
-    });
-}
+const storageBucket = process.env.FIREBASE_STORAGE_BUCKET || "nexusdentalsystem.appspot.com";
 
-const bucket = admin.storage().bucket();
+function getBucket() {
+    if (!admin.apps.length) {
+        admin.initializeApp({
+            // In Firebase App Hosting, credentials are automatically inferred from the environment.
+            storageBucket,
+        });
+    }
+
+    // Resolve lazily and pass the bucket explicitly. Another Firebase module may have
+    // initialized the shared default app without a storageBucket before this module loads.
+    return admin.storage().bucket(storageBucket);
+}
 
 /**
  * Generates a presigned URL for uploading a file directly to Firebase Storage.
@@ -17,6 +22,7 @@ const bucket = admin.storage().bucket();
  * @returns The presigned upload URL and the final public file URL
  */
 export async function generatePresignedUploadUrl(key: string, contentType: string) {
+    const bucket = getBucket();
     const file = bucket.file(key);
 
     // Generate a signed URL for a PUT request
@@ -37,4 +43,14 @@ export async function generatePresignedUploadUrl(key: string, contentType: strin
     const publicUrl = `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodeURIComponent(key)}?alt=media`;
 
     return { uploadUrl, publicUrl };
+}
+
+export async function generatePresignedDownloadUrl(key: string) {
+    const file = getBucket().file(key);
+    const [downloadUrl] = await file.getSignedUrl({
+        version: "v4",
+        action: "read",
+        expires: Date.now() + 10 * 60 * 1000,
+    });
+    return downloadUrl;
 }

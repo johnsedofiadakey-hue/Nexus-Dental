@@ -1,19 +1,21 @@
 import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
-import { requireAuth, requirePermission, PERMISSIONS, apiError, apiSuccess } from "@/lib/auth";
-import { getTenantIdFromUser } from "@/lib/clinic";
-import type { JWTPayload } from "@/lib/auth";
+import { authenticateRequest, requireAuth, requirePermission, PERMISSIONS, apiError, apiSuccess } from "@/lib/auth";
+import { getClinicId, getTenantIdFromUser } from "@/lib/clinic";
 
 export async function GET(request: NextRequest) {
     try {
-        const authResult = requireAuth(request);
-        if ("error" in authResult) return authResult.error;
-        const user = authResult.user as JWTPayload;
-
-        const tenantId = getTenantIdFromUser(user);
         const { searchParams } = new URL(request.url);
         const category = searchParams.get("category");
-        const includeInactive = searchParams.get("includeInactive") === "true";
+        const user = authenticateRequest(request);
+        const tenantId = user ? getTenantIdFromUser(user) : getClinicId();
+        let includeInactive = false;
+
+        if (searchParams.get("includeInactive") === "true" && user) {
+            const permissionError = requirePermission(user, PERMISSIONS.SERVICES_MANAGE);
+            if (permissionError) return permissionError;
+            includeInactive = true;
+        }
 
         const where: Record<string, unknown> = { tenantId };
         if (!includeInactive) where.isActive = true;
@@ -51,7 +53,6 @@ export async function POST(request: NextRequest) {
         const permCheck = requirePermission(user, PERMISSIONS.SERVICES_MANAGE);
         if (permCheck) return permCheck;
 
-        const staffUser = user as JWTPayload;
         const body = await request.json();
         const tenantId = getTenantIdFromUser(user);
         const { name, description, category, price, duration } = body;

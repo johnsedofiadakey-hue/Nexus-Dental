@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { requireAuth, apiError, apiSuccess } from "@/lib/auth";
+import { requireAuth, requirePermission, isStaffUser, PERMISSIONS, apiError, apiSuccess } from "@/lib/auth";
 import type { JWTPayload } from "@/lib/auth";
 import { prisma } from "@/lib/db/prisma";
 import { getTenantIdFromUser } from "@/lib/clinic";
@@ -13,6 +13,9 @@ export async function GET(request: NextRequest) {
         const authResult = requireAuth(request);
         if ("error" in authResult) return authResult.error;
         const user = authResult.user as JWTPayload;
+        if (!isStaffUser(user)) return apiError("Staff access required", 403);
+        const viewPermission = requirePermission(user, PERMISSIONS.PATIENTS_VIEW);
+        if (viewPermission) return viewPermission;
 
         const { searchParams } = new URL(request.url);
         const status = searchParams.get("status") as string | null;
@@ -81,6 +84,9 @@ export async function POST(request: NextRequest) {
         const authResult = requireAuth(request);
         if ("error" in authResult) return authResult.error;
         const user = authResult.user as JWTPayload;
+        if (!isStaffUser(user)) return apiError("Staff access required", 403);
+        const updatePermission = requirePermission(user, PERMISSIONS.PATIENTS_UPDATE);
+        if (updatePermission) return updatePermission;
 
         const body = await request.json();
         const {

@@ -51,7 +51,16 @@ export const recallQueue = isBuild ? ({} as Queue) : new Queue("recall-queue", {
     defaultJobOptions,
 });
 
-export type QueueName = "notification-queue" | "appointment-queue" | "recall-queue";
+/**
+ * insurance-queue:
+ * Flags stale insurance claims and reminds clinic staff to follow up with the insurer
+ */
+export const insuranceQueue = isBuild ? ({} as Queue) : new Queue("insurance-queue", {
+    connection: queueRedisConnection as any,
+    defaultJobOptions,
+});
+
+export type QueueName = "notification-queue" | "appointment-queue" | "recall-queue" | "insurance-queue";
 
 export function getQueue(name: QueueName): Queue {
     switch (name) {
@@ -61,6 +70,8 @@ export function getQueue(name: QueueName): Queue {
             return appointmentQueue;
         case "recall-queue":
             return recallQueue;
+        case "insurance-queue":
+            return insuranceQueue;
         default:
             throw new Error(`Queue ${name} not found`);
     }

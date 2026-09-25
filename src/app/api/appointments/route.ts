@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
         const status = searchParams.get("status");
         const doctorId = searchParams.get("doctorId");
         const patientId = searchParams.get("patientId");
+        const search = searchParams.get("search")?.trim();
         const dateFrom = searchParams.get("dateFrom");
         const dateTo = searchParams.get("dateTo");
         const page = parseInt(searchParams.get("page") || "1");
@@ -50,6 +51,16 @@ export async function GET(request: NextRequest) {
 
         if (status) {
             where.status = status;
+        }
+
+        if (search && !isPatientUser(user)) {
+            where.patient = {
+                OR: [
+                    { firstName: { contains: search, mode: "insensitive" } },
+                    { lastName: { contains: search, mode: "insensitive" } },
+                    { phone: { contains: search } },
+                ],
+            };
         }
 
         if (dateFrom || dateTo) {

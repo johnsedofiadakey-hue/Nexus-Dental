@@ -2,10 +2,14 @@ import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
 import {
     requireAuth,
+    requirePermission,
+    isPatientUser,
+    isStaffUser,
+    PERMISSIONS,
     apiError,
     apiSuccess,
 } from "@/lib/auth";
-import type { JWTPayload } from "@/lib/auth";
+import type { JWTPayload, PatientJWTPayload } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
     try {
@@ -14,9 +18,17 @@ export async function GET(request: NextRequest) {
         const { user } = authResult;
 
         const { searchParams } = new URL(request.url);
-        const patientId = searchParams.get("patientId");
+        let patientId = searchParams.get("patientId");
         const tenantId = user.tenantId;
 
+        if (isPatientUser(user)) {
+            const ownPatientId = (user as PatientJWTPayload).patientId;
+            if (patientId && patientId !== ownPatientId) return apiError("Forbidden", 403);
+            patientId = ownPatientId;
+        } else {
+            const viewPermission = requirePermission(user, PERMISSIONS.PATIENTS_VIEW);
+            if (viewPermission) return viewPermission;
+        }
         if (!patientId) return apiError("patientId is required", 400);
         if (!tenantId) return apiError("No tenant associated with user", 400);
 
@@ -37,6 +49,10 @@ export async function PATCH(request: NextRequest) {
         const authResult = requireAuth(request);
         if ("error" in authResult) return authResult.error;
         const { user } = authResult;
+
+        if (!isStaffUser(user)) return apiError("Staff access required", 403);
+        const updatePermission = requirePermission(user, PERMISSIONS.PATIENTS_UPDATE);
+        if (updatePermission) return updatePermission;
 
         const tenantId = user.tenantId;
         if (!tenantId) return apiError("No tenant associated with user", 400);

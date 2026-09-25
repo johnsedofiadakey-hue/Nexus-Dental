@@ -5,7 +5,7 @@
 // Returns current authenticated user info.
 // ============================================
 
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
 import {
     requireAuth,
@@ -13,7 +13,9 @@ import {
     isPatientUser,
     apiError,
     apiSuccess,
+    signPatientToken,
 } from "@/lib/auth";
+import { AUTH_CONFIG } from "@/lib/auth/types";
 import type { JWTPayload, PatientJWTPayload } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
@@ -43,10 +45,34 @@ export async function GET(request: NextRequest) {
                 return apiError("Patient not found", 404);
             }
 
-            return apiSuccess({
-                type: "PATIENT",
-                ...patient,
+            const response = NextResponse.json({
+                success: true,
+                data: {
+                    type: "PATIENT",
+                    role: "PATIENT",
+                    roles: ["PATIENT"],
+                    ...patient,
+                },
             });
+
+            // Sliding patient session: every successful app load renews the
+            // signed cookie. The session therefore remains active while the
+            // patient uses the portal, and explicit logout remains reliable.
+            const renewedToken = signPatientToken({
+                patientId: patient.id,
+                tenantId: patient.tenantId,
+                role: "PATIENT",
+                type: "PATIENT",
+            });
+            response.cookies.set("nexus_patient_token", renewedToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "lax",
+                path: "/",
+                maxAge: AUTH_CONFIG.PATIENT_SESSION_MAX_AGE_SECONDS,
+            });
+
+            return response;
         }
 
         if (isStaffUser(user)) {

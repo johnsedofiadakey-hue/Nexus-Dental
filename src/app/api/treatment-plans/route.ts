@@ -2,6 +2,9 @@ import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
 import {
     requireAuth,
+    requirePermission,
+    isStaffUser,
+    PERMISSIONS,
     apiError,
     apiSuccess,
 } from "@/lib/auth";
@@ -12,6 +15,10 @@ export async function GET(request: NextRequest) {
         const authResult = requireAuth(request);
         if ("error" in authResult) return authResult.error;
         const { user } = authResult;
+
+        if (!isStaffUser(user)) return apiError("Staff access required", 403);
+        const viewPermission = requirePermission(user, PERMISSIONS.PATIENTS_VIEW);
+        if (viewPermission) return viewPermission;
 
         const tenantId = user.tenantId;
         if (!tenantId) return apiError("No tenant associated with user", 400);
@@ -83,6 +90,10 @@ export async function POST(request: NextRequest) {
         const authResult = requireAuth(request);
         if ("error" in authResult) return authResult.error;
         const { user } = authResult;
+
+        if (!isStaffUser(user)) return apiError("Staff access required", 403);
+        const updatePermission = requirePermission(user, PERMISSIONS.PATIENTS_UPDATE);
+        if (updatePermission) return updatePermission;
 
         const tenantId = user.tenantId;
         if (!tenantId) return apiError("No tenant associated with user", 400);
