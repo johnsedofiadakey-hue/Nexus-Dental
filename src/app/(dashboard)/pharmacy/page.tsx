@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
     Pill, Search, User as UserIcon, Calendar, CheckCircle,
-    Clock, AlertCircle, Loader2, PackageCheck, Filter
+    Clock, AlertCircle, Loader2, PackageCheck
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -24,7 +24,7 @@ interface Prescription {
         lastName: string;
     };
     medications: any[];
-    status: "PENDING" | "DISPENSED" | "CANCELLED";
+    status: "PENDING" | "FILLED" | "CANCELLED" | "EXPIRED";
     issuedAt: string;
 }
 
@@ -35,6 +35,16 @@ export default function PharmacyPage() {
     const [searchQuery, setSearchQuery] = useState("");
     const [filterStatus, setFilterStatus] = useState<string>("PENDING");
     const [processingId, setProcessingId] = useState<string | null>(null);
+
+    const fetchPrescriptions = useCallback(async () => {
+        try {
+            const res = await fetch(`/api/prescriptions?status=${filterStatus}`);
+            const data = await res.json();
+            if (data.success) setPrescriptions(data.data);
+        } catch {
+            toast.error("Failed to load prescriptions");
+        }
+    }, [filterStatus]);
 
     useEffect(() => {
         const loadInitialData = async () => {
@@ -57,19 +67,7 @@ export default function PharmacyPage() {
         };
 
         loadInitialData();
-    }, [filterStatus]);
-
-    const fetchPrescriptions = async () => {
-        try {
-            const res = await fetch(`/api/prescriptions?status=${filterStatus}`);
-            const data = await res.json();
-            if (data.success) {
-                setPrescriptions(data.data);
-            }
-        } catch (error) {
-            toast.error("Failed to load prescriptions");
-        }
-    };
+    }, [fetchPrescriptions]);
 
     const handleDispense = async (id: string) => {
         if (!confirm("Confirm medication dispensing? This will deduct stock from inventory.")) return;
@@ -134,10 +132,10 @@ export default function PharmacyPage() {
                             Pending
                         </Button>
                         <Button
-                            variant={filterStatus === "DISPENSED" ? "secondary" : "ghost"}
+                            variant={filterStatus === "FILLED" ? "secondary" : "ghost"}
                             size="sm"
-                            onClick={() => setFilterStatus("DISPENSED")}
-                            className={cn(filterStatus === "DISPENSED" && "shadow-sm bg-white")}
+                            onClick={() => setFilterStatus("FILLED")}
+                            className={cn(filterStatus === "FILLED" && "shadow-sm bg-white")}
                         >
                             Fulfilled
                         </Button>
@@ -162,10 +160,6 @@ export default function PharmacyPage() {
                             className="pl-10 h-11 bg-white"
                         />
                     </div>
-                    <Button variant="outline" className="gap-2 h-11">
-                        <Filter className="w-4 h-4" />
-                        Advanced Filter
-                    </Button>
                 </div>
 
                 {loading ? (

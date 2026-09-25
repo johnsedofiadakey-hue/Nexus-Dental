@@ -100,7 +100,7 @@ async function fetchPlans(status: string, search: string): Promise<TreatmentPlan
     const res = await fetch(`/api/treatment-plans?${params}`, { credentials: "include" });
     if (!res.ok) throw new Error("Failed to fetch treatment plans");
     const json = await res.json();
-    return json.data.plans as TreatmentPlanSummary[];
+    return (json.data?.data ?? []) as TreatmentPlanSummary[];
 }
 
 async function fetchPlanDetail(id: string): Promise<TreatmentPlanDetail> {

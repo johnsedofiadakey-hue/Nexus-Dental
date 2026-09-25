@@ -127,7 +127,7 @@ async function fetchLabOrders(search: string): Promise<LabOrder[]> {
     const res = await fetch(`/api/lab-orders?${params.toString()}`, { credentials: "include" });
     if (!res.ok) throw new Error("Failed to fetch lab orders");
     const json = await res.json();
-    return json.data;
+    return json.data?.data ?? [];
 }
 
 async function fetchPatients(q: string): Promise<Patient[]> {
@@ -141,7 +141,7 @@ async function fetchDoctors(): Promise<{ id: string; firstName: string; lastName
     const res = await fetch("/api/staff?role=DOCTOR", { credentials: "include" });
     if (!res.ok) return [];
     const json = await res.json();
-    return json.data ?? [];
+    return json.data?.staff ?? [];
 }
 
 // ─── Modal ────────────────────────────────────────────────────────────────────

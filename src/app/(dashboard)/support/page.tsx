@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MessageSquare, AlertCircle, Clock } from "lucide-react";
+import Link from "next/link";
 
 export default function SupportDashboard() {
     const [tickets, setTickets] = useState<any[]>([]);
@@ -48,7 +49,7 @@ export default function SupportDashboard() {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {tickets.map(ticket => (
-                            <Card key={ticket.id} className="hover:shadow-md transition-shadow cursor-pointer border-l-4" style={{
+                            <Link key={ticket.id} href={`/support/${ticket.id}`} className="block no-underline"><Card className="hover:shadow-md transition-shadow cursor-pointer border-l-4" style={{
                                 borderLeftColor: ticket.severity === 'HIGH' ? '#ef4444' : ticket.severity === 'MEDIUM' ? '#f59e0b' : '#3b82f6'
                             }}>
                                 <CardHeader className="pb-2">
@@ -76,7 +77,7 @@ export default function SupportDashboard() {
                                         </div>
                                     </div>
                                 </CardContent>
-                            </Card>
+                            </Card></Link>
                         ))}
                     </div>
                 )}

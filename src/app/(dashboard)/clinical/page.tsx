@@ -16,8 +16,9 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useCurrentUser } from "@/lib/hooks/use-current-user";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
-type TabFilter = "UPCOMING" | "IN_PROGRESS" | "COMPLETED";
+type TabFilter = "UPCOMING" | "WAITING" | "IN_CHAIR" | "COMPLETED";
 
 interface Appointment {
     id: string;
@@ -38,7 +39,8 @@ function initials(first: string, last: string) {
 
 const STATUS_MAP: Record<TabFilter, string> = {
     UPCOMING: "SCHEDULED",
-    IN_PROGRESS: "IN_PROGRESS",
+    WAITING: "CHECKED_IN",
+    IN_CHAIR: "IN_CHAIR",
     COMPLETED: "COMPLETED",
 };
 
@@ -147,14 +149,14 @@ export default function ClinicalDashboard() {
                                 <CardTitle>Appointment Queue</CardTitle>
                                 <CardDescription>Manage today&apos;s patient flow</CardDescription>
                             </div>
-                            <Button size="sm" className="gap-2 bg-teal-600 hover:bg-teal-700">
-                                <Plus className="w-4 h-4" /> New Booking
+                            <Button asChild size="sm" className="gap-2 bg-teal-600 hover:bg-teal-700">
+                                <Link href="/booking"><Plus className="w-4 h-4" /> New Booking</Link>
                             </Button>
                         </CardHeader>
                         <CardContent>
                             {/* Tabs */}
                             <div className="flex gap-1 p-1 bg-slate-100 rounded-xl w-fit mb-6">
-                                {(["UPCOMING", "IN_PROGRESS", "COMPLETED"] as TabFilter[]).map((tab) => (
+                                {(["UPCOMING", "WAITING", "IN_CHAIR", "COMPLETED"] as TabFilter[]).map((tab) => (
                                     <button
                                         key={tab}
                                         onClick={() => setActiveTab(tab)}
@@ -165,7 +167,7 @@ export default function ClinicalDashboard() {
                                                 : "text-slate-500 hover:text-slate-700"
                                         )}
                                     >
-                                        {tab === "IN_PROGRESS" ? "In Progress" : tab.charAt(0) + tab.slice(1).toLowerCase()}
+                                        {tab === "IN_CHAIR" ? "In Chair" : tab.charAt(0) + tab.slice(1).toLowerCase()}
                                     </button>
                                 ))}
                             </div>
@@ -212,22 +214,22 @@ export default function ClinicalDashboard() {
                                             {activeTab === "UPCOMING" && (
                                                 <Button
                                                     size="sm"
-                                                    className="bg-teal-600 hover:bg-teal-700 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                    onClick={() => statusMutation.mutate({ id: appt.id, status: "IN_PROGRESS" })}
+                                                    className="bg-teal-600 hover:bg-teal-700"
+                                                    onClick={() => statusMutation.mutate({ id: appt.id, status: "CHECKED_IN" })}
                                                     disabled={statusMutation.isPending}
                                                 >
-                                                    Start Session
+                                                    Check In
                                                 </Button>
                                             )}
-                                            {activeTab === "IN_PROGRESS" && (
+                                            {activeTab === "WAITING" && (
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
-                                                    className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                    onClick={() => statusMutation.mutate({ id: appt.id, status: "COMPLETED" })}
+                                                    className="border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                                                    onClick={() => statusMutation.mutate({ id: appt.id, status: "IN_CHAIR" })}
                                                     disabled={statusMutation.isPending}
                                                 >
-                                                    <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Complete
+                                                    <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Seat Patient
                                                 </Button>
                                             )}
                                             <Button variant="ghost" size="icon">

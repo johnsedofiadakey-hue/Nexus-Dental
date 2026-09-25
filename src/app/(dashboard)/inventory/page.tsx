@@ -18,12 +18,12 @@ import { toast } from "sonner";
 interface InventoryItem {
     id: string;
     name: string;
-    category: string;
+    supplier: string | null;
     quantity: number;
     unit: string;
-    reorderLevel: number;
-    unitCost: number;
-    expiryDate?: string;
+    threshold: number;
+    cost: number | null;
+    expiresAt?: string | null;
 }
 
 async function fetchInventory(search: string, page: number) {
@@ -50,9 +50,9 @@ export default function InventoryPage() {
     const items = data?.items ?? [];
     const pagination = data?.pagination;
 
-    const lowStockCount = items.filter(i => i.quantity <= i.reorderLevel).length;
-    const inStockCount = items.filter(i => i.quantity > i.reorderLevel).length;
-    const totalValuation = items.reduce((sum, i) => sum + i.quantity * i.unitCost, 0);
+    const lowStockCount = items.filter(i => i.quantity <= i.threshold).length;
+    const inStockCount = items.filter(i => i.quantity > i.threshold).length;
+    const totalValuation = items.reduce((sum, i) => sum + i.quantity * (i.cost ?? 0), 0);
     const healthPct = items.length > 0 ? Math.round((inStockCount / items.length) * 100) : 100;
 
     return (
@@ -152,7 +152,7 @@ export default function InventoryPage() {
                                 <thead>
                                     <tr className="bg-slate-50 border-b border-slate-100">
                                         <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Item Name</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Category</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Supplier</th>
                                         <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Quantity</th>
                                         <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Unit Cost</th>
                                         <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Status</th>
@@ -161,25 +161,25 @@ export default function InventoryPage() {
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
                                     {items.map((item) => {
-                                        const isLow = item.quantity <= item.reorderLevel;
+                                        const isLow = item.quantity <= item.threshold;
                                         return (
                                             <tr key={item.id} className="hover:bg-slate-50 transition-colors">
                                                 <td className="px-6 py-4">
                                                     <p className="font-semibold text-slate-900">{item.name}</p>
-                                                    {item.expiryDate && (
-                                                        <p className="text-xs text-slate-400">Exp: {new Date(item.expiryDate).toLocaleDateString("en-GB")}</p>
+                                                    {item.expiresAt && (
+                                                        <p className="text-xs text-slate-400">Exp: {new Date(item.expiresAt).toLocaleDateString("en-GB")}</p>
                                                     )}
                                                 </td>
-                                                <td className="px-6 py-4 text-sm text-slate-500">{item.category}</td>
+                                                <td className="px-6 py-4 text-sm text-slate-500">{item.supplier || "—"}</td>
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-2">
                                                         <span className="text-sm font-bold text-slate-900">{item.quantity} {item.unit}</span>
                                                         {isLow && <TrendingDown className="w-3.5 h-3.5 text-red-500" />}
                                                     </div>
-                                                    <p className="text-xs text-slate-400">Reorder at {item.reorderLevel}</p>
+                                                    <p className="text-xs text-slate-400">Reorder at {item.threshold}</p>
                                                 </td>
                                                 <td className="px-6 py-4 text-sm text-slate-700">
-                                                    GH₵ {item.unitCost.toFixed(2)}
+                                                    GH₵ {(item.cost ?? 0).toFixed(2)}
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <Badge className={`border-none font-bold ${isLow ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700"}`}>

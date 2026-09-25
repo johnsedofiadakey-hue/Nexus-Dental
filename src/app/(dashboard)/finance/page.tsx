@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DollarSign, TrendingUp, Calendar, FileText, Users, CheckCircle2, AlertCircle } from "lucide-react";
 import { useCurrentUser } from "@/lib/hooks/use-current-user";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 interface ClinicStats {
     totalPatients: number;
@@ -123,8 +125,9 @@ export default function FinanceDashboardPage() {
                 <CardContent>
                     <div className="text-sm text-muted-foreground text-center py-12">
                         <FileText className="w-12 h-12 mx-auto mb-4 text-muted-foreground/30" />
-                        <p className="font-medium">Invoice management coming soon</p>
-                        <p className="text-xs mt-2">Full billing, insurance claims, and payment tracking will appear here.</p>
+                        <p className="font-medium">Review invoices and payments</p>
+                        <p className="text-xs mt-2">Track balances, payments, and insurance information from the billing workspace.</p>
+                        <Button asChild className="mt-5 bg-teal-600 hover:bg-teal-700"><Link href="/finance/invoices">Open invoices</Link></Button>
                     </div>
                 </CardContent>
             </Card>

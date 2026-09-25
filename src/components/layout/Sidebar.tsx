@@ -14,8 +14,9 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
 type UserRoleType = "SYSTEM_OWNER" | "CLINIC_OWNER" | "ADMIN" | "DOCTOR" | "NURSE" | "RECEPTIONIST" | "INVENTORY_MANAGER" | "BILLING_STAFF" | "PATIENT";
+type NavItem = { label: string; icon: React.ElementType; href: string };
 
-const NAV_ITEMS: Record<UserRoleType, { label: string; icon: React.ElementType; href: string }[]> = {
+const NAV_ITEMS: Record<UserRoleType, NavItem[]> = {
     SYSTEM_OWNER: [
         { label: "Overview",   icon: LayoutDashboard, href: "/system/dashboard" },
         { label: "Tenants",    icon: Building2,        href: "/system/dashboard/tenants" },
@@ -46,6 +47,7 @@ const NAV_ITEMS: Record<UserRoleType, { label: string; icon: React.ElementType; 
         { label: "Content",          icon: Globe,           href: "/content" },
         { label: "Support",          icon: LifeBuoy,        href: "/support" },
         { label: "Settings",         icon: Settings,        href: "/dashboard/settings" },
+        { label: "Security",         icon: ShieldAlert,     href: "/dashboard/security" },
     ],
     ADMIN: [
         { label: "Dashboard",        icon: LayoutDashboard, href: "/dashboard" },
@@ -70,6 +72,7 @@ const NAV_ITEMS: Record<UserRoleType, { label: string; icon: React.ElementType; 
         { label: "Content",          icon: Globe,           href: "/content" },
         { label: "Support",          icon: LifeBuoy,        href: "/support" },
         { label: "Settings",         icon: Settings,        href: "/dashboard/settings" },
+        { label: "Security",         icon: ShieldAlert,     href: "/dashboard/security" },
     ],
     DOCTOR: [
         { label: "My Schedule",      icon: DocIcon,         href: "/doctor" },
@@ -117,13 +120,24 @@ const NAV_ITEMS: Record<UserRoleType, { label: string; icon: React.ElementType; 
     ],
 };
 
+function navigationGroup(item: NavItem) {
+    if (["/dashboard", "/appointments", "/patients", "/doctor", "/clinical"].includes(item.href)) return "Daily work";
+    if (["/dental-chart", "/treatment-plans", "/lab-orders", "/consent"].includes(item.href)) return "Clinical care";
+    if (["/clinic-services", "/inventory", "/pharmacy", "/suppliers", "/expenses", "/waitlist"].includes(item.href)) return "Operations";
+    if (item.href.startsWith("/finance") || ["/insurance", "/analytics"].includes(item.href)) return "Finance";
+    if (["/reviews", "/content", "/support"].includes(item.href)) return "Patient experience";
+    if (item.href.includes("staff") || item.href.includes("settings")) return "Administration";
+    return "Navigation";
+}
+
 interface SidebarProps {
     role?: UserRoleType;
     roles?: UserRoleType[];
     className?: string;
+    onNavigate?: () => void;
 }
 
-export function Sidebar({ role, roles = [], className }: SidebarProps) {
+export function Sidebar({ role, roles = [], className, onNavigate }: SidebarProps) {
     const pathname = usePathname();
     const [collapsed, setCollapsed] = useState(false);
 
@@ -135,7 +149,13 @@ export function Sidebar({ role, roles = [], className }: SidebarProps) {
             if (!acc.find(a => a.href === item.href)) acc.push(item);
         });
         return acc;
-    }, [] as { label: string; icon: React.ElementType; href: string }[]);
+    }, [] as NavItem[]);
+
+    const groupedItems = navItems.reduce<Record<string, NavItem[]>>((groups, item) => {
+        const group = navItems.length > 8 ? navigationGroup(item) : "Navigation";
+        groups[group] = [...(groups[group] || []), item];
+        return groups;
+    }, {});
 
     return (
         <div className={cn(
@@ -156,37 +176,37 @@ export function Sidebar({ role, roles = [], className }: SidebarProps) {
             </div>
 
             {/* Nav */}
-            <div className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5">
-                {navItems.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-
-                    return (
-                        <Link key={item.href} href={item.href}
-                            className={cn(
-                                "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group",
-                                isActive
-                                    ? "bg-teal-50 text-teal-700"
-                                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                            )}>
-                            <Icon className={cn("w-5 h-5 shrink-0 transition-colors",
-                                isActive ? "text-teal-600" : "text-slate-400 group-hover:text-slate-600"
-                            )} />
-                            {!collapsed && <span className="text-sm font-medium">{item.label}</span>}
-                        </Link>
-                    );
-                })}
+            <div className="flex-1 overflow-y-auto py-3 px-3 space-y-4">
+                {Object.entries(groupedItems).map(([group, items]) => (
+                    <div key={group} className="space-y-0.5">
+                        {!collapsed && navItems.length > 8 && <p className="px-3 pb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">{group}</p>}
+                        {items.map((item) => {
+                            const Icon = item.icon;
+                            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                            return (
+                                <Link key={item.href} href={item.href} onClick={onNavigate}
+                                    className={cn(
+                                        "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group",
+                                        isActive ? "bg-teal-50 text-teal-700" : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                                    )}>
+                                    <Icon className={cn("w-5 h-5 shrink-0 transition-colors", isActive ? "text-teal-600" : "text-slate-400 group-hover:text-slate-600")} />
+                                    {!collapsed && <span className="text-sm font-medium">{item.label}</span>}
+                                </Link>
+                            );
+                        })}
+                    </div>
+                ))}
             </div>
 
             {/* Logout */}
             <div className="p-3 border-t border-slate-100 shrink-0">
                 <Button variant="ghost"
-                    onClick={() => {
-                        if (role === "PATIENT") {
-                            document.cookie = "nexus_patient_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT";
-                        } else {
-                            document.cookie = "nexus_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT";
-                        }
+                    onClick={async () => {
+                        await fetch("/api/auth/logout", {
+                            method: "POST",
+                            credentials: "include",
+                        }).catch(() => undefined);
+                        onNavigate?.();
                         window.location.href = role === "PATIENT" ? "/auth/patient" : "/auth/staff";
                     }}
                     className={cn("w-full justify-start gap-3 rounded-xl hover:bg-red-50 hover:text-red-700", collapsed && "justify-center px-0")}>

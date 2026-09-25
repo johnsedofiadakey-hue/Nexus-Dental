@@ -13,6 +13,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Badge } from "@/components/ui/badge";
 import { useCurrentUser } from "@/lib/hooks/use-current-user";
 import { useDebounce } from "@/lib/hooks/use-debounce";
+import Link from "next/link";
 
 interface Patient {
     id: string;
@@ -67,8 +68,8 @@ export default function PatientsPage() {
                     <p className="text-slate-500">Search, manage, and register patients in your clinic.</p>
                 </div>
                 <div className="flex gap-3">
-                    <Button className="bg-teal-600 hover:bg-teal-700 gap-2">
-                        <Plus className="w-4 h-4" /> New Patient
+                    <Button asChild className="bg-teal-600 hover:bg-teal-700 gap-2">
+                        <Link href="/patients/new"><Plus className="w-4 h-4" /> New Patient</Link>
                     </Button>
                 </div>
             </div>
@@ -161,11 +162,9 @@ export default function PatientsPage() {
                                             </Badge>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-teal-600">
-                                                    <History className="w-4 h-4" />
-                                                </Button>
-                                            </div>
+                                            <Button asChild variant="outline" size="sm" className="min-h-9 text-teal-700">
+                                                <Link href={`/patients/${patient.id}`}><History className="mr-1.5 w-4 h-4" />View</Link>
+                                            </Button>
                                         </td>
                                     </tr>
                                 ))}

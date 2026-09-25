@@ -13,8 +13,9 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Badge } from "@/components/ui/badge";
 import { useCurrentUser } from "@/lib/hooks/use-current-user";
 import { toast } from "sonner";
+import Link from "next/link";
 
-type AppointmentStatus = "SCHEDULED" | "CONFIRMED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | "NO_SHOW";
+type AppointmentStatus = "SCHEDULED" | "CHECKED_IN" | "IN_IMAGING" | "IN_CHAIR" | "COMPLETED" | "CHECKOUT" | "CANCELLED" | "NO_SHOW";
 
 interface Appointment {
     id: string;
@@ -28,9 +29,11 @@ interface Appointment {
 
 const STATUS_CONFIG: Record<AppointmentStatus, { label: string; className: string }> = {
     SCHEDULED:   { label: "Scheduled",   className: "bg-blue-50 text-blue-700" },
-    CONFIRMED:   { label: "Confirmed",   className: "bg-teal-50 text-teal-700" },
-    IN_PROGRESS: { label: "In Progress", className: "bg-amber-50 text-amber-700" },
+    CHECKED_IN:  { label: "Checked In",  className: "bg-blue-50 text-blue-700" },
+    IN_IMAGING:  { label: "In Imaging",  className: "bg-violet-50 text-violet-700" },
+    IN_CHAIR:    { label: "In Chair",    className: "bg-amber-50 text-amber-700" },
     COMPLETED:   { label: "Completed",   className: "bg-emerald-50 text-emerald-700" },
+    CHECKOUT:    { label: "Checkout",    className: "bg-cyan-50 text-cyan-700" },
     CANCELLED:   { label: "Cancelled",   className: "bg-red-50 text-red-700" },
     NO_SHOW:     { label: "No Show",     className: "bg-slate-100 text-slate-500" },
 };
@@ -50,6 +53,7 @@ function formatDate(dateStr: string) {
 async function fetchAppointments(status: string, search: string, page: number) {
     const params = new URLSearchParams({ page: String(page), limit: "20" });
     if (status !== "ALL") params.set("status", status);
+    if (search.trim()) params.set("search", search.trim());
     const res = await fetch(`/api/appointments?${params}`, { credentials: "include" });
     if (!res.ok) throw new Error("Failed to fetch appointments");
     const json = await res.json();
@@ -75,7 +79,7 @@ export default function AppointmentsPage() {
     const queryClient = useQueryClient();
 
     const { data, isLoading, isError, refetch } = useQuery({
-        queryKey: ["appointments", status, page],
+        queryKey: ["appointments", status, search, page],
         queryFn: () => fetchAppointments(status, search, page),
         enabled: !!user,
     });
@@ -96,8 +100,8 @@ export default function AppointmentsPage() {
     const tabs: { id: string; label: string }[] = [
         { id: "ALL", label: "All" },
         { id: "SCHEDULED", label: "Scheduled" },
-        { id: "CONFIRMED", label: "Confirmed" },
-        { id: "IN_PROGRESS", label: "In Progress" },
+        { id: "CHECKED_IN", label: "Checked In" },
+        { id: "IN_CHAIR", label: "In Chair" },
         { id: "COMPLETED", label: "Completed" },
         { id: "CANCELLED", label: "Cancelled" },
     ];
@@ -113,8 +117,8 @@ export default function AppointmentsPage() {
                     <Button variant="outline" className="gap-2" onClick={() => refetch()}>
                         <RefreshCw className="w-4 h-4" /> Refresh
                     </Button>
-                    <Button className="bg-teal-600 hover:bg-teal-700 gap-2">
-                        <Plus className="w-4 h-4" /> New Booking
+                    <Button asChild className="bg-teal-600 hover:bg-teal-700 gap-2">
+                        <Link href="/booking"><Plus className="w-4 h-4" /> New Booking</Link>
                     </Button>
                 </div>
             </div>
@@ -230,23 +234,23 @@ export default function AppointmentsPage() {
                                                         <Button
                                                             size="sm" variant="outline"
                                                             className="text-teal-600 border-teal-200 hover:bg-teal-50"
-                                                            onClick={() => statusMutation.mutate({ id: appt.id, newStatus: "CONFIRMED" })}
+                                                            onClick={() => statusMutation.mutate({ id: appt.id, newStatus: "CHECKED_IN" })}
                                                             disabled={statusMutation.isPending}
                                                         >
-                                                            <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Confirm
+                                                            <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Check In
                                                         </Button>
                                                     )}
-                                                    {appt.status === "CONFIRMED" && (
+                                                    {(appt.status === "CHECKED_IN" || appt.status === "IN_IMAGING") && (
                                                         <Button
                                                             size="sm"
                                                             className="bg-teal-600 hover:bg-teal-700"
-                                                            onClick={() => statusMutation.mutate({ id: appt.id, newStatus: "IN_PROGRESS" })}
+                                                            onClick={() => statusMutation.mutate({ id: appt.id, newStatus: "IN_CHAIR" })}
                                                             disabled={statusMutation.isPending}
                                                         >
                                                             Start Session
                                                         </Button>
                                                     )}
-                                                    {(appt.status === "SCHEDULED" || appt.status === "CONFIRMED") && (
+                                                    {appt.status === "SCHEDULED" && (
                                                         <Button
                                                             size="sm" variant="ghost"
                                                             className="text-red-500 hover:bg-red-50"

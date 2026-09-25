@@ -119,7 +119,7 @@ async function fetchServices(): Promise<Service[]> {
   );
   if (!res.ok) throw new Error("Failed to load services");
   const json = await res.json();
-  return json.services as Service[];
+  return json.data?.services as Service[];
 }
 
 async function createService(
@@ -141,7 +141,8 @@ async function createService(
     const err = await res.json().catch(() => ({}));
     throw new Error(err.error ?? "Failed to create service");
   }
-  return res.json();
+  const json = await res.json();
+  return json.data as Service;
 }
 
 async function updateService(
@@ -165,7 +166,8 @@ async function updateService(
     const err = await res.json().catch(() => ({}));
     throw new Error(err.error ?? "Failed to update service");
   }
-  return res.json();
+  const json = await res.json();
+  return json.data as Service;
 }
 
 async function deleteService(id: string): Promise<void> {

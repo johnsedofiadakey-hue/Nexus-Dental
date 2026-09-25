@@ -102,9 +102,11 @@ function formatTime(dateTimeStr: string): string {
 
 type AppointmentStatus =
   | "SCHEDULED"
-  | "CONFIRMED"
-  | "IN_PROGRESS"
+  | "CHECKED_IN"
+  | "IN_IMAGING"
+  | "IN_CHAIR"
   | "COMPLETED"
+  | "CHECKOUT"
   | "CANCELLED"
   | "NO_SHOW";
 
@@ -152,18 +154,22 @@ interface CompleteSessionForm {
 
 const STATUS_COLORS: Record<AppointmentStatus, string> = {
   SCHEDULED: "bg-slate-100 text-slate-700 border-slate-200",
-  CONFIRMED: "bg-blue-50 text-blue-700 border-blue-200",
-  IN_PROGRESS: "bg-amber-50 text-amber-700 border-amber-200",
+  CHECKED_IN: "bg-blue-50 text-blue-700 border-blue-200",
+  IN_IMAGING: "bg-violet-50 text-violet-700 border-violet-200",
+  IN_CHAIR: "bg-amber-50 text-amber-700 border-amber-200",
   COMPLETED: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  CHECKOUT: "bg-cyan-50 text-cyan-700 border-cyan-200",
   CANCELLED: "bg-red-50 text-red-700 border-red-200",
   NO_SHOW: "bg-rose-50 text-rose-700 border-rose-200",
 };
 
 const STATUS_LABELS: Record<AppointmentStatus, string> = {
   SCHEDULED: "Scheduled",
-  CONFIRMED: "Confirmed",
-  IN_PROGRESS: "In Progress",
+  CHECKED_IN: "Checked In",
+  IN_IMAGING: "In Imaging",
+  IN_CHAIR: "In Chair",
   COMPLETED: "Completed",
+  CHECKOUT: "Checkout",
   CANCELLED: "Cancelled",
   NO_SHOW: "No Show",
 };
@@ -196,7 +202,7 @@ function useAppointments(
       });
       if (!res.ok) throw new Error("Failed to fetch appointments");
       const json = await res.json();
-      return json.appointments ?? [];
+      return json.data?.appointments ?? [];
     },
     enabled: !!tenantId && !!doctorId,
     refetchInterval: 60_000,
@@ -279,7 +285,7 @@ function StatCard({
   color: string;
 }) {
   return (
-    <Card className="flex-1 min-w-0">
+    <Card className="min-w-[140px] flex-1">
       <CardContent className="p-5 flex items-center gap-4">
         <div className={`rounded-xl p-3 ${color}`}>
           <Icon className="w-5 h-5" />
@@ -310,12 +316,12 @@ function AppointmentCard({
 }) {
   const { patient, services, status, dateTime } = appointment;
   const isActionable =
-    status === "SCHEDULED" || status === "CONFIRMED" || status === "IN_PROGRESS";
+    status === "SCHEDULED" || status === "CHECKED_IN" || status === "IN_IMAGING" || status === "IN_CHAIR";
 
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardContent className="p-5">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-start">
           {/* Time + patient info */}
           <div className="flex gap-4 flex-1 min-w-0">
             <div className="flex flex-col items-center pt-1 min-w-[52px]">
@@ -356,7 +362,7 @@ function AppointmentCard({
 
           {/* Action buttons */}
           {isActionable && (
-            <div className="flex flex-col gap-2 shrink-0">
+            <div className="flex shrink-0 flex-row flex-wrap gap-2 sm:flex-col">
               {status === "SCHEDULED" && (
                 <Button
                   size="sm"
@@ -365,10 +371,10 @@ function AppointmentCard({
                   onClick={onConfirm}
                   disabled={isLoading}
                 >
-                  Confirm
+                  Check In
                 </Button>
               )}
-              {status === "CONFIRMED" && (
+              {(status === "CHECKED_IN" || status === "IN_IMAGING") && (
                 <Button
                   size="sm"
                   className="bg-teal-600 hover:bg-teal-700 text-white"
@@ -378,7 +384,7 @@ function AppointmentCard({
                   Start Session
                 </Button>
               )}
-              {status === "IN_PROGRESS" && (
+              {status === "IN_CHAIR" && (
                 <Button
                   size="sm"
                   className="bg-emerald-600 hover:bg-emerald-700 text-white"
@@ -388,15 +394,17 @@ function AppointmentCard({
                   Complete Session
                 </Button>
               )}
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-rose-600 hover:bg-rose-50 hover:text-rose-700 text-xs"
-                onClick={onNoShow}
-                disabled={isLoading}
-              >
-                No Show
-              </Button>
+              {status === "SCHEDULED" && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-rose-600 hover:bg-rose-50 hover:text-rose-700 text-xs"
+                  onClick={onNoShow}
+                  disabled={isLoading}
+                >
+                  No Show
+                </Button>
+              )}
             </div>
           )}
         </div>
@@ -751,15 +759,15 @@ export default function DoctorDashboardPage() {
   // Stat counts
   const todayTotal = appointments.length;
   const waiting = appointments.filter((a) => a.status === "SCHEDULED").length;
-  const inProgress = appointments.filter((a) => a.status === "IN_PROGRESS").length;
+  const inProgress = appointments.filter((a) => ["CHECKED_IN", "IN_IMAGING", "IN_CHAIR"].includes(a.status)).length;
   const completed = appointments.filter((a) => a.status === "COMPLETED").length;
   const noShows = appointments.filter((a) => a.status === "NO_SHOW").length;
 
   // Tab groups
   const upcoming = appointments.filter(
-    (a) => a.status === "SCHEDULED" || a.status === "CONFIRMED"
+    (a) => a.status === "SCHEDULED"
   );
-  const inProgressList = appointments.filter((a) => a.status === "IN_PROGRESS");
+  const inProgressList = appointments.filter((a) => ["CHECKED_IN", "IN_IMAGING", "IN_CHAIR"].includes(a.status));
   const completedList = appointments.filter((a) => a.status === "COMPLETED");
 
   const tabData: Record<Tab, Appointment[]> = {
@@ -829,7 +837,7 @@ export default function DoctorDashboardPage() {
         </div>
 
         {/* ── Body ──────────────────────────────────────────────────────── */}
-        <div className="flex gap-6 items-start">
+        <div className="flex flex-col gap-6 items-start xl:flex-row">
           {/* ── Queue ─────────────────────────────────────────────────── */}
           <div className="flex-1 min-w-0 flex flex-col gap-4">
             {/* Date Navigator */}
@@ -940,10 +948,10 @@ export default function DoctorDashboardPage() {
                     appointment={appt}
                     isLoading={isUpdating}
                     onConfirm={() =>
-                      handleStatusUpdate(appt.id, "CONFIRMED", "confirmed")
+                      handleStatusUpdate(appt.id, "CHECKED_IN", "checked in")
                     }
                     onStart={() =>
-                      handleStatusUpdate(appt.id, "IN_PROGRESS", "started")
+                      handleStatusUpdate(appt.id, "IN_CHAIR", "started")
                     }
                     onComplete={() => setCompleteTarget(appt)}
                     onNoShow={() =>
@@ -960,7 +968,7 @@ export default function DoctorDashboardPage() {
           </div>
 
           {/* ── Right Sidebar ─────────────────────────────────────────── */}
-          <div className="w-72 shrink-0 flex flex-col gap-4">
+          <div className="flex w-full shrink-0 flex-col gap-4 xl:w-72">
             {/* Patient Search */}
             <Card>
               <CardHeader className="pb-3">

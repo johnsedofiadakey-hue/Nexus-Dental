@@ -60,7 +60,7 @@ async function fetchWaitlist(): Promise<WaitlistEntry[]> {
   const res = await fetch("/api/waitlist", { credentials: "include" });
   if (!res.ok) throw new Error("Failed to fetch waitlist");
   const json = await res.json();
-  return json.data as WaitlistEntry[];
+  return (json.data?.data ?? []) as WaitlistEntry[];
 }
 
 async function fetchPatients(search: string): Promise<Patient[]> {
@@ -75,14 +75,14 @@ async function fetchServices(): Promise<Service[]> {
   const res = await fetch("/api/services", { credentials: "include" });
   if (!res.ok) return [];
   const json = await res.json();
-  return (json.data ?? []) as Service[];
+  return (json.data?.services ?? []) as Service[];
 }
 
 async function fetchDoctors(): Promise<StaffUser[]> {
   const res = await fetch("/api/staff?role=DOCTOR", { credentials: "include" });
   if (!res.ok) return [];
   const json = await res.json();
-  return (json.data ?? []) as StaffUser[];
+  return (json.data?.staff ?? []) as StaffUser[];
 }
 
 async function addToWaitlist(payload: {
