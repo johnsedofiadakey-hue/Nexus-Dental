@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { requireAuth, apiError, apiSuccess } from "@/lib/auth";
+import { requireAuth, requirePermission, PERMISSIONS, apiError, apiSuccess } from "@/lib/auth";
 import type { JWTPayload, PatientJWTPayload } from "@/lib/auth";
 import prisma from "@/lib/db/prisma";
 import { getTenantIdFromUser } from "@/lib/clinic";
@@ -24,6 +24,8 @@ export async function GET(request: NextRequest) {
         } else {
             // Staff must provide a patientId
             if (!patientId) return apiError("patientId is required", 400);
+            const permissionError = requirePermission(user, PERMISSIONS.PATIENTS_VIEW);
+            if (permissionError) return permissionError;
         }
 
         const files = await prisma.patientFile.findMany({
@@ -68,11 +70,20 @@ export async function POST(request: NextRequest) {
             return apiError("Currently, only staff can upload files", 403);
         } else {
             if (!patientId) return apiError("patientId is required", 400);
+            const permissionError = requirePermission(user, PERMISSIONS.PATIENTS_UPDATE);
+            if (permissionError) return permissionError;
         }
 
         if (!filename || !fileType || !fileSize || !storageKey || !category) {
             return apiError("Missing required file metadata", 400);
         }
+        if (!storageKey.startsWith(`tenants/${getTenantIdFromUser(user)}/patients/${patientId}/`)) {
+            return apiError("Invalid patient file storage path", 400);
+        }
+        if (!['xray', 'photo', 'document', 'consent', 'lab_result'].includes(category)) {
+            return apiError("Invalid file category", 400);
+        }
+        if (Number(fileSize) > 15 * 1024 * 1024) return apiError("File is too large", 400);
 
         // Validate patient belongs to tenant
         const patient = await prisma.patient.findFirst({

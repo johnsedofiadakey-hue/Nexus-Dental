@@ -52,9 +52,7 @@ export default function ConsultationPage({ params }: { params: Promise<{ id: str
 
         // Fetch room details
         const roomRes = await fetch(`/api/telehealth/rooms/${appointmentId}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
+          credentials: "include",
         });
 
         if (!roomRes.ok) {
@@ -67,20 +65,18 @@ export default function ConsultationPage({ params }: { params: Promise<{ id: str
         }
 
         const roomData = await roomRes.json();
-        setAppointment(roomData.appointment);
-        setConsultation(roomData.consultation);
+        setAppointment(roomData.data?.appointment);
+        setConsultation(roomData.data?.consultation);
 
         // Check consent status
         const consentRes = await fetch(`/api/telehealth/consents?appointmentId=${appointmentId}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
+          credentials: "include",
         });
 
         if (consentRes.ok) {
           const consentData = await consentRes.json();
-          setConsentStatus(consentData.consentStatus);
-          if (consentData.consentStatus === "PENDING") {
+          setConsentStatus(consentData.data?.consentStatus);
+          if (consentData.data?.consentStatus === "PENDING") {
             setShowConsent(true);
           }
         }
@@ -102,8 +98,8 @@ export default function ConsultationPage({ params }: { params: Promise<{ id: str
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
+        credentials: "include",
         body: JSON.stringify(consentData),
       });
 
@@ -123,12 +119,12 @@ export default function ConsultationPage({ params }: { params: Promise<{ id: str
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
+          credentials: "include",
           body: JSON.stringify({ saveTranscription: true }),
         });
       }
-      router.push("/patient/appointments");
+      router.push(user?.type === "PATIENT" ? "/portal/telehealth" : "/doctor");
     } catch (err) {
       console.error("Error ending session:", err);
     }

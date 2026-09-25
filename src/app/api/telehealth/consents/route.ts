@@ -14,6 +14,7 @@ export async function POST(request: NextRequest) {
     if ("error" in authResult) return authResult.error;
     const user = authResult.user as JWTPayload | PatientJWTPayload;
     const tenantId = getTenantIdFromUser(user);
+    if (user.type !== "PATIENT") return apiError("Only the patient can give consultation consent", 403);
 
     const body = await request.json();
     const {
@@ -40,12 +41,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Only patient can give consent for themselves
-    if (user.type === "PATIENT") {
-      const patientUser = user as PatientJWTPayload;
-      if (patientUser.patientId !== appointment.patientId) {
-        return apiError("You can only consent for your own appointment", 403);
-      }
+    const patientUser = user as PatientJWTPayload;
+    if (patientUser.patientId !== appointment.patientId) {
+      return apiError("You can only consent for your own appointment", 403);
     }
+
+    const existingConsent = await prisma.patientConsent.findFirst({ where: { tenantId, appointmentId } });
+    if (existingConsent) return apiSuccess({ consentId: existingConsent.id, appointmentId, consented: true, timestamp: existingConsent.signedAt });
 
     // Create consent record (using existing ConsentTemplate system)
     // First, get or create telehealth consent template
@@ -122,6 +124,9 @@ export async function GET(request: NextRequest) {
     });
 
     if (!appointment) {
+      return apiError("Appointment not found", 404);
+    }
+    if (user.type === "PATIENT" && (user as PatientJWTPayload).patientId !== appointment.patientId) {
       return apiError("Appointment not found", 404);
     }
 

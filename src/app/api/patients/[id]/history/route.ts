@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth, apiError, apiSuccess } from "@/lib/auth";
+import { requireAuth, requirePermission, PERMISSIONS, apiError, apiSuccess } from "@/lib/auth";
 import type { JWTPayload, PatientJWTPayload } from "@/lib/auth";
 import { PatientService } from "@/lib/services/patient.service";
 import { getTenantIdFromUser } from "@/lib/clinic";
@@ -27,8 +27,10 @@ export async function GET(
             if ((user as PatientJWTPayload).patientId !== patientId) {
                 return apiError("Forbidden", 403);
             }
-        } else if (!tenantId) {
-            return apiError("Tenant ID is required for staff", 400);
+        } else {
+            if (!tenantId) return apiError("Tenant ID is required for staff", 400);
+            const permissionError = requirePermission(user, PERMISSIONS.PATIENTS_VIEW);
+            if (permissionError) return permissionError;
         }
 
         const history = await PatientService.getTimelineHistory(patientId, tenantId || "");

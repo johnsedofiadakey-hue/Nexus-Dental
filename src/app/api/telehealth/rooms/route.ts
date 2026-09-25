@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
-import { requireAuth, apiError, apiSuccess } from "@/lib/auth";
+import { NextRequest } from "next/server";
+import { requireAuth, requirePermission, isPatientUser, PERMISSIONS, apiError, apiSuccess } from "@/lib/auth";
 import { getTenantIdFromUser } from "@/lib/clinic";
 import { TelehealthService } from "@/lib/services/telehealth.service";
 import prisma from "@/lib/db/prisma";
-import type { JWTPayload } from "@/lib/auth";
+import type { JWTPayload, PatientJWTPayload } from "@/lib/auth";
 
 /**
  * POST /api/telehealth/rooms
@@ -14,8 +14,18 @@ export async function POST(request: NextRequest) {
   try {
     const authResult = requireAuth(request);
     if ("error" in authResult) return authResult.error;
-    const user = authResult.user as JWTPayload;
+    const user = authResult.user;
+
+    // Video needs the Daily provider. Until DAILY_API_KEY is configured, fail
+    // cleanly instead of surfacing a raw server error.
+    if (!process.env.DAILY_API_KEY) {
+      return apiError("Video consultations are not available yet.", 503);
+    }
+
     const tenantId = getTenantIdFromUser(user);
+
+    if (isPatientUser(user)) return apiError("Only clinical staff can create consultation rooms", 403);
+    const staffUser = user as JWTPayload;
 
     const body = await request.json();
     const { appointmentId } = body;
@@ -41,9 +51,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Only allow doctor or staff to create rooms
-    const isDoctor = user.userId === appointment.doctorId;
+    const isDoctor = staffUser.userId === appointment.doctorId;
     const isStaff = ["CLINIC_OWNER", "ADMIN", "RECEPTIONIST"].includes(
-      user.roles?.[0] as string
+      staffUser.roles?.[0] as string
     );
 
     if (!isDoctor && !isStaff) {
@@ -89,13 +99,19 @@ export async function GET(request: NextRequest) {
   try {
     const authResult = requireAuth(request);
     if ("error" in authResult) return authResult.error;
-    const user = authResult.user as JWTPayload;
+    const user = authResult.user;
     const tenantId = getTenantIdFromUser(user);
+
+    if (!isPatientUser(user)) {
+      const permissionError = requirePermission(user, PERMISSIONS.APPOINTMENTS_VIEW);
+      if (permissionError) return permissionError;
+    }
 
     // Get all active appointments with video sessions for this tenant
     const activeAppointments = await prisma.appointment.findMany({
       where: {
         tenantId,
+        ...(isPatientUser(user) ? { patientId: (user as PatientJWTPayload).patientId } : {}),
         videoSessionId: { not: null },
         status: { in: ["SCHEDULED", "CHECKED_IN", "IN_CHAIR"] },
       },

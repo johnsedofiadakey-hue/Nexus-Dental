@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
                     orderBy: { dateTime: 'desc' },
                     include: {
                         doctor: { select: { firstName: true, lastName: true } },
-                        services: { select: { name: true } },
+                        service: { select: { name: true } },
                         additionalServices: { select: { name: true } },
                     }
                 }
@@ -30,7 +30,12 @@ export async function GET(request: NextRequest) {
 
         if (!patient) return apiError("Patient not found", 404);
 
-        return apiSuccess({ patient });
+        const appointments = patient.appointments.map(({ service, additionalServices, ...appt }: any) => ({
+            ...appt,
+            services: [service, ...(additionalServices || [])].filter(Boolean),
+        }));
+
+        return apiSuccess({ patient: { ...patient, appointments } });
     } catch (error) {
         console.error("[Patient Dashboard]", error);
         return apiError("Internal server error", 500);

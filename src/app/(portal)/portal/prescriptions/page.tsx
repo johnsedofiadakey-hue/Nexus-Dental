@@ -23,7 +23,7 @@ const fmtDate = (d: string) => new Date(d).toLocaleDateString("en-GB", { day: "n
 
 function StatusBadge({ status }: { status: string }) {
     const map: Record<string, { label: string; className: string; Icon: React.ElementType }> = {
-        DISPENSED: {
+        FILLED: {
             label: "Dispensed",
             className: "bg-emerald-50 text-emerald-700 border-emerald-200",
             Icon: CheckCircle2,
@@ -211,7 +211,7 @@ export default function PrescriptionsPage() {
     const counts = {
         all: prescriptions.length,
         pending: prescriptions.filter((p) => p.status === "PENDING").length,
-        dispensed: prescriptions.filter((p) => p.status === "DISPENSED").length,
+        dispensed: prescriptions.filter((p) => p.status === "FILLED").length,
         cancelled: prescriptions.filter((p) => p.status === "CANCELLED").length,
     };
 
