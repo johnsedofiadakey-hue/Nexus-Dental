@@ -43,3 +43,16 @@ export function makeRequest(
 
 /** Next.js 15 passes route params as a Promise. */
 export const params = <T extends Record<string, string>>(p: T) => ({ params: Promise.resolve(p) });
+
+/** A real, signed platform (system owner) JWT — not tied to any clinic. */
+export function systemOwnerToken(userId = "sys-owner") {
+    return signToken({
+        userId,
+        tenantId: null,
+        role: "SYSTEM_OWNER",
+        roles: ["SYSTEM_OWNER"],
+        permissions: DEFAULT_ROLE_PERMISSIONS.SYSTEM_OWNER,
+        featureFlags: [],
+        type: "SYSTEM_OWNER",
+    });
+}

@@ -1,12 +1,19 @@
 import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
-import { apiError, apiSuccess } from "@/lib/auth";
+import { requireAuth, requireSystemOwner, apiError, apiSuccess } from "@/lib/auth";
 
 /**
  * GET /api/system/stats - Get platform-wide statistics
  */
 export async function GET(request: NextRequest) {
     try {
+        // Platform-wide counts: system owner only (the edge middleware does not
+        // verify the session, only that a cookie exists).
+        const authResult = requireAuth(request);
+        if ("error" in authResult) return authResult.error;
+        const ownerCheck = requireSystemOwner(authResult.user);
+        if (ownerCheck) return ownerCheck;
+
         // Fetch all stats in parallel
         const [totalTenants, activeTenants, totalUsers, totalPatients] = await Promise.all([
             prisma.tenant.count(),
