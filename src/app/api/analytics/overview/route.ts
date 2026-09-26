@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { requireAuth, isStaffUser, apiError, apiSuccess } from "@/lib/auth";
 import type { JWTPayload } from "@/lib/auth";
+import { paidInRange, sumAmounts } from "@/lib/services/analytics.math";
 
 export async function GET(request: NextRequest) {
     try {
@@ -17,20 +18,21 @@ export async function GET(request: NextRequest) {
         const months: { label: string; from: Date; to: Date }[] = [];
         for (let i = 5; i >= 0; i--) {
             const from = new Date(now.getFullYear(), now.getMonth() - i, 1);
-            const to   = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59);
+            // Half-open range end (first instant of the next month) so nothing is dropped.
+            const to   = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
             months.push({ label: from.toLocaleString("en-GB", { month: "short" }), from, to });
         }
 
         const [monthlyData, serviceBreakdown, statusBreakdown, topPatients] = await Promise.all([
             Promise.all(months.map(async m => {
                 const [appts, invoices] = await Promise.all([
-                    prisma.appointment.count({ where: { tenantId, dateTime: { gte: m.from, lte: m.to } } }),
-                    prisma.invoice.findMany({ where: { tenantId, createdAt: { gte: m.from, lte: m.to }, status: "PAID" }, select: { totalAmount: true } }),
+                    prisma.appointment.count({ where: { tenantId, dateTime: { gte: m.from, lt: m.to } } }),
+                    prisma.invoice.findMany({ where: { tenantId, ...paidInRange(m.from, m.to) }, select: { totalAmount: true } }),
                 ]);
                 return {
                     month: m.label,
                     appointments: appts,
-                    revenue: invoices.reduce((s: number, i: any) => s + i.totalAmount, 0),
+                    revenue: sumAmounts(invoices),
                 };
             })),
             prisma.service.findMany({

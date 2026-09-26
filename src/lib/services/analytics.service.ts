@@ -1,4 +1,5 @@
 import prisma from "@/lib/db/prisma";
+import { monthBounds, paidInRange, percentChange, sumAmounts } from "./analytics.math";
 
 /**
  * Analytics Service
@@ -31,33 +32,44 @@ export interface TenantStats {
  */
 export async function getPlatformStats(): Promise<PlatformStats> {
     try {
+        const { prevStart, start, nextStart } = monthBounds();
+
         // Parallel queries for performance
         const [
             tenants,
-            patients,
+            patientCount,
+            patientsThisMonth,
+            patientsLastMonth,
             appointments,
-            invoices,
+            paidAllTime,
+            paidThisMonth,
+            paidLastMonth,
         ] = await Promise.all([
             prisma.tenant.findMany({ select: { id: true, status: true } }),
-            prisma.patient.findMany({ select: { id: true } }),
+            // Soft-deleted patients are not active patients.
+            prisma.patient.count({ where: { deletedAt: null } }),
+            prisma.patient.count({ where: { deletedAt: null, createdAt: { gte: start, lt: nextStart } } }),
+            prisma.patient.count({ where: { deletedAt: null, createdAt: { gte: prevStart, lt: start } } }),
             prisma.appointment.findMany({ select: { id: true, status: true } }),
-            prisma.invoice.findMany({ select: { totalAmount: true } }),
+            prisma.invoice.findMany({ where: { status: "PAID" }, select: { totalAmount: true } }),
+            prisma.invoice.findMany({ where: paidInRange(start, nextStart), select: { totalAmount: true } }),
+            prisma.invoice.findMany({ where: paidInRange(prevStart, start), select: { totalAmount: true } }),
         ]);
 
         const totalTenants = tenants.length;
         const activeTenants = tenants.filter((t: any) => t.status === "ACTIVE").length;
-        const activePatients = patients.length;
+        const activePatients = patientCount;
         const totalAppointments = appointments.length;
         const completedAppointments = appointments.filter((a: any) => a.status === "COMPLETED").length;
         const completionRate = totalAppointments > 0
             ? (completedAppointments / totalAppointments) * 100
             : 0;
 
-        // TODO: Calculate real revenue from payments table when implemented
-        const totalRevenue = invoices.reduce((sum: number, i: any) => sum + i.totalAmount, 0);
-        const monthlyRevenue = 0;
-        const revenueGrowth = 0;
-        const patientGrowth = 0; // Would need historical data
+        // Revenue = money actually received (PAID invoices), see analytics.math.ts.
+        const totalRevenue = sumAmounts(paidAllTime);
+        const monthlyRevenue = sumAmounts(paidThisMonth);
+        const revenueGrowth = percentChange(monthlyRevenue, sumAmounts(paidLastMonth));
+        const patientGrowth = percentChange(patientsThisMonth, patientsLastMonth);
 
         return {
             totalRevenue,
@@ -106,12 +118,21 @@ export async function getTenantStats(tenantId?: string): Promise<TenantStats[]> 
             },
         });
 
+        const revenueRows = await prisma.invoice.groupBy({
+            by: ["tenantId"],
+            where: { status: "PAID", ...(tenantId ? { tenantId } : {}) },
+            _sum: { totalAmount: true },
+        });
+        const revenueByTenant = new Map<string, number>(
+            revenueRows.map((r: any) => [r.tenantId, sumAmounts([{ totalAmount: r._sum.totalAmount }])])
+        );
+
         return tenants.map((tenant: any) => ({
             tenantId: tenant.id,
             tenantName: tenant.name,
             totalPatients: tenant._count.patients,
             totalAppointments: tenant._count.appointments,
-            revenue: 0, // TODO: Calculate from payments
+            revenue: revenueByTenant.get(tenant.id) ?? 0,
         }));
     } catch (error) {
         console.error("[Analytics Service] Failed to fetch tenant stats:", error);
@@ -124,16 +145,21 @@ export async function getTenantStats(tenantId?: string): Promise<TenantStats[]> 
  */
 export async function getClinicStats(tenantId: string) {
     try {
+        const { start, nextStart } = monthBounds();
         const [
             patients,
             appointments,
             completedAppointments,
             staff,
+            paidAllTime,
+            paidThisMonth,
         ] = await Promise.all([
-            prisma.patient.count({ where: { tenantId } }),
+            prisma.patient.count({ where: { tenantId, deletedAt: null } }),
             prisma.appointment.count({ where: { tenantId } }),
             prisma.appointment.count({ where: { tenantId, status: "COMPLETED" } }),
             prisma.user.count({ where: { tenantId } }),
+            prisma.invoice.findMany({ where: { tenantId, status: "PAID" }, select: { totalAmount: true } }),
+            prisma.invoice.findMany({ where: { tenantId, ...paidInRange(start, nextStart) }, select: { totalAmount: true } }),
         ]);
 
         const completionRate = appointments > 0
@@ -146,8 +172,8 @@ export async function getClinicStats(tenantId: string) {
             completedAppointments,
             completionRate,
             totalStaff: staff,
-            revenue: 0, // TODO: Calculate from payments
-            monthlyRevenue: 0,
+            revenue: sumAmounts(paidAllTime),
+            monthlyRevenue: sumAmounts(paidThisMonth),
         };
     } catch (error) {
         console.error("[Analytics Service] Failed to fetch clinic stats:", error);
