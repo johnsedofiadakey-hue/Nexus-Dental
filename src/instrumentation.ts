@@ -1,5 +1,30 @@
 export async function register() {
+  // `next build` calls register() too. Nothing here may run then: no Redis,
+  // no queue workers, no Sentry, no signal handlers, no config enforcement
+  // (the build environment is not the runtime environment).
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
+    return;
+  }
+
   if (process.env.NEXT_RUNTIME === 'nodejs') {
+    // Fail closed: in production a release with incomplete or inconsistent
+    // deployment configuration must not start serving traffic. Reports variable
+    // NAMES only, never values. Skipped during `next build`.
+    //
+    // Exit explicitly rather than just throwing: a throw here leaves the Node
+    // process running (but not listening), which hides the failure. A non-zero
+    // exit is unambiguous to the platform, the rollout and the operator.
+    const { enforceStartupConfig, ConfigError } = await import('@/lib/config/validate');
+    try {
+      enforceStartupConfig(process.env);
+    } catch (error) {
+      if (error instanceof ConfigError) {
+        console.error(`[Config] Refusing to start. ${error.message}`);
+        process.exit(1);
+      }
+      throw error;
+    }
+
     const Sentry = await import('@sentry/nextjs');
     Sentry.init({
       dsn: process.env.SENTRY_DSN,
@@ -7,47 +32,10 @@ export async function register() {
       debug: false,
     });
 
-    console.log('[Instrumentation] Initializing workers...');
-
-    try {
-      // Import and register workers
-      const appointmentWorker = await import('@/lib/queue/workers/appointment.worker');
-      const notificationWorker = await import('@/lib/queue/workers/notification.worker');
-      const recallWorker = await import('@/lib/queue/workers/recall.worker');
-      const insuranceReminderWorker = await import('@/lib/queue/workers/insurance-reminder.worker');
-      const { registerWorker } = await import('@/lib/queue/manager');
-
-      // Register workers for lifecycle management
-      if (appointmentWorker.appointmentWorker) {
-        registerWorker('appointment', appointmentWorker.appointmentWorker);
-      }
-      if (notificationWorker.notificationWorker) {
-        registerWorker('notification', notificationWorker.notificationWorker);
-      }
-      if (recallWorker.recallWorker) {
-        registerWorker('recall', recallWorker.recallWorker);
-      }
-      if (insuranceReminderWorker.insuranceReminderWorker) {
-        registerWorker('insurance-reminder', insuranceReminderWorker.insuranceReminderWorker);
-      }
-
-      console.log('[Instrumentation] Workers initialized successfully');
-    } catch (error) {
-      console.error('[Instrumentation] Failed to initialize workers:', error);
-      // Don't throw - allow app to start even if workers fail
-      // Workers are optional for HTTP operations
-    }
-
-    // Graceful shutdown on process termination
-    const handleShutdown = async (signal: string) => {
-      console.log(`[Instrumentation] Received ${signal}, shutting down workers...`);
-      const { shutdownWorkers } = await import('@/lib/queue/manager');
-      await shutdownWorkers();
-      process.exit(0);
-    };
-
-    process.on('SIGTERM', () => handleShutdown('SIGTERM'));
-    process.on('SIGINT', () => handleShutdown('SIGINT'));
+    // Background workers do NOT run here. The web service scales to zero, so jobs
+    // started in this process stop when the site is idle. They run in the separate
+    // always-on worker process (src/worker/index.ts, `npm run worker`); the web
+    // app only enqueues jobs.
   }
 
   if (process.env.NEXT_RUNTIME === 'edge') {

@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     try {
         // Platform-wide counts: system owner only (the edge middleware does not
         // verify the session, only that a cookie exists).
-        const authResult = requireAuth(request);
+        const authResult = await requireAuth(request);
         if ("error" in authResult) return authResult.error;
         const ownerCheck = requireSystemOwner(authResult.user);
         if (ownerCheck) return ownerCheck;

@@ -21,6 +21,22 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # A throwaway PostgreSQL for the clean-install / provisioning tests. It exists
+    # only for this job and holds no real data.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     env:
       # Placeholders so the build can run without any real secrets. None of these
       # connect to a real service — the build only needs them to be present
@@ -45,6 +61,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # pg_dump / pg_restore for the backup -> restore round-trip test. Matches the
+      # postgres:16 service above.
+      - name: Install PostgreSQL client tools
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client-16
+
       - name: Type check
         run: npx tsc --noEmit
 
@@ -58,6 +79,17 @@ jobs:
       # reach each other's data, and that role/permission rules hold.
       - name: Tests
         run: npm test
+
+      # Clean-install tests: build a brand-new database from the committed
+      # migrations (`prisma migrate deploy`), provision one clinic into it (idempotency,
+      # single-clinic rules, owner invitation) and exercise server-side sessions
+      # end to end (revocation, suspension, rolling patient sessions, fail-closed), and
+      # prove encrypted backup -> restore into a second throwaway database works and
+      # rejects damaged or wrongly-keyed backups.
+      - name: Clean-install and provisioning tests
+        run: npm run test:provision
+        env:
+          TEST_DATABASE_ADMIN_URL: postgresql://postgres:postgres@localhost:5432/postgres
 
       - name: Production build
         run: npm run build

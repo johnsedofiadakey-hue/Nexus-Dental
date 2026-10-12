@@ -9,7 +9,8 @@ const m = vi.hoisted(() => {
         patient: { findFirst: fn() },
         invoice: { findFirst: fn(), update: fn() },
         user: { findUnique: fn(), update: fn(), create: fn() },
-        staffInvite: { findUnique: fn(), updateMany: fn() },
+        staffInvite: { findFirst: fn(), updateMany: fn() },
+        authSession: { create: fn(), updateMany: vi.fn(async () => ({ count: 1 })) },
     };
     db.$transaction = vi.fn(async (cb: any) => cb(db));
     return {
@@ -20,7 +21,7 @@ const m = vi.hoisted(() => {
             reset: vi.fn(async () => {}),
         },
         firebase: { verifyIdToken: fn() },
-        paystack: { verifyPayment: fn(), verifyWebhookSignature: vi.fn(() => true) },
+        paystack: { verifyPayment: fn(), verifyWebhookSignature: vi.fn(() => true), reconcile: fn() },
         sendEmail: vi.fn(async () => {}),
         resolvePermissions: vi.fn(async () => ["appointments:view"]),
     };
@@ -43,6 +44,7 @@ vi.mock("@/lib/payments/paystack", () => ({
     verifyPayment: m.paystack.verifyPayment,
     verifyWebhookSignature: m.paystack.verifyWebhookSignature,
 }));
+vi.mock("@/lib/payments/reconcile", () => ({ reconcilePaystackReference: m.paystack.reconcile }));
 vi.mock("@/lib/email/sender", () => ({ sendEmail: m.sendEmail }));
 vi.mock("@/lib/auth/permissions", async (importOriginal) => ({
     ...(await importOriginal<typeof import("@/lib/auth/permissions")>()),
@@ -66,6 +68,7 @@ beforeEach(() => {
     db.$transaction.mockImplementation(async (cb: any) => cb(db));
     rateLimit.consume.mockResolvedValue({ allowed: true, remaining: 5, retryAfterSeconds: 0 });
     paystack.verifyWebhookSignature.mockReturnValue(true);
+    paystack.reconcile.mockResolvedValue({ result: "NOT_FOUND", reason: "missing" });
     m.resolvePermissions.mockResolvedValue(["appointments:view"]);
     vi.spyOn(console, "error").mockImplementation(() => {});
     vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -133,43 +136,37 @@ describe("paystack webhook", () => {
     });
 
     it("marks the invoice PAID when amount and currency match", async () => {
-        paystack.verifyPayment.mockResolvedValue(txn());
-        db.invoice.findFirst.mockResolvedValue(invoice);
+        paystack.reconcile.mockResolvedValue({ result: "PAID", invoiceId: invoice.id });
         expect((await send()).status).toBe(200);
-        expect(db.invoice.update).toHaveBeenCalledWith(
-            expect.objectContaining({ where: { id: "inv-1" }, data: expect.objectContaining({ status: "PAID" }) })
-        );
+        expect(paystack.reconcile).toHaveBeenCalledWith("ref-1");
     });
 
     it("does NOT mark it paid when a cheaper transaction is replayed against it", async () => {
-        paystack.verifyPayment.mockResolvedValue(txn({ amount: 100 })); // GHS 1 for a GHS 100 invoice
-        db.invoice.findFirst.mockResolvedValue(invoice);
+        paystack.reconcile.mockResolvedValue({ result: "MISMATCH", invoiceId: invoice.id, reason: "amount" });
         expect((await send()).status).toBe(200);
         expect(db.invoice.update).not.toHaveBeenCalled();
     });
 
     it("does NOT mark it paid when the currency is wrong", async () => {
-        paystack.verifyPayment.mockResolvedValue(txn({ currency: "USD" }));
-        db.invoice.findFirst.mockResolvedValue(invoice);
+        paystack.reconcile.mockResolvedValue({ result: "MISMATCH", invoiceId: invoice.id, reason: "currency" });
         await send();
         expect(db.invoice.update).not.toHaveBeenCalled();
     });
 
     it("ignores transactions Paystack does not report as successful", async () => {
-        paystack.verifyPayment.mockResolvedValue(txn({ status: "failed" }));
+        paystack.reconcile.mockResolvedValue({ result: "NOT_SUCCESSFUL", reason: "failed" });
         await send();
         expect(db.invoice.update).not.toHaveBeenCalled();
     });
 
     it("is idempotent for an invoice that is already paid", async () => {
-        paystack.verifyPayment.mockResolvedValue(txn());
-        db.invoice.findFirst.mockResolvedValue({ ...invoice, status: "PAID" });
+        paystack.reconcile.mockResolvedValue({ result: "ALREADY_PAID", invoiceId: invoice.id });
         await send();
         expect(db.invoice.update).not.toHaveBeenCalled();
     });
 
     it("returns 500 (so Paystack retries) when processing fails", async () => {
-        paystack.verifyPayment.mockRejectedValue(new Error("network"));
+        paystack.reconcile.mockRejectedValue(new Error("network"));
         expect((await send()).status).toBe(500);
     });
 });
@@ -194,30 +191,30 @@ describe("staff invite acceptance", () => {
     it("rejects a weak password without touching the invite", async () => {
         const res = await accept({ ...good, password: "weak" });
         expect(res.status).toBe(400);
-        expect(db.staffInvite.findUnique).not.toHaveBeenCalled();
+        expect(db.staffInvite.findFirst).not.toHaveBeenCalled();
     });
 
     it("rejects unknown, expired and already-used invites", async () => {
-        db.staffInvite.findUnique.mockResolvedValueOnce(null);
+        db.staffInvite.findFirst.mockResolvedValueOnce(null);
         expect((await accept(good)).status).toBe(404);
-        db.staffInvite.findUnique.mockResolvedValueOnce(invite({ expiresAt: new Date(Date.now() - 1000) }));
+        db.staffInvite.findFirst.mockResolvedValueOnce(invite({ expiresAt: new Date(Date.now() - 1000) }));
         expect((await accept(good)).status).toBe(410);
-        db.staffInvite.findUnique.mockResolvedValueOnce(invite({ acceptedAt: new Date() }));
+        db.staffInvite.findFirst.mockResolvedValueOnce(invite({ acceptedAt: new Date() }));
         expect((await accept(good)).status).toBe(410);
         expect(db.user.create).not.toHaveBeenCalled();
     });
 
     it("refuses when the clinic is not active or the email already has an account", async () => {
-        db.staffInvite.findUnique.mockResolvedValueOnce(invite({ tenant: { id: "tenant-a", name: "X", status: "FROZEN" } }));
+        db.staffInvite.findFirst.mockResolvedValueOnce(invite({ tenant: { id: "tenant-a", name: "X", status: "FROZEN" } }));
         expect((await accept(good)).status).toBe(403);
-        db.staffInvite.findUnique.mockResolvedValueOnce(invite());
+        db.staffInvite.findFirst.mockResolvedValueOnce(invite());
         db.user.findUnique.mockResolvedValueOnce({ id: "existing" });
         expect((await accept(good)).status).toBe(409);
         expect(db.user.create).not.toHaveBeenCalled();
     });
 
     it("creates the account with the INVITED role and clinic, hashes the password, and signs in", async () => {
-        db.staffInvite.findUnique.mockResolvedValue(invite());
+        db.staffInvite.findFirst.mockResolvedValue(invite());
         db.user.findUnique.mockResolvedValue(null);
         db.staffInvite.updateMany.mockResolvedValue({ count: 1 });
         db.user.create.mockImplementation(async ({ data }: any) => ({
@@ -239,7 +236,7 @@ describe("staff invite acceptance", () => {
     });
 
     it("is single-use: a concurrent second acceptance loses the race and creates nothing", async () => {
-        db.staffInvite.findUnique.mockResolvedValue(invite());
+        db.staffInvite.findFirst.mockResolvedValue(invite());
         db.user.findUnique.mockResolvedValue(null);
         db.staffInvite.updateMany.mockResolvedValue({ count: 0 }); // someone else claimed it first
         const res = await accept(good);

@@ -14,6 +14,8 @@ const { db } = vi.hoisted(() => {
         invoice: { findUnique: fn(), create: fn(), update: fn() },
         patientConsent: { findMany: fn() },
         auditLog: { create: fn() },
+        authSession: { create: fn(), updateMany: vi.fn(async () => ({ count: 1 })) },
+        appointmentReminder: { findMany: vi.fn(async () => []), updateMany: vi.fn(async () => ({ count: 0 })) },
     };
     db.$transaction = vi.fn(async (cb: any) => cb(db));
     return { db };

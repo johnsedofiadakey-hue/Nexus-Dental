@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
-import { authenticateRequest, apiError, apiSuccess, isPatientUser } from "@/lib/auth";
+import { authenticateSession, apiError, apiSuccess, isPatientUser } from "@/lib/auth";
 import type { PatientJWTPayload } from "@/lib/auth";
 import { getClinicId } from "@/lib/clinic";
 
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
 
         // Try to link to patient if authenticated
         let patientId: string | null = null;
-        const user = authenticateRequest(request);
+        const user = await authenticateSession(request).catch(() => null); // unreadable session store => anonymous, never elevated
         if (user && isPatientUser(user)) {
             patientId = (user as PatientJWTPayload).patientId;
         }

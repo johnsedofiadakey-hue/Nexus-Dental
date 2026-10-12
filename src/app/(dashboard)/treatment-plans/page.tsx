@@ -149,6 +149,24 @@ async function markStepComplete(planId: string, stepId: string): Promise<void> {
     }
 }
 
+async function addStep(planId: string, input: { title: string; description: string; estimatedCost: string }): Promise<void> {
+    const cost = input.estimatedCost.trim();
+    const res = await fetch(`/api/treatment-plans/${planId}/steps`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            title: input.title.trim(),
+            ...(input.description.trim() ? { description: input.description.trim() } : {}),
+            ...(cost ? { estimatedCost: Number(cost) } : {}),
+        }),
+    });
+    if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        throw new Error(json.error ?? "Failed to add step");
+    }
+}
+
 interface NewPlanModalProps {
     onClose: () => void;
 }
@@ -316,7 +334,22 @@ function PlanDetailPanel({ planId, onClose }: PlanDetailPanelProps) {
         },
     });
 
+    const [stepTitle, setStepTitle] = useState("");
+    const [stepDescription, setStepDescription] = useState("");
+    const [stepCost, setStepCost] = useState("");
+    const addStepMutation = useMutation({
+        mutationFn: () => addStep(planId, { title: stepTitle, description: stepDescription, estimatedCost: stepCost }),
+        onSuccess: () => {
+            toast.success("Step added");
+            setStepTitle(""); setStepDescription(""); setStepCost("");
+            queryClient.invalidateQueries({ queryKey: ["treatment-plan-detail", planId] });
+            queryClient.invalidateQueries({ queryKey: ["treatment-plans"] });
+        },
+        onError: (err: Error) => toast.error(err.message),
+    });
+
     const steps = Array.isArray(plan?.steps) ? plan.steps as TreatmentStep[] : [];
+    const canAddSteps = plan?.status === "ACTIVE" || plan?.status === "ON_HOLD";
 
     return (
         <div className="fixed inset-0 z-40 flex justify-end">
@@ -432,7 +465,35 @@ function PlanDetailPanel({ planId, onClose }: PlanDetailPanelProps) {
                                             )}
                                         </div>
                                     ))}
+                                    {steps.length === 0 && (
+                                        <p className="text-sm text-slate-500">No steps yet. Add the first step below.</p>
+                                    )}
                                 </div>
+
+                                {canAddSteps && (
+                                    <form
+                                        className="mt-4 space-y-3 rounded-xl border border-dashed border-slate-200 p-4"
+                                        aria-label="Add a treatment step"
+                                        onSubmit={(e) => { e.preventDefault(); if (stepTitle.trim()) addStepMutation.mutate(); }}
+                                    >
+                                        <p className="text-sm font-semibold text-slate-900">Add a step</p>
+                                        <div>
+                                            <label htmlFor="new-step-title" className="mb-1 block text-xs font-medium text-slate-600">Step title *</label>
+                                            <Input id="new-step-title" value={stepTitle} onChange={(e) => setStepTitle(e.target.value)} maxLength={200} placeholder="e.g. Root canal, visit 1" required />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="new-step-description" className="mb-1 block text-xs font-medium text-slate-600">Description</label>
+                                            <Input id="new-step-description" value={stepDescription} onChange={(e) => setStepDescription(e.target.value)} maxLength={2000} placeholder="Optional" />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="new-step-cost" className="mb-1 block text-xs font-medium text-slate-600">Estimated cost</label>
+                                            <Input id="new-step-cost" type="number" inputMode="decimal" min="0" step="0.01" value={stepCost} onChange={(e) => setStepCost(e.target.value)} placeholder="Optional" />
+                                        </div>
+                                        <Button type="submit" size="sm" disabled={addStepMutation.isPending || !stepTitle.trim()} className="bg-teal-600 hover:bg-teal-700">
+                                            {addStepMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><Plus className="mr-1 h-3.5 w-3.5" />Add step</>}
+                                        </Button>
+                                    </form>
+                                )}
                             </div>
                         </div>
                     ) : null}

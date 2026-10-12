@@ -8,6 +8,7 @@ export default defineConfig({
     test: {
         environment: "node",
         include: ["tests/**/*.test.ts"],
+        setupFiles: ["tests/setup.ts"],
         // Required at import time by src/lib/auth/jwt.ts and src/lib/clinic.ts
         // (both deliberately throw when unset). Test-only values.
         env: {

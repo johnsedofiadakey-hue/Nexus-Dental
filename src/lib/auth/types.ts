@@ -11,6 +11,8 @@ export interface JWTPayload {
     featureFlags: string[];
     type: "STAFF" | "PATIENT" | "SYSTEM_OWNER";
     impersonatorId?: string; // If being impersonated
+    /** Opaque server-session id carried by the token. See lib/auth/session.ts. */
+    sid?: string;
 }
 
 export interface PatientJWTPayload {
@@ -18,6 +20,8 @@ export interface PatientJWTPayload {
     tenantId: string;
     role: "PATIENT";
     type: "PATIENT";
+    /** Opaque server-session id carried by the token. See lib/auth/session.ts. */
+    sid?: string;
 }
 
 export interface SystemOwnerJWTPayload {
@@ -310,6 +314,16 @@ export const AUTH_CONFIG = {
     SLOT_LOCK_TTL_SECONDS: 600, // 10 minutes
     SANITIZATION_BUFFER_MINUTES: 15,
     BCRYPT_ROUNDS: 12,
+} as const;
+
+// Server-side session lifetimes. The token's own expiry is only an outer bound;
+// the auth_sessions row decides whether a session is still valid.
+export const SESSION_POLICY = {
+    STAFF_ABSOLUTE_SECONDS: 60 * 60 * 24, // hard cap, matches JWT_EXPIRATION
+    STAFF_IDLE_SECONDS: 60 * 60 * 12, // unused for 12h => expired
+    PATIENT_ABSOLUTE_SECONDS: 60 * 60 * 24 * 90, // rolling session can never exceed 90 days
+    PATIENT_IDLE_SECONDS: 60 * 60 * 24 * 30, // renewed by activity
+    TOUCH_INTERVAL_SECONDS: 60, // write lastSeen/idle at most once a minute per session
 } as const;
 
 // ─────────────────────────────────────────────

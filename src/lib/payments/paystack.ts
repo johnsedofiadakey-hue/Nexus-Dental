@@ -28,11 +28,13 @@ export interface PaystackInitResponse {
 }
 
 export interface PaystackVerifyResponse {
+    id: number;
     status: "success" | "failed" | "abandoned" | "reversed";
     reference: string;
     amount: number;        // in kobo/pesewas (smallest currency unit)
     currency: string;
     paid_at: string;
+    channel?: string;
     metadata?: Record<string, unknown>;
     customer: { email: string };
 }
@@ -79,6 +81,7 @@ export async function initializePayment(params: {
             callback_url: params.callbackUrl,
             metadata: params.metadata ?? {},
         }),
+        signal: AbortSignal.timeout(10_000),
     });
 
     const json = await res.json();
@@ -98,6 +101,7 @@ export async function initializePayment(params: {
 export async function verifyPayment(reference: string): Promise<PaystackVerifyResponse> {
     const res = await fetch(`${PAYSTACK_BASE}/transaction/verify/${encodeURIComponent(reference)}`, {
         headers: paystackHeaders(),
+        signal: AbortSignal.timeout(10_000),
     });
 
     const json = await res.json();
@@ -138,6 +142,7 @@ export async function refundPayment(params: {
         method: "POST",
         headers: paystackHeaders(),
         body: JSON.stringify(body),
+        signal: AbortSignal.timeout(10_000),
     });
 
     const json = await res.json();
@@ -166,5 +171,8 @@ export function verifyWebhookSignature(rawBody: string, signature: string | null
         .createHmac("sha512", secret)
         .update(rawBody)
         .digest("hex");
-    return expected === signature;
+    if (!/^[a-f0-9]{128}$/i.test(signature)) return false;
+    const expectedBytes = Buffer.from(expected, "hex");
+    const actualBytes = Buffer.from(signature, "hex");
+    return expectedBytes.length === actualBytes.length && crypto.timingSafeEqual(expectedBytes, actualBytes);
 }

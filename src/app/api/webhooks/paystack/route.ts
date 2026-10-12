@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
-import { verifyWebhookSignature, verifyPayment } from "@/lib/payments/paystack";
+import { verifyWebhookSignature } from "@/lib/payments/paystack";
+import { reconcilePaystackReference } from "@/lib/payments/reconcile";
 
 // POST /api/webhooks/paystack
 // Paystack sends events here. Configure this URL in your Paystack dashboard:
@@ -44,62 +45,39 @@ export async function POST(request: NextRequest) {
 async function handleChargeSuccess(data: Record<string, unknown>) {
     const reference = data.reference as string;
     if (!reference) return;
-
-    // Verify with Paystack directly (don't trust webhook payload alone)
-    const txn = await verifyPayment(reference);
-    if (txn.status !== "success") return;
-
-    const invoice = await prisma.invoice.findFirst({
-        where: { paystackRef: reference },
-    });
-
-    if (!invoice) {
-        console.warn(`[Paystack Webhook] No invoice found for ref: ${reference}`);
-        return;
+    const outcome = await reconcilePaystackReference(reference);
+    if (outcome.result === "MISMATCH" || outcome.result === "DUPLICATE_PAYMENT") {
+        console.error(`[Paystack Webhook] ${outcome.result} for invoice ${outcome.invoiceId ?? "unknown"}; manual review required.`);
     }
-
-    if (invoice.status === "PAID") return; // idempotent — already marked
-
-    // Never trust "success" alone: the money received must match what this
-    // invoice is owed, in the right currency. Otherwise a cheap transaction
-    // could be replayed against an expensive invoice.
-    const expectedPesewas = Math.round(invoice.totalAmount * 100);
-    if (txn.currency !== "GHS" || txn.amount !== expectedPesewas) {
-        console.error(
-            `[Paystack Webhook] Amount/currency mismatch for invoice ${invoice.id}: ` +
-            `expected GHS ${expectedPesewas} pesewas, got ${txn.currency} ${txn.amount}. Invoice NOT marked paid.`
-        );
-        return;
-    }
-
-    await prisma.invoice.update({
-        where: { id: invoice.id },
-        data: {
-            status: "PAID",
-            paidAt: new Date(txn.paid_at),
-            paymentMethod: "PAYSTACK",
-            paystackRef: reference,
-        },
-    });
-
-    console.log(`[Paystack Webhook] Invoice ${invoice.id} marked PAID via ref ${reference}`);
 }
 
 async function handleRefundProcessed(data: Record<string, unknown>) {
     const transactionRef = (data.transaction as Record<string, unknown>)?.reference as string;
     if (!transactionRef) return;
 
-    const invoice = await prisma.invoice.findFirst({
-        where: { paystackRef: transactionRef },
+    const attempt = await prisma.paymentAttempt.findUnique({
+        where: { reference: transactionRef },
+        include: { invoice: true },
     });
 
+    const invoice = attempt?.invoice ?? await prisma.invoice.findFirst({ where: { paystackRef: transactionRef } });
     if (!invoice || invoice.status !== "PAID") return;
 
     const fullyDeducted = data.fully_deducted as boolean;
-    await prisma.invoice.update({
-        where: { id: invoice.id },
-        data: { status: fullyDeducted ? "REFUNDED" : "PARTIAL_REFUND" },
-    });
+    const deducted = Number(data.deducted_amount ?? 0);
+    await prisma.$transaction([
+        prisma.invoice.update({
+            where: { id: invoice.id },
+            data: { status: fullyDeducted ? "REFUNDED" : "PARTIAL_REFUND" },
+        }),
+        ...(attempt ? [prisma.paymentAttempt.update({
+            where: { id: attempt.id },
+            data: {
+                status: fullyDeducted ? "REFUNDED" : "PARTIALLY_REFUNDED",
+                refundedAmountMinor: Number.isSafeInteger(deducted) && deducted >= 0 ? deducted : attempt.refundedAmountMinor,
+            },
+        })] : []),
+    ]);
 
     console.log(`[Paystack Webhook] Invoice ${invoice.id} → ${fullyDeducted ? "REFUNDED" : "PARTIAL_REFUND"}`);
 }

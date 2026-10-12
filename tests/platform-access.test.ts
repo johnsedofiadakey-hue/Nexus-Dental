@@ -87,7 +87,7 @@ describe("API route authentication inventory", () => {
         "staff/invite/[token]/accept",
     ]);
     // A route verifies its caller if it uses one of these mechanisms.
-    const AUTH_MARKERS = /requireAuth|authenticateRequest|verifyWebhookSignature|BACKUP_WEBHOOK_SECRET|x-backup-secret|requireSystemOwner|verifyToken/;
+    const AUTH_MARKERS = /requireAuth|authenticateSession|authenticateRequest|verifyWebhookSignature|BACKUP_WEBHOOK_SECRET|x-backup-secret|OPS_WATCHDOG_SECRET|x-ops-watchdog-secret|requireSystemOwner|verifyToken/;
 
     function findRoutes(dir: string): string[] {
         return fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {

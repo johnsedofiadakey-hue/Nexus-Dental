@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
-import { signPatientToken } from "@/lib/auth";
-import { AUTH_CONFIG } from "@/lib/auth/types";
+import { signPatientToken, createPatientSession } from "@/lib/auth";
+import { logAudit, getClientIP, getUserAgent } from "@/lib/audit/logger";
 import { getClinicId } from "@/lib/clinic";
 import { adminAuth } from "@/lib/firebase/server";
 import { consumeRateLimit, clientIp } from "@/lib/security/rate-limit";
@@ -47,6 +47,7 @@ export async function POST(request: NextRequest) {
         const patient = await prisma.patient.findFirst({
             where: { 
                 tenantId, 
+                deletedAt: null,
                 OR: [
                     { phone: normalizedPhone },
                     { phone: `0${stripped}` },
@@ -60,11 +61,27 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: false, error: "Patient not found." }, { status: 200 });
         }
 
+        const session = await createPatientSession(prisma, {
+            patientId: patient.id,
+            tenantId: patient.tenantId,
+            userAgent: getUserAgent(request.headers),
+        });
         const nexusToken = signPatientToken({
             patientId: patient.id,
             tenantId: patient.tenantId,
             role: "PATIENT",
             type: "PATIENT",
+            sid: session.sid,
+        });
+
+        await logAudit({
+            tenantId: patient.tenantId,
+            userId: null,
+            action: "PATIENT_SESSION_STARTED",
+            entity: "Patient",
+            entityId: patient.id,
+            ipAddress: getClientIP(request.headers),
+            userAgent: getUserAgent(request.headers),
         });
 
         const response = NextResponse.json({
@@ -77,7 +94,7 @@ export async function POST(request: NextRequest) {
             secure: process.env.NODE_ENV === "production",
             sameSite: "lax",
             path: "/",
-            maxAge: AUTH_CONFIG.PATIENT_SESSION_MAX_AGE_SECONDS,
+            maxAge: session.maxAgeSeconds,
         });
 
         return response;

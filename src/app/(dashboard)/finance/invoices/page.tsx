@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
     FileText, DollarSign, CheckCircle2, Clock, AlertCircle,
-    Search, ChevronLeft, ChevronRight, Loader2, CreditCard, Filter
+    Search, ChevronLeft, ChevronRight, Loader2, Filter
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -232,12 +232,6 @@ export default function InvoicesPage() {
                                                             onClick={() => payMutation.mutate({ id: inv.id, method: "CASH" })}
                                                             disabled={payMutation.isPending}>
                                                             Cash
-                                                        </Button>
-                                                        <Button size="sm" variant="outline"
-                                                            className="text-slate-600 border-slate-200 hover:bg-slate-50"
-                                                            onClick={() => payMutation.mutate({ id: inv.id, method: "CARD" })}
-                                                            disabled={payMutation.isPending}>
-                                                            <CreditCard className="w-3.5 h-3.5 mr-1" /> Card
                                                         </Button>
                                                         <Button size="sm"
                                                             className="bg-teal-600 hover:bg-teal-700"

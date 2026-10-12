@@ -18,7 +18,7 @@ const STATUS_PROGRESSION: Record<string, LabOrderStatus> = {
  */
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const authResult = requireAuth(request);
+        const authResult = await requireAuth(request);
         if ("error" in authResult) return authResult.error;
         const permissionError = requirePermission(authResult.user, PERMISSIONS.PATIENTS_UPDATE);
         if (permissionError) return permissionError;
@@ -106,7 +106,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
  */
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const authResult = requireAuth(request);
+        const authResult = await requireAuth(request);
         if ("error" in authResult) return authResult.error;
         const permissionError = requirePermission(authResult.user, PERMISSIONS.PATIENTS_UPDATE);
         if (permissionError) return permissionError;

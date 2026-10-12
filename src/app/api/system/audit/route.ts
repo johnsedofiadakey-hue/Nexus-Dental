@@ -7,8 +7,8 @@ import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { requireAuth, apiError, apiSuccess } from "@/lib/auth";
 
-function requireSystemOwner(request: NextRequest) {
-    const authResult = requireAuth(request);
+async function requireSystemOwner(request: NextRequest) {
+    const authResult = await requireAuth(request);
     if ("error" in authResult) return { error: authResult.error };
     if (authResult.user.type !== "SYSTEM_OWNER") {
         return { error: apiError("System owner access required", 403) };
@@ -18,7 +18,7 @@ function requireSystemOwner(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
     try {
-        const auth = requireSystemOwner(request);
+        const auth = await requireSystemOwner(request);
         if ("error" in auth && auth.error) return auth.error;
 
         const { searchParams } = new URL(request.url);

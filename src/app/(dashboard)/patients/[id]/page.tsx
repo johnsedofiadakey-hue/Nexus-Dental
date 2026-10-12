@@ -16,6 +16,7 @@ import {
     HeartPulse,
     Loader2,
     MessageSquare,
+    Phone,
     Pill,
     Receipt,
     Stethoscope,
@@ -199,20 +200,34 @@ export default function PatientWorkspacePage() {
     return (
         <DashboardLayout title="Patient record">
             <div className="space-y-6 pb-20 lg:pb-6">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center gap-3">
+                <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                    <div className="flex min-w-0 items-center gap-3">
                         <Button asChild variant="outline" size="icon" className="shrink-0 rounded-xl">
                             <Link href="/patients" aria-label="Back to patients"><ArrowLeft className="h-4 w-4" /></Link>
                         </Button>
-                        <div>
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-teal-50 text-sm font-bold text-teal-700">
+                            {patient.firstName.charAt(0)}{patient.lastName.charAt(0)}
+                        </div>
+                        <div className="min-w-0">
                             <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-700">Patient 360</p>
-                            <h2 className="text-2xl font-bold text-slate-950 sm:text-3xl">{patient.firstName} {patient.lastName}</h2>
-                            <p className="text-sm text-slate-500">{patient.phone}{patient.email ? ` · ${patient.email}` : ""}</p>
+                            <h2 className="truncate text-2xl font-bold text-slate-950 sm:text-3xl">{patient.firstName} {patient.lastName}</h2>
+                            <p className="truncate text-sm text-slate-500">{patient.phone}{patient.email ? ` · ${patient.email}` : ""}</p>
                         </div>
                     </div>
-                    <Button asChild className="min-h-11 bg-teal-600 hover:bg-teal-700">
-                        <Link href={`/booking?patientId=${patient.id}`}><Calendar className="mr-2 h-4 w-4" />Book appointment</Link>
-                    </Button>
+                    <div className="grid grid-cols-2 gap-2 sm:flex">
+                        <Button asChild className="min-h-11 bg-teal-600 hover:bg-teal-700">
+                            <Link href={`/booking?patientId=${patient.id}`}><Calendar className="mr-2 h-4 w-4" />Book visit</Link>
+                        </Button>
+                        <Button asChild variant="outline" className="min-h-11">
+                            <a href={`tel:${patient.phone}`}><Phone className="mr-2 h-4 w-4" />Call</a>
+                        </Button>
+                        <Button type="button" variant="outline" className="min-h-11" onClick={() => setActiveTab("chart")}>
+                            <FileImage className="mr-2 h-4 w-4" />Files
+                        </Button>
+                        <Button type="button" variant="outline" className="min-h-11" onClick={() => setActiveTab("messages")}>
+                            <MessageSquare className="mr-2 h-4 w-4" />Messages
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -240,13 +255,26 @@ export default function PatientWorkspacePage() {
                     </div>
                 )}
 
-                <div className="-mx-1 overflow-x-auto px-1 pb-1">
+                <label className="block sm:hidden">
+                    <span className="mb-1.5 block text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Patient workspace</span>
+                    <select
+                        value={activeTab}
+                        onChange={(event) => setActiveTab(event.target.value as TabId)}
+                        className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                    >
+                        {tabs.map((tab) => <option key={tab.id} value={tab.id}>{tab.label}</option>)}
+                    </select>
+                </label>
+
+                <div className="-mx-1 hidden overflow-x-auto px-1 pb-1 sm:block" role="tablist" aria-label="Patient workspace sections">
                     <div className="flex min-w-max gap-2">
                         {tabs.map((tab) => (
                             <button
                                 key={tab.id}
                                 type="button"
                                 onClick={() => setActiveTab(tab.id)}
+                                role="tab"
+                                aria-selected={activeTab === tab.id}
                                 className={`flex min-h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold transition-colors ${activeTab === tab.id ? "bg-slate-950 text-white" : "border border-slate-200 bg-white text-slate-600"}`}
                             >
                                 <tab.icon className="h-4 w-4" />{tab.label}

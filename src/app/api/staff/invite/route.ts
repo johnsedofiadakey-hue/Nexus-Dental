@@ -1,8 +1,9 @@
 import { NextRequest } from "next/server";
-import { randomUUID } from "crypto";
 import prisma from "@/lib/db/prisma";
 import { requireAuth, apiError, apiSuccess } from "@/lib/auth";
 import { getTenantIdFromUser } from "@/lib/clinic";
+import { generateInviteToken, hashInviteToken } from "@/lib/auth/invite-token";
+import { logAudit, getClientIP, getUserAgent } from "@/lib/audit/logger";
 import { sendEmail, staffInviteEmailHtml } from "@/lib/email/sender";
 import type { JWTPayload } from "@/lib/auth";
 import type { UserRole } from "@prisma/client";
@@ -16,7 +17,7 @@ const ALLOWED_ROLES: UserRole[] = [
 // POST /api/staff/invite — send an invite email to a new staff member
 export async function POST(request: NextRequest) {
     try {
-        const authResult = requireAuth(request);
+        const authResult = await requireAuth(request);
         if ("error" in authResult) return authResult.error;
         const { user } = authResult;
 
@@ -44,7 +45,10 @@ export async function POST(request: NextRequest) {
         }
 
         // Upsert invite — allow re-sending if previous invite expired
-        const token = randomUUID();
+        // The raw token exists only in the emailed link. The database gets its hash,
+        // so a leaked row or backup cannot be turned into a working invitation.
+        const token = generateInviteToken();
+        const tokenHash = hashInviteToken(token);
         const expiresAt = new Date(Date.now() + INVITE_EXPIRES_HOURS * 60 * 60 * 1000);
 
         const existing = await prisma.staffInvite.findUnique({
@@ -58,11 +62,22 @@ export async function POST(request: NextRequest) {
         const invite = existing
             ? await prisma.staffInvite.update({
                 where: { id: existing.id },
-                data: { token, role, expiresAt, invitedById: staffUser.userId },
+                data: { token: tokenHash, role, expiresAt, invitedById: staffUser.userId },
             })
             : await prisma.staffInvite.create({
-                data: { tenantId, email, role, token, invitedById: staffUser.userId, expiresAt },
+                data: { tenantId, email, role, token: tokenHash, invitedById: staffUser.userId, expiresAt },
             });
+
+        await logAudit({
+            tenantId,
+            userId: staffUser.userId,
+            action: "STAFF_INVITE_CREATED",
+            entity: "StaffInvite",
+            entityId: invite.id,
+            newValue: { role, reissued: Boolean(existing) },
+            ipAddress: getClientIP(request.headers),
+            userAgent: getUserAgent(request.headers),
+        });
 
         // Fetch inviter + tenant names for the email
         const [inviter, tenant] = await Promise.all([
@@ -95,7 +110,7 @@ export async function POST(request: NextRequest) {
 // GET /api/staff/invite?tenantId=xxx — list pending invites for a tenant
 export async function GET(request: NextRequest) {
     try {
-        const authResult = requireAuth(request);
+        const authResult = await requireAuth(request);
         if ("error" in authResult) return authResult.error;
         const { user } = authResult;
 
@@ -103,7 +118,17 @@ export async function GET(request: NextRequest) {
 
         const invites = await prisma.staffInvite.findMany({
             where: { tenantId, acceptedAt: null },
-            include: { invitedBy: { select: { firstName: true, lastName: true } } },
+            // Never return the token column (a hash, or a raw token on legacy rows).
+            select: {
+                id: true,
+                tenantId: true,
+                email: true,
+                role: true,
+                expiresAt: true,
+                acceptedAt: true,
+                createdAt: true,
+                invitedBy: { select: { firstName: true, lastName: true } },
+            },
             orderBy: { createdAt: "desc" },
         });
 
@@ -116,7 +141,7 @@ export async function GET(request: NextRequest) {
 // DELETE /api/staff/invite?id=xxx — revoke a pending invite
 export async function DELETE(request: NextRequest) {
     try {
-        const authResult = requireAuth(request);
+        const authResult = await requireAuth(request);
         if ("error" in authResult) return authResult.error;
         const { user } = authResult;
 
@@ -137,6 +162,15 @@ export async function DELETE(request: NextRequest) {
         }
 
         await prisma.staffInvite.delete({ where: { id } });
+        await logAudit({
+            tenantId: invite.tenantId,
+            userId: staffUser.userId,
+            action: "STAFF_INVITE_REVOKED",
+            entity: "StaffInvite",
+            entityId: id,
+            ipAddress: getClientIP(request.headers),
+            userAgent: getUserAgent(request.headers),
+        });
         return apiSuccess({ revoked: true });
     } catch (error) {
         return apiError("Internal server error", 500);

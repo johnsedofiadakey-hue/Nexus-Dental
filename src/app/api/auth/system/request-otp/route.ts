@@ -17,7 +17,7 @@ const SYSTEM_TENANT_KEY = "system";
 export async function POST(request: NextRequest) {
     try {
         // Require authenticated system owner
-        const authResult = requireAuth(request);
+        const authResult = await requireAuth(request);
         if ("error" in authResult) return authResult.error;
 
         const roleCheck = requireSystemOwner(authResult.user);

@@ -6,7 +6,7 @@ import { paidInRange, sumAmounts } from "@/lib/services/analytics.math";
 
 export async function GET(request: NextRequest) {
     try {
-        const authResult = requireAuth(request);
+        const authResult = await requireAuth(request);
         if ("error" in authResult) return authResult.error;
         const { user } = authResult;
         if (!isStaffUser(user)) return apiError("Staff access required", 403);

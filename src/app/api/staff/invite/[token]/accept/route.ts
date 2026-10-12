@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
 import {
     signToken,
+    createStaffSession,
     hashPassword,
     validatePasswordStrength,
     resolveUserPermissions,
@@ -9,7 +10,8 @@ import {
     apiError,
 } from "@/lib/auth";
 import { logAudit, getClientIP, getUserAgent } from "@/lib/audit/logger";
-import type { JWTPayload, UserRoleType } from "@/lib/auth";
+import { inviteTokenLookupValues } from "@/lib/auth/invite-token";
+import type { JWTPayload, UserRoleType, CreatedSession } from "@/lib/auth";
 
 // POST /api/staff/invite/[token]/accept  (public — the invite token is the credential)
 // Body: { firstName, lastName, password }
@@ -39,8 +41,9 @@ export async function POST(
             return apiError(strength.errors.join(". "), 400);
         }
 
-        const invite = await prisma.staffInvite.findUnique({
-            where: { token },
+        // Tokens are stored hashed; legacy rows holding the raw token still resolve.
+        const invite = await prisma.staffInvite.findFirst({
+            where: { token: { in: inviteTokenLookupValues(token) } },
             include: { tenant: { select: { id: true, name: true, status: true } } },
         });
 
@@ -72,7 +75,7 @@ export async function POST(
                 throw new Error("INVITE_ALREADY_USED");
             }
 
-            return tx.user.create({
+            const created = await tx.user.create({
                 data: {
                     email,
                     passwordHash,
@@ -84,6 +87,13 @@ export async function POST(
                 },
                 include: { roles: true },
             });
+            // Same transaction: an accepted invite never leaves an account without its session.
+            const session = await createStaffSession(tx, {
+                userId: created.id,
+                tenantId: created.tenantId,
+                userAgent: getUserAgent(request.headers),
+            });
+            return Object.assign(created, { __session: session as CreatedSession });
         }).catch((err: unknown) => {
             if (err instanceof Error && err.message === "INVITE_ALREADY_USED") return null;
             throw err;
@@ -104,7 +114,8 @@ export async function POST(
             roles: userRoles,
             permissions,
             featureFlags: [],
-            type: "STAFF",
+            type: userRoles.includes("SYSTEM_OWNER") ? "SYSTEM_OWNER" : "STAFF",
+            sid: user.__session.sid,
         };
         const sessionToken = signToken(tokenPayload);
 
@@ -140,7 +151,7 @@ export async function POST(
             secure: process.env.NODE_ENV === "production",
             sameSite: "lax",
             path: "/",
-            maxAge: 60 * 60 * 24,
+            maxAge: user.__session.maxAgeSeconds,
         });
 
         return res;

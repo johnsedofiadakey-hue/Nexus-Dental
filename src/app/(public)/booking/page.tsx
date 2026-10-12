@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { Suspense, useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
     Stethoscope, User, Calendar, CheckCircle, Loader2, Info
 } from "lucide-react";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 interface Service { id: string; name: string; description: string; category: string; price: number; duration: number; }
@@ -21,8 +21,28 @@ const STEPS = [
     { id: 4, label: "Details", icon: Info },
 ];
 
+// useSearchParams() needs a Suspense boundary in the App Router.
 export default function BookingPage() {
+    return (
+        <Suspense fallback={null}>
+            <BookingFlow />
+        </Suspense>
+    );
+}
+
+interface KnownPatient { id: string; firstName: string; lastName: string; phone: string; }
+interface ReminderSummary { enabled: boolean; complete: boolean; items: Array<{ offsetMinutes: number; status: string }>; }
+
+function BookingFlow() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    // Staff arriving from Patient 360 (/booking?patientId=…) book FOR that patient: nobody retypes
+    // their name or number, and no second find-or-create-by-phone happens on the server.
+    const requestedPatientId = searchParams.get("patientId");
+    const [knownPatient, setKnownPatient] = useState<KnownPatient | null>(null);
+    const [patientLookup, setPatientLookup] = useState<"idle" | "loading" | "error">(requestedPatientId ? "loading" : "idle");
+    const [patientLookupError, setPatientLookupError] = useState("");
+    const [reminderSummary, setReminderSummary] = useState<ReminderSummary | null>(null);
     const [currentStep, setCurrentStep] = useState(1);
     
     // Selections
@@ -48,6 +68,33 @@ export default function BookingPage() {
     const [loadingSchedule, setLoadingSchedule] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isBooked, setIsBooked] = useState(false);
+
+    useEffect(() => {
+        if (!requestedPatientId) return;
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await fetch(`/api/patients/${encodeURIComponent(requestedPatientId)}`);
+                const body = await res.json().catch(() => ({}));
+                if (cancelled) return;
+                if (res.ok && body?.success && body.data?.id) {
+                    const { id, firstName, lastName, phone } = body.data;
+                    setKnownPatient({ id, firstName, lastName, phone });
+                    setPatientLookup("idle");
+                } else {
+                    setPatientLookup("error");
+                    setPatientLookupError(
+                        res.status === 401 || res.status === 403
+                            ? "Sign in with a staff account to book for a patient."
+                            : res.status === 404 ? "That patient could not be found in this clinic." : "Could not load the patient."
+                    );
+                }
+            } catch {
+                if (!cancelled) { setPatientLookup("error"); setPatientLookupError("Could not load the patient. Check your connection."); }
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [requestedPatientId]);
 
     // Initial Fetch
     useEffect(() => {
@@ -119,12 +166,12 @@ export default function BookingPage() {
     };
 
     const handleSubmit = async () => {
-        if (!firstName || !lastName || !phone) {
+        if (requestedPatientId && !knownPatient) {
+            return toast.error(patientLookupError || "Still loading the patient.");
+        }
+        if (!knownPatient && (!firstName || !lastName || !phone)) {
             return toast.error("Please fill in your details.");
         }
-        let formattedPhone = phone.trim();
-        if (formattedPhone.startsWith("0")) formattedPhone = formattedPhone.substring(1);
-        if (!formattedPhone.startsWith("+233")) formattedPhone = `+233${formattedPhone}`;
 
         setIsSubmitting(true);
         try {
@@ -136,15 +183,17 @@ export default function BookingPage() {
                     doctorId: selectedDoctor?.id,
                     date: selectedDate,
                     time: selectedTime,
-                    firstName,
-                    lastName,
-                    phone: formattedPhone,
+                    // The server normalises the number (one canonical form), so send what was typed.
+                    ...(knownPatient
+                        ? { patientId: knownPatient.id }
+                        : { firstName, lastName, phone: phone.trim() }),
                     notes,
                 })
             });
             const data = await res.json();
             if (data.success) {
                 toast.success("Appointment booked successfully!");
+                setReminderSummary(data.data?.remindersScheduled ?? null);
                 setIsBooked(true);
             } else {
                 toast.error(data.error || "Failed to book appointment.");
@@ -164,7 +213,12 @@ export default function BookingPage() {
                 <div className="surface-card max-w-md w-full p-8 rounded-[2rem] text-center">
                     <CheckCircle className="w-16 h-16 text-primary mx-auto mb-6" />
                     <h2 className="font-[family-name:var(--font-heading)] text-3xl mb-2 text-secondary">Booking confirmed</h2>
-                    <p className="text-text-secondary mb-6">Your appointment is reserved. We will send an SMS confirmation shortly.</p>
+                    <p className="text-text-secondary mb-6">
+                        Your appointment is reserved.
+                        {reminderSummary?.enabled && reminderSummary.items.some((i) => i.status === "PENDING")
+                            ? ` We will text a reminder ${reminderSummary.items.filter((i) => i.status === "PENDING").map((i) => `${i.offsetMinutes} minutes`).join(" and ")} before.`
+                            : ""}
+                    </p>
                     <button 
                         onClick={() => router.push("/auth/patient")}
                         className="btn-primary w-full py-3"
@@ -325,6 +379,20 @@ export default function BookingPage() {
                                 </div>
                             </div>
                             <div className="space-y-4">
+                                {requestedPatientId ? (
+                                    <div className="rounded-xl border border-border-light bg-bg p-4" data-testid="booking-for-patient">
+                                        <p className="text-sm text-slate-500">Booking for</p>
+                                        {patientLookup === "loading" && <p className="font-semibold">Loading patient…</p>}
+                                        {patientLookup === "error" && <p className="font-semibold text-red-600" role="alert">{patientLookupError}</p>}
+                                        {knownPatient && (
+                                            <>
+                                                <p className="font-semibold text-secondary">{knownPatient.firstName} {knownPatient.lastName}</p>
+                                                <p className="text-sm text-slate-600">{knownPatient.phone}</p>
+                                            </>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <>
                                 <div>
                                     <label className="text-sm font-medium mb-1 block">First Name *</label>
                                     <input type="text" value={firstName} onChange={e=>setFirstName(e.target.value)} className="w-full border p-3 rounded-xl" placeholder="John" />
@@ -344,6 +412,8 @@ export default function BookingPage() {
                                         <input type="tel" value={phone} onChange={e=>setPhone(e.target.value)} className="w-full border pl-[95px] pr-3 py-3 rounded-xl text-lg tracking-wide focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="24 000 0000" />
                                     </div>
                                 </div>
+                                    </>
+                                )}
                                 <div>
                                     <label className="text-sm font-medium mb-1 block">Notes (Optional)</label>
                                     <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={3} className="w-full border p-3 rounded-xl" placeholder="Any special requests..."></textarea>

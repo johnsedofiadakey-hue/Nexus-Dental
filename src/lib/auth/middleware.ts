@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken, extractTokenFromHeader } from "./jwt";
 import { hasPermission, hasAnyPermission } from "./permissions";
+import { resolveSession } from "./session";
 import { JWTPayload, PatientJWTPayload, AuthUser } from "./types";
 
 /**
@@ -28,17 +29,13 @@ export function apiSuccess<T>(data: T, status: number = 200) {
 }
 
 /**
- * Authenticate a request by verifying the JWT token.
- * Returns the decoded user payload or null.
+ * Read the raw token from the request: Authorization header first (API clients),
+ * then the HTTP-only cookie (browser).
  */
-export function authenticateRequest(
-    request: NextRequest
-): AuthUser | null {
-    // 1. Try Authorization header first (for API clients, mobile app, etc.)
+function extractRequestToken(request: NextRequest): string | null {
     const authHeader = request.headers.get("authorization");
     let token = extractTokenFromHeader(authHeader);
 
-    // 2. If no header, fallback to the HTTP-only cookie (for web app fetches)
     if (!token) {
         // Use patient token if it exists and request is for patient portal or patient API
         if (request.nextUrl.pathname.startsWith("/portal") || request.nextUrl.pathname.startsWith("/api/auth/patient")) {
@@ -51,19 +48,54 @@ export function authenticateRequest(
             token = request.cookies.get("nexus_token")?.value || null;
         }
     }
+    return token;
+}
 
+/**
+ * Verify the token's SIGNATURE only. This proves who issued the token, not that
+ * the session is still valid — it does not consult the session store. Use
+ * `requireAuth` (or `authenticateSession`) for anything that guards data.
+ */
+export function authenticateRequest(
+    request: NextRequest
+): AuthUser | null {
+    const token = extractRequestToken(request);
     if (!token) return null;
     return verifyToken(token);
 }
 
 /**
+ * Authenticate a request against the session store. Returns the account's
+ * CURRENT authority (roles, permissions, status re-read from the database), or
+ * null when the token is missing, forged, legacy (no session), revoked, expired,
+ * or the account/clinic is no longer active.
+ *
+ * Throws if the session store cannot be read — callers must deny, never allow.
+ */
+export async function authenticateSession(
+    request: NextRequest
+): Promise<AuthUser | null> {
+    const claims = authenticateRequest(request);
+    if (!claims) return null;
+    const result = await resolveSession(claims);
+    return result.ok ? result.user : null;
+}
+
+/**
  * Middleware: Require authentication.
  * Returns the user payload or sends a 401 response.
+ * Fails closed (503) when the session store is unavailable.
  */
-export function requireAuth(
+export async function requireAuth(
     request: NextRequest
-): { user: AuthUser } | { error: NextResponse } {
-    const user = authenticateRequest(request);
+): Promise<{ user: AuthUser } | { error: NextResponse }> {
+    let user: AuthUser | null;
+    try {
+        user = await authenticateSession(request);
+    } catch (error) {
+        console.error("[Auth] Session store unavailable; denying request:", error instanceof Error ? error.message : "unknown");
+        return { error: apiError("Authentication temporarily unavailable", 503) };
+    }
     if (!user) {
         return { error: apiError("Authentication required", 401) };
     }

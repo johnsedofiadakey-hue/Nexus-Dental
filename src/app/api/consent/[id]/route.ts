@@ -20,7 +20,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const authResult = requireAuth(request);
+    const authResult = await requireAuth(request);
     if ("error" in authResult) return authResult.error;
     const { user } = authResult;
 
@@ -62,7 +62,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const authResult = requireAuth(request);
+    const authResult = await requireAuth(request);
     if ("error" in authResult) return authResult.error;
     const { user } = authResult;
 

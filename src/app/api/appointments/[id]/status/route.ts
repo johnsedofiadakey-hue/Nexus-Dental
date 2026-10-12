@@ -17,6 +17,9 @@ import {
 } from "@/lib/auth";
 import { logAudit, getClientIP, getUserAgent } from "@/lib/audit/logger";
 import type { JWTPayload } from "@/lib/auth";
+import { cancelPendingReminders, enqueueAndSummarise, removeQueuedJobs, scheduleAppointmentReminders } from "@/lib/reminders/schedule";
+import { smsRemindersState } from "@/lib/reminders/settings";
+import { clinicTimeZone } from "@/lib/utils/timezone";
 
 export async function PATCH(
     request: NextRequest,
@@ -26,7 +29,7 @@ export async function PATCH(
         const { id } = await params;
 
         // Authenticate
-        const authResult = requireAuth(request);
+        const authResult = await requireAuth(request);
         if ("error" in authResult) return authResult.error;
         const { user } = authResult;
 
@@ -79,6 +82,10 @@ export async function PATCH(
             );
         }
 
+        // Reminders that are still pending belong to an appointment that is no longer "SCHEDULED":
+        // cancel them in the same transaction as the status change.
+        let cancelledReminderRows: Array<{ id: string; generation: number }> = [];
+
         // Execute transition atomically
         const updated = await prisma.$transaction(async (tx: any) => {
             // Update appointment status
@@ -106,6 +113,14 @@ export async function PATCH(
                 },
             });
 
+            if (newStatus !== "SCHEDULED") {
+                cancelledReminderRows = (await tx.appointmentReminder.findMany({
+                    where: { appointmentId: id, status: { in: ["PENDING", "PROCESSING", "FAILED"] } },
+                    select: { id: true, generation: true },
+                })) ?? [];
+                await cancelPendingReminders(tx, id, `Appointment is now ${newStatus}.`);
+            }
+
             // Record transition
             await tx.appointmentTransition.create({
                 data: {
@@ -120,6 +135,28 @@ export async function PATCH(
             const { service, additionalServices, ...rest } = updatedAppointment;
             return { ...rest, services: [service, ...(additionalServices || [])].filter(Boolean) };
         });
+
+        // After commit: drop the now-pointless queue jobs (best effort: the worker re-checks status anyway),
+        // or, when an appointment is REOPENED, recreate its reminders from the durable rows.
+        if (cancelledReminderRows.length > 0) {
+            // Imported lazily: the queue module opens a Redis connection when loaded.
+            const { appointmentQueue } = await import("@/lib/queue/queues");
+            await removeQueuedJobs(appointmentQueue, cancelledReminderRows).catch(() => {});
+        }
+        if (newStatus === "SCHEDULED") {
+            try {
+                const state = await smsRemindersState(appointment.tenantId);
+                if (state.enabled) {
+                    const { appointmentQueue } = await import("@/lib/queue/queues");
+                    const rows = await scheduleAppointmentReminders(prisma, appointment);
+                    const tenant = await prisma.tenant.findUnique({ where: { id: appointment.tenantId }, select: { timezone: true } });
+                    await enqueueAndSummarise({ rows, appointmentAt: appointment.dateTime, queue: appointmentQueue, timeZone: clinicTimeZone(tenant?.timezone) });
+                }
+            } catch (error) {
+                // The status change is already committed; the reconciler will queue the rows.
+                console.error("[Appointment] Could not recreate reminders on reopen:", error instanceof Error ? error.message : "unknown");
+            }
+        }
 
         // Audit log
         await logAudit({

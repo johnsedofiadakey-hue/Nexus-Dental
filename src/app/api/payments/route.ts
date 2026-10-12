@@ -14,7 +14,7 @@ import { initiateHubtelCheckout } from "@/lib/payments/hubtel";
 
 export async function POST(request: NextRequest) {
     try {
-        const authResult = requireAuth(request);
+        const authResult = await requireAuth(request);
         if ("error" in authResult) return authResult.error;
         const { user } = authResult;
 

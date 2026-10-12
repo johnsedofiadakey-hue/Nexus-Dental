@@ -1,0 +1,60 @@
+# Nexus Dental demonstration clinic — NON-SECRET, safe to commit.
+#
+# Synthetic-data demo only (see docs/RENDER_DEPLOY.md). Secrets never go here.
+# Provision with:  npm run clinic:provision -- --manifest clients/nexus-demo/clinic.yaml --skip-owner-invite
+# then fill it with sample data:  npm run demo:provision (creates the demo owner, receptionist and dentist).
+schemaVersion: 1
+
+clinic:
+  id: nexus-demo
+  slug: nexus-demo
+  name: Nexus Dental Demo Clinic
+  timezone: Africa/Accra
+  email: demo@nexus-demo.invalid
+  phone: "+233 20 000 0000"
+  address: 1 Demo Street, Accra, Ghana
+  website: https://nexus-dental-demo.onrender.com
+
+deployment:
+  environment: rehearsal
+  appUrl: https://nexus-dental-demo.onrender.com   # must equal NEXT_PUBLIC_APP_URL in render.yaml
+
+infrastructure:
+  firebaseProjectId: nexusdentalsystem
+  storageBucket: nexusdentalsystem.appspot.com
+
+# Cash only: Paystack, Hubtel and e-mail stay off so the demo cannot take a live payment.
+features: [mnotify]
+
+owner:
+  email: owner@nexus-demo.invalid
+  inviteExpiryHours: 72
+
+branding:
+  primaryColor: "#0d9488"
+  secondaryColor: "#0f172a"
+
+content:
+  about: Nexus Dental Demo Clinic is a sample clinic with synthetic data, used to demonstrate the Nexus Dental platform.
+  mission: To show how a modern dental practice can run on one connected system.
+  vision: Every clinic running smoothly, every patient well informed.
+
+hours:
+  monday:    { open: "08:00", close: "17:00", isOpen: true }
+  tuesday:   { open: "08:00", close: "17:00", isOpen: true }
+  wednesday: { open: "08:00", close: "17:00", isOpen: true }
+  thursday:  { open: "08:00", close: "17:00", isOpen: true }
+  friday:    { open: "08:00", close: "17:00", isOpen: true }
+  saturday:  { open: "09:00", close: "13:00", isOpen: true }
+  sunday:    { open: "09:00", close: "13:00", isOpen: false }
+
+services:
+  - name: Check-up & Cleaning
+    category: GENERAL
+    durationMinutes: 30
+    price: 150
+    description: Examination and professional cleaning.
+  - name: Teeth Whitening
+    category: COSMETIC
+    durationMinutes: 60
+    price: 450

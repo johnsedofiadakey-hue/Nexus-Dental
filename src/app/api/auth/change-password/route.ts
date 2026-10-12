@@ -1,9 +1,13 @@
 import { NextRequest } from "next/server";
+import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/db/prisma";
 import {
     requireAuth,
     verifyPassword,
     hashPassword,
+    signToken,
+    createStaffSession,
+    revokeUserSessions,
     validatePasswordStrength,
     apiError,
     apiSuccess,
@@ -17,7 +21,7 @@ import { consumeRateLimit, resetRateLimit } from "@/lib/security/rate-limit";
 // take over the account.
 export async function POST(request: NextRequest) {
     try {
-        const authResult = requireAuth(request);
+        const authResult = await requireAuth(request);
         if ("error" in authResult) return authResult.error;
         const { user } = authResult;
 
@@ -61,9 +65,20 @@ export async function POST(request: NextRequest) {
             return apiError("Current password is incorrect", 400);
         }
 
-        await prisma.user.update({
-            where: { id: account.id },
-            data: { passwordHash: await hashPassword(newPassword) },
+        const newHash = await hashPassword(newPassword);
+
+        // One transaction: the new password, the revocation of EVERY earlier
+        // session, and this device's fresh session commit together or not at
+        // all. If revocation fails the password is not changed (fail closed).
+        const fresh = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+            await tx.user.update({ where: { id: account.id }, data: { passwordHash: newHash } });
+            const revoked = await revokeUserSessions(tx, account.id, "PASSWORD_CHANGED");
+            const session = await createStaffSession(tx, {
+                userId: account.id,
+                tenantId: account.tenantId,
+                userAgent: getUserAgent(request.headers),
+            });
+            return { session, revoked };
         });
 
         await resetRateLimit(limitKey);
@@ -73,11 +88,34 @@ export async function POST(request: NextRequest) {
             action: "AUTH_PASSWORD_CHANGED",
             entity: "User",
             entityId: account.id,
+            newValue: { sessionsRevoked: fresh.revoked },
             ipAddress: getClientIP(request.headers),
             userAgent: getUserAgent(request.headers),
         });
 
-        return apiSuccess({ changed: true });
+        // Re-sign the caller in on this device so only the OTHER sessions are lost.
+        const res = apiSuccess({ changed: true });
+        res.cookies.set(
+            "nexus_token",
+            signToken({
+                userId: staff.userId,
+                tenantId: staff.tenantId,
+                role: staff.role,
+                roles: staff.roles,
+                permissions: staff.permissions,
+                featureFlags: [],
+                type: staff.type,
+                sid: fresh.session.sid,
+            }),
+            {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "lax",
+                path: "/",
+                maxAge: fresh.session.maxAgeSeconds,
+            }
+        );
+        return res;
     } catch (error) {
         console.error("[Change Password] Error:", error);
         return apiError("Internal server error", 500);

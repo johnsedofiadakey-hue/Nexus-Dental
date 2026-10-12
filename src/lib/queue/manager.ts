@@ -4,7 +4,7 @@
 // ============================================
 
 import { Worker } from "bullmq";
-import { queueRedisConnection } from "./redis";
+import { isExhausted, recordDeadLetter } from "./dead-letter";
 
 /**
  * Registry of active workers
@@ -31,6 +31,12 @@ export function registerWorker(name: string, worker: Worker) {
 
   worker.on("failed", (job, error) => {
     console.error(`[Queue] Job failed (${name}):`, job?.id, error.message);
+    // Out of retries: keep a durable, redacted record so it cannot vanish with Redis.
+    if (job && isExhausted(job)) {
+      recordDeadLetter(worker.name, job, error).catch((e) =>
+        console.error(`[Queue] Could not record dead-letter job (${name}):`, e instanceof Error ? e.message : "unknown")
+      );
+    }
   });
 
   worker.on("drained", () => {

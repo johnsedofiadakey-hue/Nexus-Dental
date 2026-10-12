@@ -14,11 +14,12 @@ import {
     apiSuccess,
 } from "@/lib/auth";
 import { getTenantIdFromUser } from "@/lib/clinic";
+import { normalizePhone, phoneLookupVariants } from "@/lib/phone";
 import type { JWTPayload } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
     try {
-        const authResult = requireAuth(request);
+        const authResult = await requireAuth(request);
         if ("error" in authResult) return authResult.error;
         const { user } = authResult;
 
@@ -87,7 +88,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
-        const authResult = requireAuth(request);
+        const authResult = await requireAuth(request);
         if ("error" in authResult) return authResult.error;
         const { user } = authResult;
 
@@ -119,9 +120,15 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Check for duplicate phone in tenant
+        // One canonical form (E.164). "024…" and "+23324…" are the same patient, whichever way an
+        // older record was stored, so look under every spelling before creating.
+        const normalized = normalizePhone(phone);
+        if (!normalized.ok) {
+            return apiError("Please enter a valid phone number", 400);
+        }
         const existing = await prisma.patient.findFirst({
-            where: { tenantId, phone },
+            where: { tenantId, phone: { in: phoneLookupVariants(phone) } },
+            select: { id: true },
         });
 
         if (existing) {
@@ -133,7 +140,7 @@ export async function POST(request: NextRequest) {
                 tenantId,
                 firstName,
                 lastName,
-                phone,
+                phone: normalized.e164,
                 email: email || null,
                 dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
                 gender: gender || null,
@@ -154,7 +161,7 @@ export async function POST(request: NextRequest) {
                 action: "PATIENT_CREATED",
                 entity: "Patient",
                 entityId: patient.id,
-                newValue: { firstName, lastName, phone },
+                newValue: { firstName, lastName, phone: normalized.e164 },
             },
         });
 

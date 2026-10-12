@@ -1,0 +1,28 @@
+# Background worker image (Packet C3). Runs src/worker/index.ts: BullMQ workers,
+# recurring schedules, heartbeat and the operations watchdog - OUTSIDE the
+# scale-to-zero web service. Keep at least ONE instance running (min instances >= 1).
+#
+#   docker build -f Dockerfile.worker -t nexus-worker .
+#   docker run --env-file <clinic env file kept OUTSIDE the repo> -p 8081:8081 nexus-worker
+#
+# Needs the same environment as the web app (DATABASE_URL, REDIS_URL, CLINIC_ID,
+# JWT_SECRET, DEPLOYMENT_MODE, ENABLED_FEATURES, ...) plus ALERT_EMAIL_TO. The
+# platform health probe should use GET /healthz (liveness) and /readyz (readiness).
+FROM node:22-slim
+
+WORKDIR /app
+ENV NODE_ENV=production
+
+# tsx is a devDependency and runs the TypeScript entrypoint, so install everything.
+COPY package.json package-lock.json ./
+COPY prisma ./prisma
+COPY prisma.config.ts ./
+RUN npm ci
+
+COPY tsconfig.json ./
+COPY src ./src
+
+EXPOSE 8081
+USER node
+# Node runs directly (no npx/tsx wrapper) so SIGTERM reaches the worker for a graceful shutdown.
+CMD ["node", "--import", "tsx", "src/worker/index.ts"]

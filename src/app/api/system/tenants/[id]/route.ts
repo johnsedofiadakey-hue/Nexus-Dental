@@ -7,12 +7,13 @@
 import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { requireAuth, apiError, apiSuccess } from "@/lib/auth";
+import { tenantAdminDisabledResponse } from "@/lib/config/guards";
 import { getTenantStats, changeTenantStatus, killSwitch } from "@/lib/system";
 import { enableMaintenance, disableMaintenance } from "@/lib/system";
 import type { TenantStatus } from "@prisma/client";
 
-function requireSystemOwner(request: NextRequest) {
-    const authResult = requireAuth(request);
+async function requireSystemOwner(request: NextRequest) {
+    const authResult = await requireAuth(request);
     if ("error" in authResult) return { error: authResult.error };
     if (authResult.user.type !== "SYSTEM_OWNER") {
         return { error: apiError("System owner access required", 403) };
@@ -26,8 +27,11 @@ export async function GET(
 ) {
     try {
         const { id } = await params;
-        const auth = requireSystemOwner(request);
+        const auth = await requireSystemOwner(request);
         if ("error" in auth && auth.error) return auth.error;
+
+        const disabled = tenantAdminDisabledResponse();
+        if (disabled) return disabled;
 
         const tenant = await prisma.tenant.findUnique({ where: { id } });
         if (!tenant) return apiError("Tenant not found", 404);
@@ -47,8 +51,11 @@ export async function PATCH(
 ) {
     try {
         const { id } = await params;
-        const auth = requireSystemOwner(request);
+        const auth = await requireSystemOwner(request);
         if ("error" in auth && auth.error) return auth.error;
+
+        const disabled = tenantAdminDisabledResponse();
+        if (disabled) return disabled;
 
         const body = await request.json();
         const { action, reason, status, estimatedDuration, ...updateData } = body;

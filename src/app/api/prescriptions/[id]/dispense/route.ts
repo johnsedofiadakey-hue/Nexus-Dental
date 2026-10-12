@@ -14,7 +14,7 @@ export async function POST(
 ) {
     try {
         const { id } = await params;
-        const auth = requireAuth(request);
+        const auth = await requireAuth(request);
         if ("error" in auth) return auth.error;
 
         const permCheck = requirePermission(auth.user, PERMISSIONS.PRESCRIPTIONS_DISPENSE);

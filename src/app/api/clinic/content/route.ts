@@ -13,7 +13,7 @@ import { logAudit, getClientIP, getUserAgent } from "@/lib/audit/logger";
  */
 export async function GET(request: NextRequest) {
     try {
-        const auth = requireAuth(request);
+        const auth = await requireAuth(request);
         if ("error" in auth) return auth.error;
 
         const tenantId = auth.user.tenantId;
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
     try {
-        const auth = requireAuth(request);
+        const auth = await requireAuth(request);
         if ("error" in auth) return auth.error;
 
         const tenantId = auth.user.tenantId;

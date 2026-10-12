@@ -3,6 +3,7 @@ import prisma from "@/lib/db/prisma";
 import {
     requireAuth,
     requirePermission,
+    revokeUserSessions,
     PERMISSIONS,
     apiError,
     apiSuccess,
@@ -25,15 +26,17 @@ const ALLOWED_STATUSES = ["ACTIVE", "SUSPENDED"] as const;
 
 // PATCH /api/staff/[id]   { status?: "ACTIVE" | "SUSPENDED", role?: <assignable role> }
 //
-// Suspension blocks all new sign-ins immediately. A session that is already
-// open keeps working until its token expires (24h) unless JWT_SECRET is rotated.
+// Suspension and role changes take effect on the target's very next request:
+// their sessions are revoked in the same transaction as the change (so a failed
+// revocation rolls the change back), and roles/permissions are re-resolved from
+// the database on every request.
 export async function PATCH(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const { id } = await params;
-        const authResult = requireAuth(request);
+        const authResult = await requireAuth(request);
         if ("error" in authResult) return authResult.error;
 
         const permissionError = requirePermission(authResult.user, PERMISSIONS.STAFF_UPDATE);
@@ -88,9 +91,13 @@ export async function PATCH(
 
         const before = { status: target.status, roles: targetRoles };
 
-        await prisma.$transaction(async (tx: any) => {
+        const revokedSessions = await prisma.$transaction(async (tx: any) => {
+            let revoked = 0;
             if (newStatus !== undefined) {
                 await tx.user.update({ where: { id }, data: { status: newStatus } });
+                if (newStatus === "SUSPENDED") {
+                    revoked += await revokeUserSessions(tx, id, "ACCOUNT_SUSPENDED");
+                }
             }
             if (newRole !== undefined) {
                 // Replace only hard-coded system roles; custom tenant roles are left alone.
@@ -98,7 +105,9 @@ export async function PATCH(
                     where: { userId: id, systemRole: { not: null } },
                 });
                 await tx.userRoleMapping.create({ data: { userId: id, systemRole: newRole } });
+                revoked += await revokeUserSessions(tx, id, "ROLE_CHANGED");
             }
+            return revoked;
         });
 
         await logAudit({
@@ -111,6 +120,7 @@ export async function PATCH(
             newValue: {
                 status: newStatus ?? before.status,
                 roles: newRole ? [newRole] : before.roles,
+                sessionsRevoked: revokedSessions,
             },
             ipAddress: getClientIP(request.headers),
             userAgent: getUserAgent(request.headers),

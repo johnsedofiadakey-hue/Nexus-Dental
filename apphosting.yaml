@@ -12,6 +12,30 @@ env:
       - BUILD
       - RUNTIME
 
+  - variable: DEPLOYMENT_MODE
+    value: single_clinic
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: ENABLED_FEATURES
+    value: paystack,mnotify
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: SMS_PROVIDER
+    value: mnotify
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: DEMO_MODE
+    value: "true"
+    availability:
+      - BUILD
+      - RUNTIME
+
   - variable: NEXT_PUBLIC_API_URL
     value: https://nexusdental--nexusdentalsystem.us-east4.hosted.app
     availability:
@@ -54,12 +78,6 @@ env:
       - BUILD
       - RUNTIME
 
-  - variable: NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY
-    value: pk_live_0824b60f0c0e7b10be0d8e4e0c74d229596e836c
-    availability:
-      - BUILD
-      - RUNTIME
-
   # ─── Secrets (stored in Google Cloud Secret Manager) ───────────
   - variable: DATABASE_URL
     secret: DATABASE_URL
@@ -87,6 +105,15 @@ env:
 
   - variable: PAYSTACK_SECRET_KEY
     secret: PAYSTACK_SECRET_KEY
+
+  - variable: MNOTIFY_API_KEY
+    secret: MNOTIFY_API_KEY
+
+  - variable: MNOTIFY_SENDER_ID
+    secret: MNOTIFY_SENDER_ID
+
+  - variable: DEMO_SMS_ALLOWLIST
+    secret: DEMO_SMS_ALLOWLIST
 
   - variable: HUBTEL_CLIENT_ID
     secret: HUBTEL_CLIENT_ID

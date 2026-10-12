@@ -22,7 +22,7 @@ export async function POST(
 ) {
     try {
         const { id: ticketId } = await params;
-        const authResult = requireAuth(request);
+        const authResult = await requireAuth(request);
         if ("error" in authResult) return authResult.error;
         const { user } = authResult;
 

@@ -3,8 +3,9 @@
 // Supports Ghana-first phone number formatting
 // ============================================
 
-const HUBTEL_SMS_URL = "https://smsc.hubtel.com/v1/messages/send";
 const HUBTEL_WHATSAPP_URL = "https://api.hubtel.com/v1/whatsapp/messages";
+
+import { sendSms } from "./index";
 
 // ─── Phone number normalisation ───────────────────────────────────────────────
 
@@ -46,43 +47,13 @@ function getAuthHeader(): string | null {
 // ─── Core send functions ──────────────────────────────────────────────────────
 
 /**
- * Send an SMS via Hubtel.
- * Falls back to console.log when env vars are not configured.
+ * Send an SMS. SMS no longer goes through Hubtel: it is routed through the provider-neutral
+ * service (src/lib/sms), which fails closed, enforces the demo allowlist and never claims a
+ * send that did not happen. Kept under this name so existing callers continue to work, but
+ * unlike before it THROWS when the SMS could not be sent, so callers can record the failure.
  */
 export async function sendSMS(to: string, message: string): Promise<void> {
-    const auth = getAuthHeader();
-    const phone = normalisePhone(to);
-
-    if (!auth) {
-        console.log(`[Hubtel SMS dev] → ${phone}: ${message}`);
-        return;
-    }
-
-    const senderId = process.env.HUBTEL_SENDER_ID ?? "NexusDental";
-
-    try {
-        const res = await fetch(HUBTEL_SMS_URL, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: auth,
-            },
-            body: JSON.stringify({
-                From: senderId,
-                To: phone,
-                Content: message,
-            }),
-        });
-
-        if (!res.ok) {
-            const body = await res.text().catch(() => "");
-            console.error(`[Hubtel SMS] HTTP ${res.status} for ${phone}: ${body}`);
-        } else {
-            console.log(`[Hubtel SMS] Sent to ${phone}`);
-        }
-    } catch (err) {
-        console.error(`[Hubtel SMS] Network error for ${phone}:`, err);
-    }
+    await sendSms(to, message);
 }
 
 /**
@@ -161,7 +132,7 @@ export function appointmentReminder(
     return (
         `Hi ${patientName}, this is a reminder from ${clinicName}. ` +
         `Your appointment with Dr. ${doctorName} is scheduled for ${date} at ${time}. ` +
-        `Please arrive 10 minutes early. Reply CANCEL to cancel.`
+        `Please arrive 10 minutes early. To change it, call the clinic.`
     );
 }
 

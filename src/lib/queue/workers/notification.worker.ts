@@ -3,6 +3,7 @@
 // Background processing for messages + fallbacks
 // ============================================
 
+import { isBuildPhase } from "@/lib/config/build-phase";
 import { Worker, Job } from "bullmq";
 import { queueRedisConnection } from "../redis";
 import prisma from "@/lib/db/prisma";
@@ -14,7 +15,7 @@ import type { NotificationPayload } from "@/lib/support/notifications";
  * Processes messages from the notification-queue.
  * Leverages the existing notification engine fallback logic.
  */
-const isBuild = process.env.NODE_ENV === "production" && !process.env.REDIS_URL;
+const isBuild = isBuildPhase();
 
 export const notificationWorker = isBuild ? ({} as Worker) : new Worker(
     "notification-queue",
@@ -54,10 +55,13 @@ export const notificationWorker = isBuild ? ({} as Worker) : new Worker(
     }
 );
 
-notificationWorker.on("completed", (job) => {
-    console.log(`[Worker] Notification job ${job.id} completed successfully`);
-});
+// During `next build` the worker is an inert stand-in with no event emitter.
+if (!isBuild) {
+    notificationWorker.on("completed", (job) => {
+        console.log(`[Worker] Notification job ${job.id} completed successfully`);
+    });
 
-notificationWorker.on("failed", (job, err) => {
-    console.error(`[Worker] Notification job ${job?.id} failed:`, err);
-});
+    notificationWorker.on("failed", (job, err) => {
+        console.error(`[Worker] Notification job ${job?.id} failed:`, err);
+    });
+}

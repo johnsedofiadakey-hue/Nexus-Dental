@@ -10,7 +10,7 @@ import { getTenantIdFromUser } from "@/lib/clinic";
  */
 export async function GET(request: NextRequest) {
     try {
-        const authResult = requireAuth(request);
+        const authResult = await requireAuth(request);
         if ("error" in authResult) return authResult.error;
         const user = authResult.user as JWTPayload;
         if (!isStaffUser(user)) return apiError("Staff access required", 403);
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
     try {
-        const authResult = requireAuth(request);
+        const authResult = await requireAuth(request);
         if ("error" in authResult) return authResult.error;
         const user = authResult.user as JWTPayload;
         if (!isStaffUser(user)) return apiError("Staff access required", 403);

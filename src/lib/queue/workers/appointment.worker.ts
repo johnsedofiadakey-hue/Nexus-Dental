@@ -1,68 +1,68 @@
 // ============================================
 // NEXUS DENTAL — Appointment Worker
-// Background reminders and lifecycle management
+// SMS appointment reminders and no-show detection
 // ============================================
 
-import { Worker, Job } from "bullmq";
+import { isBuildPhase } from "@/lib/config/build-phase";
+import { Worker, Job, UnrecoverableError } from "bullmq";
 import { queueRedisConnection } from "../redis";
 import prisma from "@/lib/db/prisma";
-import { notificationQueue } from "../queues";
-import {
-    sendNotification as hubtelSend,
-    appointmentReminder,
-} from "@/lib/sms/hubtel";
+import { APPOINTMENT_QUEUE_JOB, type ReminderJobData } from "@/lib/reminders/constants";
+import { ReminderDeliveryError, dispatchReminder } from "@/lib/reminders/dispatch";
 
-interface AppointmentJobData {
-    type: "REMINDER_24H" | "REMINDER_1H" | "NO_SHOW_CHECK";
+interface NoShowJobData {
+    type: "NO_SHOW_CHECK";
     appointmentId: string;
     tenantId: string;
 }
 
+/** Jobs queued by the pre-C-demo code (24h/1h, sent via WhatsApp + a second notification). They must NOT send. */
+interface ObsoleteReminderJobData {
+    type: "REMINDER_24H" | "REMINDER_1H";
+    appointmentId: string;
+    tenantId: string;
+}
+
+type AppointmentJobData = ReminderJobData | NoShowJobData | ObsoleteReminderJobData;
+
 /**
- * Appointment Worker:
- * Prcesses reminders and audits appointment states
+ * Appointment Worker.
+ *
+ * REMINDER jobs go through dispatchReminder(): one reminder, one claim, one SMS, one
+ * persisted result (src/lib/reminders/dispatch.ts). Nothing here sends directly and then
+ * enqueues a second sender: that double-send path no longer exists.
  */
-const isBuild = process.env.NODE_ENV === "production" && !process.env.REDIS_URL;
+const isBuild = isBuildPhase();
 
 export const appointmentWorker = isBuild ? ({} as Worker) : new Worker(
     "appointment-queue",
     async (job: Job<AppointmentJobData>) => {
-        const { type, appointmentId, tenantId } = job.data;
+        const data = job.data;
 
-        const appointment = await prisma.appointment.findUnique({
-            where: { id: appointmentId },
-            include: {
-                patient: true,
-                doctor: true,
-                service: true,
-            },
-        });
+        if (data.type === "REMINDER") {
+            try {
+                return await dispatchReminder(data.reminderId, { db: prisma });
+            } catch (error) {
+                // A recorded, non-retryable failure (not configured, demo-blocked, bad number) must not be
+                // retried; a transient one (timeout, 5xx) keeps the queue's retry policy.
+                if (error instanceof ReminderDeliveryError && !error.retryable) throw new UnrecoverableError(error.message);
+                throw error;
+            }
+        }
 
-        if (!appointment) {
-            console.warn(`[Worker] Appointment ${appointmentId} not found, skipping job`);
+        if (data.type === "REMINDER_24H" || data.type === "REMINDER_1H") {
+            console.log(`[Worker] Ignoring obsolete ${data.type} job ${job.id}; reminders are now 60/30-minute SMS rows.`);
+            return { skipped: "OBSOLETE" };
+        }
+
+        if (data.type === "NO_SHOW_CHECK") {
+            const appointment = await prisma.appointment.findUnique({ where: { id: data.appointmentId } });
+            if (!appointment) return;
+            await handleNoShow(appointment);
             return;
         }
 
-        // If appointment was cancelled or is already checked in, skip reminders
-        if (
-            type !== "NO_SHOW_CHECK" &&
-            (appointment.status === "CANCELLED" || appointment.status !== "SCHEDULED")
-        ) {
-            console.log(`[Worker] Appointment ${appointmentId} status is ${appointment.status}, skipping reminder`);
-            return;
-        }
-
-        switch (type) {
-            case "REMINDER_24H":
-                await enqueueReminder(appointment, "Upcoming Appointment Tomorrow");
-                break;
-            case "REMINDER_1H":
-                await enqueueReminder(appointment, "Appointment Starting Soon");
-                break;
-            case "NO_SHOW_CHECK":
-                await handleNoShow(appointment);
-                break;
-        }
+        console.warn(`[Worker] Unknown appointment job type on job ${job.id}`);
     },
     {
         connection: queueRedisConnection as any,
@@ -70,52 +70,7 @@ export const appointmentWorker = isBuild ? ({} as Worker) : new Worker(
     }
 );
 
-async function enqueueReminder(appointment: any, title: string) {
-    const dateStr = appointment.dateTime.toLocaleDateString("en-GH", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-    });
-    const timeStr = appointment.dateTime.toLocaleTimeString("en-GH", {
-        hour: "2-digit",
-        minute: "2-digit",
-    });
-
-    // Resolve patient phone for direct Hubtel delivery (SMS + WhatsApp)
-    const patient = await prisma.patient.findUnique({
-        where: { id: appointment.patientId },
-        select: { phone: true, firstName: true, lastName: true },
-    });
-
-    if (patient?.phone) {
-        const clinic = await prisma.tenant.findUnique({
-            where: { id: appointment.tenantId },
-            select: { name: true },
-        });
-
-        const message = appointmentReminder(
-            `${patient.firstName} ${patient.lastName}`,
-            dateStr,
-            timeStr,
-            clinic?.name ?? "our clinic",
-            `${appointment.doctor.firstName} ${appointment.doctor.lastName}`
-        );
-
-        // SMS + WhatsApp for appointment reminders
-        await hubtelSend(patient.phone, message, "both");
-    }
-
-    // Also queue in-app notification via BullMQ
-    await notificationQueue.add(`reminder-${appointment.id}`, {
-        tenantId: appointment.tenantId,
-        recipientId: appointment.patientId,
-        type: "APPOINTMENT_REMINDER",
-        title,
-        content: `Reminder: Your ${appointment.service.name} appointment with Dr. ${appointment.doctor.lastName} is at ${timeStr}.`,
-        metadata: { appointmentId: appointment.id },
-    });
-}
+export { APPOINTMENT_QUEUE_JOB };
 
 async function handleNoShow(appointment: any) {
     // If appointment is still just "SCHEDULED" 30 mins after start time, mark as NO_SHOW

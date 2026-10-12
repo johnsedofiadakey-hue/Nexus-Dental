@@ -8,7 +8,7 @@ import { InsuranceService } from "@/lib/services/insurance.service";
  */
 export async function GET(request: NextRequest) {
   try {
-    const authResult = requireAuth(request);
+    const authResult = await requireAuth(request);
     if ("error" in authResult) return authResult.error;
 
     const permissionError = requirePermission(authResult.user, PERMISSIONS.BILLING_VIEW);

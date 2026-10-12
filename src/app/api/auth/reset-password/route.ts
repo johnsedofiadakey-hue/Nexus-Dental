@@ -1,8 +1,9 @@
 import { NextRequest } from "next/server";
 import crypto from "crypto";
+import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/db/prisma";
 import redis from "@/lib/db/redis";
-import { hashPassword, validatePasswordStrength, apiError, apiSuccess } from "@/lib/auth";
+import { hashPassword, revokeUserSessions, validatePasswordStrength, apiError, apiSuccess } from "@/lib/auth";
 import { logAudit, getClientIP, getUserAgent } from "@/lib/audit/logger";
 import { consumeRateLimit, clientIp } from "@/lib/security/rate-limit";
 
@@ -39,9 +40,13 @@ export async function POST(request: NextRequest) {
             return apiError("This reset link is invalid or has expired.", 400);
         }
 
-        await prisma.user.update({
-            where: { id: user.id },
-            data: { passwordHash: await hashPassword(password) },
+        const newHash = await hashPassword(password);
+
+        // Password and revocation commit together: if revoking sessions fails the
+        // password is not changed, so a compromised session can never outlive a reset.
+        const revoked = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+            await tx.user.update({ where: { id: user.id }, data: { passwordHash: newHash } });
+            return revokeUserSessions(tx, user.id, "PASSWORD_RESET");
         });
 
         await logAudit({
@@ -50,6 +55,7 @@ export async function POST(request: NextRequest) {
             action: "AUTH_PASSWORD_RESET",
             entity: "User",
             entityId: user.id,
+            newValue: { sessionsRevoked: revoked },
             ipAddress: getClientIP(request.headers),
             userAgent: getUserAgent(request.headers),
         });

@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
         // Cross-clinic revenue and counts: platform (system owner) access only. The
         // edge middleware merely checks that SOME cookie is present, so the real
         // session and role must be verified here.
-        const authResult = requireAuth(request);
+        const authResult = await requireAuth(request);
         if ("error" in authResult) return authResult.error;
         const ownerCheck = requireSystemOwner(authResult.user);
         if (ownerCheck) return ownerCheck;

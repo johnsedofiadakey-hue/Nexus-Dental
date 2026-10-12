@@ -1,5 +1,15 @@
 name: Nightly Database Backup
 
+# Encrypted, verified, off-project backups.
+#   pg_dump -> validate -> age-encrypt to a PUBLIC key -> checksum -> upload -> verify -> report
+# This job holds only the PUBLIC key, so a stolen CI secret cannot read any backup.
+# The private key is kept offline by the owner and is used only for restore drills.
+# Retention is enforced by the bucket's lifecycle rules (docs/BACKUP_AND_RESTORE.md),
+# not by this job. Its credential is CREATE-ONLY: it can create new objects and nothing
+# else - no download, no list, no overwrite, no delete. Upload integrity is confirmed from
+# the metadata the store returns for the upload itself. Restoring uses a different,
+# operator-controlled READ identity that is never stored in this workflow.
+
 on:
   schedule:
     # 03:00 UTC daily
@@ -9,25 +19,41 @@ on:
 jobs:
   backup:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
+    env:
+      # pg_dump must be the same major version as (or newer than) the database server.
+      # Set the repository variable PG_MAJOR to the server's major version.
+      PG_MAJOR: ${{ vars.PG_MAJOR || '16' }}
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: npm
 
-      - name: Install postgresql-client (pg_dump)
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Install matching PostgreSQL client (pg_dump / pg_restore)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y "postgresql-client-${PG_MAJOR}"
+          pg_dump --version
 
+      # tsx runs the TypeScript backup script; --ignore-scripts skips the Prisma/postinstall hooks it does not need.
       - name: Install dependencies
-        run: npm ci --omit=dev --ignore-scripts
+        run: npm ci --ignore-scripts
 
-      - name: Run backup
+      - name: Run encrypted backup
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
+          BACKUP_AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
+          BACKUP_BUCKET: ${{ secrets.BACKUP_BUCKET }}
+          BACKUP_GCS_SERVICE_ACCOUNT: ${{ secrets.BACKUP_GCS_SERVICE_ACCOUNT }}
           APP_URL: ${{ secrets.APP_URL }}
           BACKUP_WEBHOOK_SECRET: ${{ secrets.BACKUP_WEBHOOK_SECRET }}
-        run: node scripts/run-backup.js
+        run: npm run backup:run
+
+      - name: Make a failure impossible to miss
+        if: failure()
+        run: echo "::error title=Database backup FAILED::The nightly backup did not complete. The app also alerts ALERT_EMAIL_TO if it received the failure; if it did not, the hourly watchdog alerts when no backup is recorded for 26 hours."

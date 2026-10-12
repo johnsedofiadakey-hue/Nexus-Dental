@@ -1,0 +1,67 @@
+# Example clinic manifest — NON-SECRET, safe to commit.
+#
+# Copy this directory to clients/<your-clinic>/ and edit. Secrets (database URL,
+# JWT secret, API keys…) never go here: they come from the environment / Secret
+# Manager. The schema is strict, so an unknown key such as `password:` is rejected.
+#
+# See docs/CLINIC_PROVISIONING.md.
+schemaVersion: 1
+
+clinic:
+  # IMMUTABLE. Becomes the database primary key for the clinic and MUST equal the
+  # CLINIC_ID environment variable. 3-64 lowercase letters, digits, hyphens.
+  id: example-dental-clinic
+  slug: example-dental            # also immutable
+  name: Example Dental Clinic
+  timezone: Africa/Accra          # IANA time zone
+  email: hello@example-dental.test
+  phone: "+233 20 000 0000"
+  address: 1 Example Street, Accra, Ghana
+  website: https://example-dental.test
+
+deployment:
+  environment: rehearsal          # development | rehearsal | production
+  appUrl: https://app.example-dental.test   # must equal NEXT_PUBLIC_APP_URL
+
+infrastructure:                   # cross-checked against the Firebase env values
+  firebaseProjectId: example-dental-rehearsal
+  storageBucket: example-dental-rehearsal.appspot.com
+
+# Optional features. Each one requires its secrets in the environment, and
+# ENABLED_FEATURES must list exactly the same set. Telehealth stays off until the
+# Daily integration is configured.
+features: [paystack, hubtel, resend]
+
+owner:
+  email: owner@example-dental.test
+  inviteExpiryHours: 72           # 1-168
+
+# Initial values — applied only where missing; the clinic edits them in the app.
+branding:
+  primaryColor: "#0d9488"
+  secondaryColor: "#0f172a"
+
+content:
+  about: Example Dental Clinic provides gentle, modern dental care for the whole family.
+  mission: To make excellent dental care accessible and comfortable.
+  vision: A community with healthy smiles.
+
+hours:
+  monday:    { open: "08:00", close: "17:00", isOpen: true }
+  tuesday:   { open: "08:00", close: "17:00", isOpen: true }
+  wednesday: { open: "08:00", close: "17:00", isOpen: true }
+  thursday:  { open: "08:00", close: "17:00", isOpen: true }
+  friday:    { open: "08:00", close: "17:00", isOpen: true }
+  saturday:  { open: "09:00", close: "13:00", isOpen: true }
+  sunday:    { open: "09:00", close: "13:00", isOpen: false }
+
+services:
+  - name: Check-up & Cleaning
+    category: GENERAL
+    durationMinutes: 30
+    price: 150
+    description: Examination and professional cleaning.
+  - name: Teeth Whitening
+    category: COSMETIC
+    durationMinutes: 60
+    price: 450

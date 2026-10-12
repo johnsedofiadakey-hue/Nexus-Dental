@@ -7,6 +7,9 @@ import { useCurrentUser, roleLabel, type UserRole } from "@/lib/hooks/use-curren
 import { Skeleton } from "@/components/ui/skeleton";
 import { PatientBottomNav } from "./PatientBottomNav";
 import { useState } from "react";
+import { StaffBottomNav } from "./StaffBottomNav";
+import { buildNavigation } from "./navigation";
+import { fallbackSettings, useClinicSettings } from "@/lib/hooks/use-clinic-settings";
 
 interface DashboardLayoutProps {
     children: React.ReactNode;
@@ -33,6 +36,17 @@ export function DashboardLayout({
     const resolvedRoles: UserRole[] = rolesProp.length > 0 ? rolesProp : (user?.roles ?? [resolvedRole]);
     const resolvedName = userNameProp ?? (user ? `${user.firstName} ${user.lastName}` : "");
     const resolvedRoleLabel = userRoleLabelProp ?? roleLabel(resolvedRole);
+    const clinicSettingsQuery = useClinicSettings(Boolean(user) && resolvedRole !== "SYSTEM_OWNER");
+    const clinicSettings = clinicSettingsQuery.data ?? fallbackSettings;
+    const clinicName: string = resolvedRole === "SYSTEM_OWNER"
+        ? "Nexus Control"
+        : (clinicSettings.platformName || fallbackSettings.platformName || "Nexus Dental");
+    const featureFlags = clinicSettings.featureFlags || undefined;
+    const navigationItems = buildNavigation({
+        roles: resolvedRoles,
+        permissions: user?.permissions,
+        featureFlags,
+    });
 
     if (isLoading && !roleProp) {
         return (
@@ -48,11 +62,31 @@ export function DashboardLayout({
 
     return (
         <div className="flex h-screen bg-slate-50 overflow-hidden">
-            <Sidebar role={resolvedRole} roles={resolvedRoles} className="hidden lg:flex" />
+            <Sidebar
+                role={resolvedRole}
+                roles={resolvedRoles}
+                permissions={user?.permissions}
+                featureFlags={featureFlags}
+                clinicName={clinicName}
+                clinicLogoUrl={clinicSettings.logoUrl}
+                clinicPrimaryColor={clinicSettings.primaryColor}
+                className="hidden lg:flex"
+            />
             {mobileNavOpen && (
                 <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Navigation menu">
                     <button type="button" className="absolute inset-0 bg-slate-950/35 backdrop-blur-sm" onClick={() => setMobileNavOpen(false)} aria-label="Close navigation" />
-                    <Sidebar role={resolvedRole} roles={resolvedRoles} onNavigate={() => setMobileNavOpen(false)} className="relative z-10 max-w-[86vw] shadow-2xl" />
+                    <Sidebar
+                        role={resolvedRole}
+                        roles={resolvedRoles}
+                        permissions={user?.permissions}
+                        featureFlags={featureFlags}
+                        clinicName={clinicName}
+                        clinicLogoUrl={clinicSettings.logoUrl}
+                        clinicPrimaryColor={clinicSettings.primaryColor}
+                        collapsible={false}
+                        onNavigate={() => setMobileNavOpen(false)}
+                        className="relative z-10 max-w-[86vw] shadow-2xl"
+                    />
                 </div>
             )}
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -60,15 +94,23 @@ export function DashboardLayout({
                     title={title}
                     userName={resolvedName}
                     userRole={resolvedRoleLabel}
+                    clinicName={clinicName}
                     onMenuClick={() => setMobileNavOpen(true)}
                 />
-                <main className={`flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 ${resolvedRole === "PATIENT" ? "pb-24 lg:pb-8" : "pb-8"}`}>
+                <main className="flex-1 overflow-y-auto p-4 pb-24 sm:p-6 sm:pb-24 lg:p-8">
                     <div className="max-w-[1440px] mx-auto">
                         {children}
                     </div>
                 </main>
             </div>
             {resolvedRole === "PATIENT" && <PatientBottomNav onMore={() => setMobileNavOpen(true)} />}
+            {resolvedRole !== "PATIENT" && (
+                <StaffBottomNav
+                    items={navigationItems}
+                    primaryRole={resolvedRole}
+                    onMore={() => setMobileNavOpen(true)}
+                />
+            )}
             <Toaster />
         </div>
     );

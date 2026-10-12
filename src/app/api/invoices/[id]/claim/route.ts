@@ -6,7 +6,7 @@ import { requireAuth, requirePermission, enforceTenantScope, PERMISSIONS, apiErr
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         const { id } = await params;
-        const authResult = requireAuth(request);
+        const authResult = await requireAuth(request);
         if ("error" in authResult) return authResult.error;
         const { user } = authResult;
 

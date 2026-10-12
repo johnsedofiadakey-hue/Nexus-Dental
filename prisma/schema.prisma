@@ -48,6 +48,7 @@ model Tenant {
   expenses              Expense[]
   waitlist              Waitlist[]
   insuranceClaims       InsuranceClaim[]
+  paymentAttempts       PaymentAttempt[]
 
   @@map("tenants")
 }
@@ -120,6 +121,7 @@ model User {
   purchaseOrders         PurchaseOrder[]        @relation("POCreator")
   expensesRecorded       Expense[]              @relation("ExpenseRecorder")
   tenant                 Tenant?                @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  authSessions           AuthSession[]
 
   @@index([tenantId])
   @@index([email])
@@ -237,6 +239,7 @@ model Patient {
   patientFiles      PatientFile[]
   labOrders         LabOrder[]
   waitlist          Waitlist[]
+  authSessions      AuthSession[]
 
   @@unique([tenantId, phone])
   @@index([tenantId])
@@ -244,20 +247,20 @@ model Patient {
 }
 
 model Service {
-  id                    String                  @id @default(cuid())
-  tenantId              String
-  name                  String
-  description           String?
-  category              ServiceCategory
-  duration              Int
-  price                 Float
-  isActive              Boolean                 @default(true)
-  createdAt             DateTime                @default(now())
-  updatedAt             DateTime                @updatedAt
-  appointments          Appointment[]
-  additionalAppointments Appointment[]         @relation("AppointmentAdditionalServices")
-  procedureInventoryMap ProcedureInventoryMap[]
-  tenant                Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  id                     String                  @id @default(cuid())
+  tenantId               String
+  name                   String
+  description            String?
+  category               ServiceCategory
+  duration               Int
+  price                  Float
+  isActive               Boolean                 @default(true)
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  appointments           Appointment[]
+  additionalAppointments Appointment[]           @relation("AppointmentAdditionalServices")
+  procedureInventoryMap  ProcedureInventoryMap[]
+  tenant                 Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@index([tenantId])
   @@map("services")
@@ -291,6 +294,7 @@ model Appointment {
   invoice            Invoice?
   prescription       Prescription?
   treatmentStep      TreatmentStep?
+  reminders          AppointmentReminder[]
 
   @@index([tenantId])
   @@index([doctorId, dateTime])
@@ -375,6 +379,7 @@ model Invoice {
   insuranceClaimDate   DateTime?
   deletedAt            DateTime?
   claims               InsuranceClaim[]
+  paymentAttempts      PaymentAttempt[]
   createdAt            DateTime         @default(now())
   updatedAt            DateTime         @updatedAt
   appointment          Appointment      @relation(fields: [appointmentId], references: [id])
@@ -385,6 +390,47 @@ model Invoice {
   @@index([tenantId])
   @@index([patientId])
   @@map("invoices")
+}
+
+enum PaymentAttemptStatus {
+  INITIALIZING
+  PENDING
+  SUCCEEDED
+  FAILED
+  PARTIALLY_REFUNDED
+  REFUNDED
+}
+
+/// One immutable provider reference for one attempt to pay an invoice. Amounts are
+/// stored in whole pesewas so reconciliation never depends on floating-point maths.
+/// The invoice keeps `paystackRef` only as a backwards-compatible pointer to the
+/// most recent/successful attempt; this table is the payment source of truth.
+model PaymentAttempt {
+  id                     String               @id @default(cuid())
+  tenantId               String
+  invoiceId              String
+  provider               String               @default("PAYSTACK")
+  reference              String               @unique
+  expectedAmountMinor    Int
+  currency               String               @default("GHS")
+  status                 PaymentAttemptStatus @default(INITIALIZING)
+  authorizationUrl       String?
+  accessCode             String?
+  providerTransactionId  String?              @unique
+  channel                String?
+  failureReason          String?
+  refundedAmountMinor    Int                  @default(0)
+  initializedAt          DateTime?
+  paidAt                 DateTime?
+  failedAt               DateTime?
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+  invoice                Invoice              @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  tenant                 Tenant               @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, createdAt])
+  @@index([invoiceId, status])
+  @@map("payment_attempts")
 }
 
 model Prescription {
@@ -531,18 +577,23 @@ model SystemConfig {
 }
 
 model BackupLog {
-  id           String       @id @default(cuid())
-  type         String       @default("FULL")
-  tenantId     String?
-  status       BackupStatus @default(PENDING)
-  filePath     String?
-  fileSize     BigInt?
-  triggeredBy  String
-  startedAt    DateTime     @default(now())
-  completedAt  DateTime?
-  errorMessage String?
+  id            String       @id @default(cuid())
+  type          String       @default("FULL")
+  tenantId      String?
+  status        BackupStatus @default(PENDING)
+  filePath      String?
+  fileSize      BigInt?
+  triggeredBy   String
+  startedAt     DateTime     @default(now())
+  completedAt   DateTime?
+  errorMessage  String?
+  /// SHA-256 (hex) of the stored, encrypted file. Null on rows written before encrypted backups.
+  sha256        String?
+  encrypted     Boolean      @default(false)
+  formatVersion Int?
 
   @@index([status])
+  @@index([type, status, completedAt])
   @@map("backup_logs")
 }
 
@@ -1020,7 +1071,7 @@ enum InsuranceClaimStatus {
 }
 
 model InsuranceClaim {
-  id             String    @id @default(cuid())
+  id             String               @id @default(cuid())
   invoiceId      String
   tenantId       String
   provider       String
@@ -1030,15 +1081,132 @@ model InsuranceClaim {
   approvedAmount Float?
   status         InsuranceClaimStatus @default(SUBMITTED)
   notes          String?
-  submittedAt    DateTime  @default(now())
+  submittedAt    DateTime             @default(now())
   resolvedAt     DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
   deletedAt      DateTime?
-  invoice        Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
-  tenant         Tenant    @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  invoice        Invoice              @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  tenant         Tenant               @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
   @@index([tenantId])
   @@index([invoiceId])
   @@map("insurance_claims")
+}
+
+enum AuthSubjectType {
+  STAFF
+  PATIENT
+}
+
+/// Server-side record of a signed-in session. The browser holds a signed token
+/// carrying an opaque random session id; only its SHA-256 hash is stored here, so
+/// a database leak does not yield usable session ids. A session is valid only
+/// while this row exists, is not revoked and has not expired. Exactly one of
+/// userId / patientId is set (enforced by a CHECK constraint in the migration).
+model AuthSession {
+  id                String          @id @default(cuid())
+  sidHash           String          @unique
+  subjectType       AuthSubjectType
+  tenantId          String?
+  userId            String?
+  patientId         String?
+  createdAt         DateTime        @default(now())
+  lastSeenAt        DateTime        @default(now())
+  idleExpiresAt     DateTime
+  absoluteExpiresAt DateTime
+  revokedAt         DateTime?
+  revokedReason     String?
+  userAgent         String?
+  user              User?           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  patient           Patient?        @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+  @@index([patientId, revokedAt])
+  @@index([absoluteExpiresAt])
+  @@map("auth_sessions")
+}
+
+/// A background job that exhausted its retries. Durable on purpose: Redis can be
+/// flushed, this record cannot. Holds a redacted error and the payload KEYS only,
+/// never payload values (which may contain patient details).
+model FailedJob {
+  id              String    @id @default(cuid())
+  queue           String
+  jobId           String
+  name            String
+  attempts        Int
+  errorMessage    String
+  payloadKeys     String[]
+  failedAt        DateTime  @default(now())
+  retriedAt       DateTime?
+  retriedBy       String?
+  /// Short lease taken (atomically) BEFORE the job is re-queued, so two simultaneous retries
+  /// cannot both call Redis. Released on failure, expires on its own if the caller dies.
+  retryClaimToken String?
+  retryClaimedAt  DateTime?
+  retryClaimedBy  String?
+  /// Redacted reason the most recent retry attempt failed; cleared when a retry succeeds.
+  retryError      String?
+  retryAttempts   Int       @default(0)
+
+  @@unique([queue, jobId])
+  @@index([failedAt])
+  @@map("failed_jobs")
+}
+
+/// Per-condition operational-alert state. The rate limit is decided by one atomic UPDATE on
+/// this row (never read-then-write), and `claimedAt`/`claimToken` is a short lease held while
+/// the e-mail is being sent, so two replicas cannot both send and a failed send can be retried.
+model OpsAlertState {
+  condition  String    @id
+  lastSentAt DateTime?
+  claimedAt  DateTime?
+  claimToken String?
+  updatedAt  DateTime  @updatedAt
+
+  @@map("ops_alert_states")
+}
+
+enum ReminderStatus {
+  PENDING
+  PROCESSING
+  SENT
+  FAILED
+  CANCELLED
+}
+
+/// One scheduled SMS reminder for one appointment ("60 minutes before", "30 minutes before").
+/// This table, not Redis, is the source of truth: the BullMQ job is only an accelerator and
+/// can be rebuilt from here. The unique key makes a duplicate dispatch for the same
+/// appointment, offset and appointment time impossible. `appointmentAt` is the appointment
+/// time the reminder was computed for, so a rescheduled appointment cannot be reminded for
+/// its OLD time. SENT means "accepted by the SMS provider", never "delivered".
+model AppointmentReminder {
+  id                String         @id @default(cuid())
+  tenantId          String
+  appointmentId     String
+  /// Minutes before the appointment: 60 or 30.
+  offsetMinutes     Int
+  appointmentAt     DateTime
+  scheduledFor      DateTime
+  /// Bumped when a cancelled reminder is re-created (appointment reopened), so its queue job id is new.
+  generation        Int            @default(0)
+  status            ReminderStatus @default(PENDING)
+  provider          String?
+  providerMessageId String?
+  attempts          Int            @default(0)
+  claimedAt         DateTime?
+  claimToken        String?
+  sentAt            DateTime?
+  /// Redacted: never a key, URL, phone number or provider payload.
+  lastError         String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  appointment       Appointment    @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@unique([appointmentId, offsetMinutes, appointmentAt])
+  @@index([tenantId])
+  @@index([status, scheduledFor])
+  @@map("appointment_reminders")
 }

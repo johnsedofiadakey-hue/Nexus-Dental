@@ -3,6 +3,17 @@
 // ============================================
 
 export { signToken, signPatientToken, verifyToken, extractTokenFromHeader } from "./jwt";
+export {
+    createStaffSession,
+    createPatientSession,
+    resolveSession,
+    revokeSessionBySid,
+    revokeUserSessions,
+    revokePatientSessions,
+    hashSid,
+    generateSid,
+} from "./session";
+export type { SessionRevokeReason, SessionDenyReason, SessionResult, CreatedSession } from "./session";
 export { hashPassword, verifyPassword, validatePasswordStrength } from "./password";
 export { generateOTP, storeOTP, verifyOTP, invalidateOTP } from "./otp";
 export { resolveUserPermissions, hasPermission, hasAllPermissions, hasAnyPermission } from "./permissions";
@@ -10,6 +21,7 @@ export {
     apiError,
     apiSuccess,
     authenticateRequest,
+    authenticateSession,
     requireAuth,
     requireRole,
     requirePermission,
@@ -42,4 +54,5 @@ export {
     pickPrimaryRole,
     EMERGENCY_KEYWORDS,
     AUTH_CONFIG,
+    SESSION_POLICY,
 } from "./types";

@@ -18,7 +18,8 @@ import { DEFAULT_ROLE_PERMISSIONS, UserRoleType } from "./types";
 export async function resolveUserPermissions(
     userId: string,
     roles: UserRoleType[],
-    tenantId: string | null
+    tenantId: string | null,
+    options: { strict?: boolean } = {}
 ): Promise<string[]> {
     // Start with default role permissions (cumulative for all assigned roles)
     const basePermissions = new Set<string>();
@@ -49,7 +50,9 @@ export async function resolveUserPermissions(
             for (const rp of dbRolePermissions) {
                 basePermissions.add(rp.permission.name);
             }
-        } catch {
+        } catch (error) {
+            // Strict (per-request authority): never guess. Callers fail closed.
+            if (options.strict) throw error;
             // If DB lookup fails, continue with defaults
             console.warn(`[Permissions] Failed to fetch DB permissions for roles: ${roles.join(', ')}`);
         }
@@ -71,7 +74,9 @@ export async function resolveUserPermissions(
                 basePermissions.delete(override.permission.name);
             }
         }
-    } catch {
+    } catch (error) {
+        // A failed override lookup must not silently drop a DENY.
+        if (options.strict) throw error;
         console.warn(`[Permissions] Failed to fetch overrides for user ${userId}`);
     }
 

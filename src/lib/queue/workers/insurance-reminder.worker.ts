@@ -5,6 +5,7 @@
 // directly to the insurer)
 // ============================================
 
+import { isBuildPhase } from "@/lib/config/build-phase";
 import { Worker, Job } from "bullmq";
 import { queueRedisConnection } from "../redis";
 import prisma from "@/lib/db/prisma";
@@ -18,7 +19,7 @@ interface InsuranceReminderJobData {
 const STALE_AFTER_DAYS = 5;
 const REMINDER_TYPE = "INSURANCE_CLAIM_REMINDER";
 
-const isBuild = process.env.NODE_ENV === "production" && !process.env.REDIS_URL;
+const isBuild = isBuildPhase();
 
 export const insuranceReminderWorker = isBuild ? ({} as Worker) : new Worker(
     "insurance-queue",

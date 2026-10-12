@@ -12,6 +12,7 @@ const PUBLIC_ROUTES = [
     "/booking",
     "/about",
     "/contact",
+    "/demo",
     "/consultation",
     "/privacy",
     "/terms",
@@ -43,6 +44,9 @@ const PUBLIC_API_ROUTES = [
     // System-to-system callback from .github/workflows/backup.yml —
     // shared-secret authenticated inside the handler (X-Backup-Secret).
     "/api/system/backups/complete",
+    // Operations watchdog — called by an external scheduler, authenticated inside the
+    // handler by its own dedicated secret (x-ops-watchdog-secret).
+    "/api/system/watchdog",
     // Unauthenticated liveness check for uptime monitors.
     "/api/health",
 ];

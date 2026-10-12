@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     Calendar,
     Pill,
@@ -22,7 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useCurrentUser } from "@/lib/hooks/use-current-user";
 import { useRouter } from "next/navigation";
@@ -219,6 +219,8 @@ function InvoiceCard({ data }: { data: any }) {
 
 export default function RecordsPage() {
     const router = useRouter();
+    const queryClient = useQueryClient();
+    const callbackHandled = useRef(false);
     const { data: user, isLoading: userLoading } = useCurrentUser();
 
     useEffect(() => {
@@ -236,6 +238,34 @@ export default function RecordsPage() {
         },
         enabled: !!user?.id,
     });
+
+    useEffect(() => {
+        if (!user || user.type !== "PATIENT" || callbackHandled.current) return;
+        const params = new URLSearchParams(window.location.search);
+        const invoiceId = params.get("paid");
+        const reference = params.get("reference") || params.get("trxref");
+        if (!invoiceId || !reference) return;
+        callbackHandled.current = true;
+
+        void (async () => {
+            try {
+                const res = await fetch(`/api/invoices/${encodeURIComponent(invoiceId)}/paystack-verify`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify({ reference }),
+                });
+                const json = await res.json();
+                if (!res.ok) throw new Error(json.error || "Payment verification is still pending");
+                await queryClient.invalidateQueries({ queryKey: ["patient-history", user.id] });
+                toast.success("Payment confirmed. Your invoice has been updated.");
+            } catch (error) {
+                toast.error(error instanceof Error ? error.message : "Payment verification is still pending");
+            } finally {
+                router.replace("/portal/records");
+            }
+        })();
+    }, [queryClient, router, user]);
 
     const history = historyData?.data ?? historyData ?? {};
     const appointments: any[] = history?.appointments ?? [];

@@ -10,7 +10,16 @@
     "db:setup": "prisma generate && prisma db push && node scripts/seed-users.js",
     "seed": "node scripts/seed-users.js",
     "postinstall": "prisma generate",
-    "test": "vitest run"
+    "test": "vitest run",
+    "clinic:provision": "tsx scripts/clinic-provision.ts",
+    "config:check": "tsx scripts/check-config.ts",
+    "test:provision": "node scripts/test-provision.js",
+    "sms:test": "tsx scripts/sms-test.ts",
+    "demo:provision": "tsx scripts/demo-provision.ts",
+    "backup:run": "tsx scripts/run-backup.ts",
+    "backup:keygen": "tsx scripts/backup-keygen.ts",
+    "backup:restore": "tsx scripts/restore-backup.ts",
+    "worker": "node --import tsx src/worker/index.ts"
   },
   "dependencies": {
     "@daily-co/daily-js": "^0.91.0",
@@ -27,6 +36,7 @@
     "@tailwindcss/postcss": "^4.3.0",
     "@tanstack/react-query": "^5.90.21",
     "@tanstack/react-query-devtools": "^5.91.3",
+    "age-encryption": "^0.3.1",
     "bcryptjs": "^3.0.3",
     "bullmq": "^5.69.3",
     "class-variance-authority": "^0.7.1",
@@ -35,6 +45,7 @@
     "firebase-admin": "^13.10.0",
     "framer-motion": "^12.34.0",
     "ioredis": "^5.9.3",
+    "js-yaml": "^5.4.2",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.564.0",
     "next": "^15.5.19",
@@ -48,6 +59,7 @@
     "tailwind-merge": "^3.4.1",
     "tailwindcss": "^4.3.0",
     "uuid": "^14.0.0",
+    "zod": "^4.6.5",
     "zustand": "^5.0.11"
   },
   "devDependencies": {
@@ -61,6 +73,7 @@
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^3.2.7"
   },

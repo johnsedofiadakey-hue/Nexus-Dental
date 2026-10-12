@@ -1,24 +1,43 @@
 // ============================================
-// NEXUS DENTAL — System Owner: Backup System
+// NEXUS DENTAL — System Owner: Backup records
 // Real backups run nightly via .github/workflows/backup.yml
-// (scripts/run-backup.js), which calls POST /api/system/backups/complete
+// (scripts/run-backup.ts), which calls POST /api/system/backups/complete
 // to record each run here. This module only reads/writes BackupLog —
-// it does not perform the dump itself (see scripts/run-backup.js).
+// it does not perform the dump itself (see scripts/run-backup.ts).
+//
+// What a record must contain to COUNT as a backup is defined once, in
+// src/lib/backup/validity.ts; the callback route enforces it before anything is written.
 // ============================================
 
 import prisma from "@/lib/db/prisma";
 import { logAudit } from "@/lib/audit/logger";
+import { isValidCompletedFullBackup, type BackupRowLike } from "@/lib/backup/validity";
+import type { DrillSummary } from "@/lib/backup/callback";
+import { sendOpsAlert } from "./alerts";
+
+/** The reported proof is well-formed but does not describe a real, recorded backup. The route answers 400. */
+export class BackupProofError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = "BackupProofError";
+    }
+}
 
 export interface BackupRecordInput {
-    type: "FULL" | "INCREMENTAL" | "TENANT";
+    type: "FULL" | "INCREMENTAL" | "TENANT" | "RESTORE_DRILL";
     tenantId?: string | null;
     status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "FAILED";
     filePath?: string;
     fileSize?: number;
+    sha256?: string;
+    encrypted?: boolean;
+    formatVersion?: number;
     triggeredBy: string;
     startedAt: Date;
     completedAt?: Date;
     errorMessage?: string;
+    /** Strict-drill summary; recorded in the audit trail (there is no column for it). */
+    drill?: DrillSummary;
 }
 
 /**
@@ -27,6 +46,17 @@ export interface BackupRecordInput {
  * this is the only writer of BackupLog).
  */
 export async function recordBackup(input: BackupRecordInput) {
+    // A completed drill must be about a backup we actually have a valid record of.
+    if (input.type === "RESTORE_DRILL" && input.status === "COMPLETED") {
+        const candidates = await prisma.backupLog.findMany({
+            where: { type: "FULL", status: "COMPLETED", sha256: input.sha256 ?? "" },
+            take: 5,
+        });
+        if (!input.sha256 || !candidates.some((row: BackupRowLike) => isValidCompletedFullBackup(row))) {
+            throw new BackupProofError("The drill does not correspond to a recorded, valid, encrypted full backup.");
+        }
+    }
+
     const backup = await prisma.backupLog.create({
         data: {
             type: input.type,
@@ -34,6 +64,9 @@ export async function recordBackup(input: BackupRecordInput) {
             status: input.status,
             filePath: input.filePath,
             fileSize: input.fileSize ? BigInt(input.fileSize) : undefined,
+            sha256: input.sha256,
+            encrypted: input.encrypted ?? false,
+            formatVersion: input.formatVersion,
             triggeredBy: input.triggeredBy,
             startedAt: input.startedAt,
             completedAt: input.completedAt,
@@ -44,7 +77,9 @@ export async function recordBackup(input: BackupRecordInput) {
     await logAudit({
         tenantId: null,
         userId: null,
-        action: input.status === "FAILED" ? "BACKUP_FAILED" : "BACKUP_COMPLETED",
+        action: input.type === "RESTORE_DRILL"
+            ? (input.status === "FAILED" ? "RESTORE_DRILL_FAILED" : "RESTORE_DRILL_COMPLETED")
+            : (input.status === "FAILED" ? "BACKUP_FAILED" : "BACKUP_COMPLETED"),
         entity: "Backup",
         entityId: backup.id,
         newValue: {
@@ -52,8 +87,19 @@ export async function recordBackup(input: BackupRecordInput) {
             status: input.status,
             fileSize: input.fileSize,
             filePath: input.filePath,
+            sha256: input.sha256,
+            drill: input.drill,
         },
     });
+
+    // Tell a human immediately; the hourly watchdog is the backstop if this never runs.
+    if (input.status === "FAILED") {
+        await sendOpsAlert(
+            input.type === "RESTORE_DRILL" ? "restore-drill-failed" : "backup-failed",
+            input.type === "RESTORE_DRILL" ? "Restore drill FAILED" : "Database backup FAILED",
+            `A ${input.type === "RESTORE_DRILL" ? "restore drill" : "backup"} failed: ${(input.errorMessage ?? "no detail").slice(0, 200)}`
+        );
+    }
 
     return serializeBackup(backup);
 }
@@ -112,7 +158,7 @@ export async function triggerManualBackup(systemOwnerId: string): Promise<{ disp
  * List backup history from BackupLog.
  */
 export async function listBackups(filters?: {
-    type?: "FULL" | "INCREMENTAL" | "TENANT";
+    type?: "FULL" | "INCREMENTAL" | "TENANT" | "RESTORE_DRILL";
     status?: string;
     tenantId?: string;
     page?: number;
@@ -163,6 +209,9 @@ function serializeBackup(row: {
     startedAt: Date;
     completedAt: Date | null;
     errorMessage: string | null;
+    sha256?: string | null;
+    encrypted?: boolean;
+    formatVersion?: number | null;
 }) {
     return {
         ...row,

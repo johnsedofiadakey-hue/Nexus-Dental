@@ -1,13 +1,13 @@
 import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
-import { authenticateRequest, requireAuth, requirePermission, PERMISSIONS, apiError, apiSuccess } from "@/lib/auth";
+import { authenticateSession, requireAuth, requirePermission, PERMISSIONS, apiError, apiSuccess } from "@/lib/auth";
 import { getClinicId, getTenantIdFromUser } from "@/lib/clinic";
 
 export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
         const category = searchParams.get("category");
-        const user = authenticateRequest(request);
+        const user = await authenticateSession(request).catch(() => null); // unreadable session store => anonymous, never elevated
         const tenantId = user ? getTenantIdFromUser(user) : getClinicId();
         let includeInactive = false;
 
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
-        const authResult = requireAuth(request);
+        const authResult = await requireAuth(request);
         if ("error" in authResult) return authResult.error;
         const { user } = authResult;
 

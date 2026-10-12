@@ -1,0 +1,52 @@
+name: Operations Watchdog
+
+# An EXTERNAL monitor for the things the background worker cannot report about
+# itself: the worker being dead, backups not being made, restore drills going
+# stale, and jobs piling up in the dead-letter list.
+#
+# It calls POST /api/system/watchdog, which re-checks all of them and sends a
+# rate-limited alert email (ALERT_EMAIL_TO). This run FAILS when anything needs
+# attention, so GitHub's own failed-run notification is a second channel.
+#
+# IMPORTANT LIMITS: GitHub scheduled workflows are best-effort. They can start
+# several minutes late, are skipped under load, and are disabled after 60 days
+# without repository activity. Treat this as a backup monitor, NOT a real-time SLA.
+# For a production clinic add an uptime monitor / Cloud Scheduler job that calls the
+# same endpoint (docs/BACKUP_AND_RESTORE.md, "Production-grade monitoring").
+#
+# Secrets (repository settings): APP_URL, OPS_WATCHDOG_SECRET (a dedicated random value,
+# `openssl rand -hex 32`; not the backup callback secret, not a user token).
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+
+permissions: {}
+
+jobs:
+  watchdog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ask the app to evaluate worker, backup, drill and dead-letter health
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          OPS_WATCHDOG_SECRET: ${{ secrets.OPS_WATCHDOG_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "${APP_URL}" ] || [ -z "${OPS_WATCHDOG_SECRET}" ]; then
+            echo "::error title=Watchdog not configured::APP_URL and OPS_WATCHDOG_SECRET must be set as repository secrets."
+            exit 1
+          fi
+          status=$(curl -sS -o response.json -w "%{http_code}" --max-time 60 \
+            -X POST -H "x-ops-watchdog-secret: ${OPS_WATCHDOG_SECRET}" \
+            "${APP_URL%/}/api/system/watchdog" || echo "000")
+          echo "HTTP ${status}"
+          # The body lists condition NAMES only (never secrets or data); safe to show.
+          cat response.json || true
+          echo
+          if [ "${status}" != "200" ]; then
+            echo "::error title=Operations watchdog: attention needed::HTTP ${status}. See the response above (worker / backup / restore drill / dead letters)."
+            exit 1
+          fi

@@ -8,24 +8,28 @@ interface DashboardHeaderProps {
     title: string;
     userName: string;
     userRole: string;
+    clinicName?: string;
     onMenuClick?: () => void;
 }
 
-export function DashboardHeader({ title, userName, userRole, onMenuClick }: DashboardHeaderProps) {
+export function DashboardHeader({ title, userName, userRole, clinicName, onMenuClick }: DashboardHeaderProps) {
     const [notifications] = useState(0);
 
     return (
         <header className="h-16 lg:h-[80px] border-b border-slate-100 bg-white/90 backdrop-blur-md sticky top-0 z-30 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            <div className="flex min-w-0 items-center gap-3 sm:gap-4">
                 <Button type="button" variant="ghost" size="icon" onClick={onMenuClick} className="lg:hidden" aria-label="Open navigation">
                     <Menu className="h-5 w-5" />
                 </Button>
-                <h1 className="truncate text-lg font-heading font-semibold text-slate-900 sm:text-xl">{title}</h1>
+                <div className="min-w-0">
+                    {clinicName && <p className="truncate text-[9px] font-bold uppercase tracking-[0.14em] text-teal-700 sm:hidden">{clinicName}</p>}
+                    <h1 className="truncate text-base font-heading font-semibold text-slate-900 sm:text-xl">{title}</h1>
+                </div>
             </div>
 
             <div className="flex items-center gap-2 sm:gap-4 lg:gap-6">
                 {/* Notifications */}
-                <div className="relative hidden sm:block">
+                <div className="relative">
                     <Button variant="ghost" size="icon" className="rounded-full hover:bg-slate-100 relative">
                         <Bell className="w-5 h-5 text-slate-600" />
                         {notifications > 0 && (
@@ -41,7 +45,7 @@ export function DashboardHeader({ title, userName, userRole, onMenuClick }: Dash
                         <p className="text-xs text-slate-500 mt-1 uppercase tracking-wider font-bold">{userRole}</p>
                     </div>
                     <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center border-2 border-white shadow-sm overflow-hidden text-slate-600 font-bold">
-                        {userName.charAt(0)}
+                        {userName.charAt(0) || "U"}
                     </div>
                 </div>
             </div>

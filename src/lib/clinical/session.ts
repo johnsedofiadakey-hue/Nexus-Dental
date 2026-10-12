@@ -61,6 +61,30 @@ export interface SessionCompleteResult {
  * 5. Generate invoice (if requested)
  * 6. Log the audit event
  */
+interface BillableService {
+    id: string;
+    name: string;
+    price: number;
+}
+
+/**
+ * Invoice line items for an appointment: the primary service first, then the additional services
+ * ordered by name then id (so the same appointment always produces the same invoice). A service
+ * that is somehow listed twice is billed once. Prices are summed in whole pesewas.
+ */
+export function buildInvoiceItems(primary: BillableService, additional: BillableService[]) {
+    const seen = new Set<string>([primary.id]);
+    const extras = [...additional]
+        .filter((svc) => (seen.has(svc.id) ? false : (seen.add(svc.id), true)))
+        .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
+    const ordered = [primary, ...extras];
+    const pesewas = ordered.reduce((sum, svc) => sum + Math.round(svc.price * 100), 0);
+    return {
+        items: ordered.map((svc) => ({ serviceId: svc.id, serviceName: svc.name, price: svc.price, quantity: 1 })),
+        subtotal: pesewas / 100,
+    };
+}
+
 export async function completeSession(
     input: SessionCompleteInput,
     ipAddress?: string,
@@ -73,6 +97,7 @@ export async function completeSession(
                 where: { id: input.appointmentId },
                 include: {
                     service: true,
+                    additionalServices: true,
                     patient: true,
                 },
             });
@@ -143,11 +168,16 @@ export async function completeSession(
             // 5. Generate invoice (if requested)
             let invoice = null;
             if (input.generateInvoice !== false) {
-                const service = appointment.service;
-                const subtotal = service.price;
-                const discount = input.discount || 0;
-                const tax = subtotal * 0.0; // Ghana: No VAT on healthcare
-                const totalAmount = subtotal - discount + tax;
+                // Bill EVERY service on the appointment (the primary one plus each additional one), at the
+                // prices stored in the database now - never a client-supplied price. Arithmetic is done in
+                // whole pesewas so the total is exact; the item list order is deterministic.
+                const { items, subtotal } = buildInvoiceItems(appointment.service, appointment.additionalServices ?? []);
+                const discount = input.discount ?? 0; // not `||`: a NaN discount must be rejected, not become 0
+                if (!Number.isFinite(discount) || discount < 0 || discount > subtotal) {
+                    throw new Error("Discount must be between 0 and the invoice amount");
+                }
+                const tax = 0; // Ghana: No VAT on healthcare
+                const totalAmount = Math.round((subtotal - discount) * 100) / 100 + tax;
 
                 invoice = await tx.invoice.create({
                     data: {
@@ -161,14 +191,7 @@ export async function completeSession(
                         totalAmount,
                         status: "UNPAID",
                         notes: input.invoiceNotes || null,
-                        items: [
-                            {
-                                serviceId: service.id,
-                                serviceName: service.name,
-                                price: service.price,
-                                quantity: 1,
-                            },
-                        ],
+                        items,
                     },
                 });
             }

@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db/prisma";
-import { signToken, verifyPassword, resolveUserPermissions, pickPrimaryRole, apiError, apiSuccess } from "@/lib/auth";
+import { signToken, createStaffSession, verifyPassword, resolveUserPermissions, pickPrimaryRole, apiError, apiSuccess } from "@/lib/auth";
 import { logAudit, getClientIP, getUserAgent } from "@/lib/audit/logger";
 import { consumeRateLimit, resetRateLimit, clientIp } from "@/lib/security/rate-limit";
 import type { JWTPayload, AuthResponse, UserRoleType } from "@/lib/auth";
@@ -107,6 +107,15 @@ export async function POST(request: NextRequest) {
             type: userRoles.includes("SYSTEM_OWNER") ? "SYSTEM_OWNER" : "STAFF",
         };
 
+        // Server-side session: the token below is only valid while this row is live.
+        // If it cannot be written the sign-in fails; a token with no session is useless.
+        const session = await createStaffSession(prisma, {
+            userId: user.id,
+            tenantId: user.tenantId,
+            userAgent: getUserAgent(request.headers),
+        });
+        tokenPayload.sid = session.sid;
+
         // Sign token
         const token = signToken(tokenPayload);
 
@@ -127,6 +136,7 @@ export async function POST(request: NextRequest) {
             action: "AUTH_LOGIN_SUCCESS",
             entity: "User",
             entityId: user.id,
+            newValue: { sessionStarted: true },
             ipAddress: getClientIP(request.headers),
             userAgent: getUserAgent(request.headers),
         });
@@ -153,7 +163,7 @@ export async function POST(request: NextRequest) {
             secure: process.env.NODE_ENV === "production",
             sameSite: "lax",
             path: "/",
-            maxAge: 60 * 60 * 24, // 1 day to match JWT_EXPIRATION
+            maxAge: session.maxAgeSeconds,
         });
 
         return res;

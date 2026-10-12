@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 
 export async function POST(request: NextRequest) {
     try {
-        const auth = requireAuth(request);
+        const auth = await requireAuth(request);
         if ("error" in auth) return auth.error;
         if (!isStaffUser(auth.user)) return apiError("Staff access required", 403);
 

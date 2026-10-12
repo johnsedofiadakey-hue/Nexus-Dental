@@ -2,7 +2,9 @@
 // NEXUS DENTAL — Auth Info (whoami)
 // GET /api/auth/me
 //
-// Returns current authenticated user info.
+// Returns the current authenticated user and their effective access
+// (see src/contracts/access.ts). Everything is re-resolved from the database
+// for this request — roles, permissions, account and clinic status.
 // ============================================
 
 import { NextRequest, NextResponse } from "next/server";
@@ -14,20 +16,46 @@ import {
     apiError,
     apiSuccess,
     signPatientToken,
+    hashSid,
 } from "@/lib/auth";
-import { AUTH_CONFIG } from "@/lib/auth/types";
+import { SESSION_POLICY } from "@/lib/auth/types";
 import type { JWTPayload, PatientJWTPayload } from "@/lib/auth";
+import { ACCESS_CONTRACT_VERSION, type AccessContract, type AccessSubject } from "@/contracts/access";
+import { resolveDeploymentMode, resolveModules, resolveProviders } from "@/lib/config/features";
+
+async function buildAccess(
+    subject: AccessSubject,
+    tenantId: string | null,
+    role: string,
+    roles: string[],
+    permissions: string[]
+): Promise<AccessContract> {
+    const settings = tenantId
+        ? await prisma.tenantSettings.findUnique({ where: { tenantId }, select: { featureFlags: true } })
+        : null;
+    return {
+        version: ACCESS_CONTRACT_VERSION,
+        deploymentMode: resolveDeploymentMode(),
+        subject,
+        role,
+        roles,
+        permissions,
+        modules: resolveModules(settings?.featureFlags),
+        providers: resolveProviders(),
+    };
+}
 
 export async function GET(request: NextRequest) {
     try {
-        const authResult = requireAuth(request);
+        const authResult = await requireAuth(request);
         if ("error" in authResult) return authResult.error;
 
         const { user } = authResult;
 
         if (isPatientUser(user)) {
+            const patientUser = user as PatientJWTPayload;
             const patient = await prisma.patient.findUnique({
-                where: { id: (user as PatientJWTPayload).patientId },
+                where: { id: patientUser.patientId },
                 select: {
                     id: true,
                     firstName: true,
@@ -45,6 +73,8 @@ export async function GET(request: NextRequest) {
                 return apiError("Patient not found", 404);
             }
 
+            const access = await buildAccess("PATIENT", patient.tenantId, "PATIENT", ["PATIENT"], []);
+
             const response = NextResponse.json({
                 success: true,
                 data: {
@@ -52,30 +82,49 @@ export async function GET(request: NextRequest) {
                     role: "PATIENT",
                     roles: ["PATIENT"],
                     ...patient,
+                    access,
                 },
             });
 
-            // Sliding patient session: every successful app load renews the
-            // signed cookie. The session therefore remains active while the
-            // patient uses the portal, and explicit logout remains reliable.
-            const renewedToken = signPatientToken({
-                patientId: patient.id,
-                tenantId: patient.tenantId,
-                role: "PATIENT",
-                type: "PATIENT",
-            });
-            response.cookies.set("nexus_patient_token", renewedToken, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                sameSite: "lax",
-                path: "/",
-                maxAge: AUTH_CONFIG.PATIENT_SESSION_MAX_AGE_SECONDS,
-            });
+            // Rolling patient session: the server-side idle window was already
+            // extended by requireAuth; renew the cookie to match, but never past
+            // the session's absolute limit.
+            if (patientUser.sid) {
+                const row = await prisma.authSession.findUnique({
+                    where: { sidHash: hashSid(patientUser.sid) },
+                    select: { absoluteExpiresAt: true },
+                });
+                const remaining = row
+                    ? Math.floor((row.absoluteExpiresAt.getTime() - Date.now()) / 1000)
+                    : 0;
+                const maxAge = Math.min(SESSION_POLICY.PATIENT_IDLE_SECONDS, remaining);
+                if (maxAge > 0) {
+                    response.cookies.set(
+                        "nexus_patient_token",
+                        signPatientToken({
+                            patientId: patient.id,
+                            tenantId: patient.tenantId,
+                            role: "PATIENT",
+                            type: "PATIENT",
+                            sid: patientUser.sid,
+                        }),
+                        {
+                            httpOnly: true,
+                            secure: process.env.NODE_ENV === "production",
+                            sameSite: "lax",
+                            path: "/",
+                            maxAge,
+                        }
+                    );
+                }
+            }
 
             return response;
         }
 
         if (isStaffUser(user)) {
+            // `user` is already the CURRENT authority (roles + permissions re-read
+            // from the database by the session check), not the token's claims.
             const staffUser = user as JWTPayload;
             const dbUser = await prisma.user.findUnique({
                 where: { id: staffUser.userId },
@@ -88,18 +137,23 @@ export async function GET(request: NextRequest) {
                 return apiError("User not found", 404);
             }
 
-            const userRoles = dbUser.roles.map((r: any) => r.systemRole).filter(Boolean) as string[];
-            const primaryRole = userRoles[0] || "RECEPTIONIST";
-
             const { passwordHash, ...safeUser } = dbUser as any;
+            const access = await buildAccess(
+                staffUser.type,
+                staffUser.tenantId,
+                staffUser.role,
+                staffUser.roles,
+                staffUser.permissions
+            );
 
             return apiSuccess({
                 type: staffUser.type,
                 ...safeUser,
-                role: primaryRole,
-                roles: userRoles,
+                role: staffUser.role,
+                roles: staffUser.roles,
                 permissions: staffUser.permissions,
-                featureFlags: staffUser.featureFlags,
+                featureFlags: [],
+                access,
             });
         }
 

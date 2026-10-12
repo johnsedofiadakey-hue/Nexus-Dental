@@ -1,0 +1,121 @@
+# Render Blueprint — Nexus Dental DEMO deployment (synthetic data only).
+#
+# Creates: a web service, an always-on background worker, a Postgres database and a Redis-compatible
+# Key Value store, all in one region. Secrets are NOT in this file: create the environment group
+# `nexus-secrets` in the Render dashboard first (list and steps in docs/RENDER_DEPLOY.md).
+#
+# This is not the production clinic. It uses its own database and Redis.
+databases:
+  - name: nexus-demo-db
+    plan: basic-256mb
+    region: frankfurt
+    databaseName: nexus_demo
+    postgresMajorVersion: "16"
+
+services:
+  - type: keyvalue
+    name: nexus-demo-redis
+    plan: starter
+    region: frankfurt
+    # BullMQ stores jobs in Redis: it must never evict keys under memory pressure.
+    maxmemoryPolicy: noeviction
+    ipAllowList: []
+
+  - type: web
+    name: nexus-dental-demo
+    runtime: node
+    plan: starter
+    region: frankfurt
+    branch: claude/c1-single-clinic-provisioning
+    buildCommand: npm ci --include=dev && npm run build
+    # Applies reviewed migrations before the new version takes traffic. Never `db push`.
+    preDeployCommand: npx prisma migrate deploy
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - fromGroup: nexus-secrets
+      - key: NODE_VERSION
+        value: 22.12.0
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: nexus-demo-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: nexus-demo-redis
+          property: connectionString
+      - key: DEPLOYMENT_MODE
+        value: single_clinic
+      - key: CLINIC_ID
+        value: nexus-demo
+      - key: ENABLED_FEATURES
+        value: mnotify
+      - key: SMS_PROVIDER
+        value: mnotify
+      - key: DEMO_MODE
+        value: "true"
+      - key: NEXT_PUBLIC_APP_URL
+        value: https://nexus-dental-demo.onrender.com
+      - key: NEXT_PUBLIC_API_URL
+        value: https://nexus-dental-demo.onrender.com
+      - key: NEXT_PUBLIC_FIREBASE_API_KEY
+        value: AIzaSyCpFe20EmaY_2xQNoX7V97PCyzBoXtZfK4
+      - key: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+        value: nexusdentalsystem.firebaseapp.com
+      - key: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+        value: nexusdentalsystem
+      - key: NEXT_PUBLIC_FIREBASE_APP_ID
+        value: "1:871183265953:web:fb0e52c47d8d599e9600e0"
+      - key: FIREBASE_STORAGE_BUCKET
+        value: nexusdentalsystem.appspot.com
+      # Lets firebase-admin verify patient phone-login tokens without a service-account file.
+      - key: GOOGLE_CLOUD_PROJECT
+        value: nexusdentalsystem
+
+  - type: worker
+    name: nexus-demo-worker
+    runtime: docker
+    dockerfilePath: ./Dockerfile.worker
+    plan: starter
+    region: frankfurt
+    branch: claude/c1-single-clinic-provisioning
+    envVars:
+      - fromGroup: nexus-secrets
+      - key: DATABASE_URL
+        fromDatabase:
+          name: nexus-demo-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: nexus-demo-redis
+          property: connectionString
+      - key: DEPLOYMENT_MODE
+        value: single_clinic
+      - key: CLINIC_ID
+        value: nexus-demo
+      - key: ENABLED_FEATURES
+        value: mnotify
+      - key: SMS_PROVIDER
+        value: mnotify
+      - key: DEMO_MODE
+        value: "true"
+      - key: NEXT_PUBLIC_APP_URL
+        value: https://nexus-dental-demo.onrender.com
+      - key: NEXT_PUBLIC_API_URL
+        value: https://nexus-dental-demo.onrender.com
+      - key: NEXT_PUBLIC_FIREBASE_API_KEY
+        value: AIzaSyCpFe20EmaY_2xQNoX7V97PCyzBoXtZfK4
+      - key: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+        value: nexusdentalsystem.firebaseapp.com
+      - key: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+        value: nexusdentalsystem
+      - key: NEXT_PUBLIC_FIREBASE_APP_ID
+        value: "1:871183265953:web:fb0e52c47d8d599e9600e0"
+      - key: FIREBASE_STORAGE_BUCKET
+        value: nexusdentalsystem.appspot.com
+      - key: GOOGLE_CLOUD_PROJECT
+        value: nexusdentalsystem

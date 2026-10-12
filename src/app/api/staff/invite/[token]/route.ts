@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import prisma from "@/lib/db/prisma";
 import { apiError, apiSuccess } from "@/lib/auth";
+import { inviteTokenLookupValues } from "@/lib/auth/invite-token";
 
 // GET /api/staff/invite/[token] — validate a token and return invite details (public)
 export async function GET(
@@ -10,8 +11,9 @@ export async function GET(
     try {
         const { token } = await params;
 
-        const invite = await prisma.staffInvite.findUnique({
-            where: { token },
+        // Tokens are stored hashed; legacy rows holding the raw token still resolve.
+        const invite = await prisma.staffInvite.findFirst({
+            where: { token: { in: inviteTokenLookupValues(token) } },
             include: {
                 tenant: { select: { id: true, name: true, logo: true } },
                 invitedBy: { select: { firstName: true, lastName: true } },

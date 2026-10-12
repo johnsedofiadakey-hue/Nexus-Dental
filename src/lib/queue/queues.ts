@@ -3,6 +3,7 @@
 // Definition of all background queues
 // ============================================
 
+import { isBuildPhase } from "@/lib/config/build-phase";
 import { Queue } from "bullmq";
 import { queueRedisConnection } from "./redis";
 
@@ -22,7 +23,7 @@ const defaultJobOptions = {
     },
 };
 
-const isBuild = process.env.NODE_ENV === "production" && !process.env.REDIS_URL;
+const isBuild = isBuildPhase();
 
 /**
  * notification-queue:

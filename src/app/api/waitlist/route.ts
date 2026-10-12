@@ -5,7 +5,7 @@ import prisma from "@/lib/db/prisma";
 
 export async function GET(request: NextRequest) {
   try {
-    const authResult = requireAuth(request);
+    const authResult = await requireAuth(request);
     if ("error" in authResult) return authResult.error;
     const { user } = authResult;
     if (!isStaffUser(user)) return apiError("Staff access required", 403);
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const authResult = requireAuth(request);
+    const authResult = await requireAuth(request);
     if ("error" in authResult) return authResult.error;
     const { user } = authResult;
     if (!isStaffUser(user)) return apiError("Staff access required", 403);
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const authResult = requireAuth(request);
+    const authResult = await requireAuth(request);
     if ("error" in authResult) return authResult.error;
     const { user } = authResult;
     if (!isStaffUser(user)) return apiError("Staff access required", 403);
@@ -130,7 +130,7 @@ export async function DELETE(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const authResult = requireAuth(request);
+    const authResult = await requireAuth(request);
     if ("error" in authResult) return authResult.error;
     const { user } = authResult;
     if (!isStaffUser(user)) return apiError("Staff access required", 403);
