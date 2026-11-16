@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Nexus Dental — Pain-led Mobile Carousel</title>
+  <title>Nexus Dental — Booking and Patient Experience Campaign</title>
   <script>
     const params = new URLSearchParams(location.search);
     document.documentElement.dataset.format = params.get("format") === "meta" ? "meta" : "tiktok";
@@ -68,6 +68,26 @@
     .impact article { min-height: 112px; padding: 16px; border: 1px solid rgba(255,255,255,.22); border-radius: 17px; background: rgba(6,36,59,.78); backdrop-filter: blur(12px); }
     .impact strong { display: block; color: #67e4d7; font-size: 19px; line-height: 1.08; }.impact span { display: block; margin-top: 8px; color: rgba(255,255,255,.72); font-size: 10px; line-height: 1.35; }
 
+    .booking { background: linear-gradient(180deg, #f7f5ef 0%, #e3f3f0 100%); }
+    .booking .copy { top: 128px; }
+    .booking h1 { max-width: 640px; }
+    .booking .screen { left: 82px; right: 82px; top: 475px; bottom: -170px; border-width: 9px; border-radius: 38px; }
+    .booking .screen img { object-position: top center; }
+    .booking .trial { right: 37px; top: 412px; bottom: auto; }
+
+    .reminders { color: white; background: linear-gradient(145deg, #06314b 0%, #087f79 100%); }
+    .reminders .copy { top: 128px; }
+    .reminders .kicker, .reminders h1 em { color: #67e4d7; }
+    .reminders .sub { color: rgba(255,255,255,.76); }
+    .message-stack { position: absolute; z-index: 12; left: 44px; right: 44px; top: 520px; display: grid; gap: 14px; }
+    .message { padding: 18px 19px; border: 1px solid rgba(255,255,255,.25); border-radius: 22px; color: var(--ink); background: white; box-shadow: 0 20px 45px rgba(0,0,0,.18); }
+    .message:nth-child(2) { transform: translateX(20px); }.message:nth-child(3) { transform: translateX(40px); }
+    .message small { display: flex; align-items: center; justify-content: space-between; color: #6d8491; font-size: 10px; font-weight: 850; text-transform: uppercase; letter-spacing: .07em; }
+    .message strong { display: block; margin-top: 10px; font-size: 20px; line-height: 1.2; }
+    .message p { margin: 6px 0 0; color: #557080; font-size: 12px; line-height: 1.4; }
+    .reminder-note { position: absolute; z-index: 12; left: 44px; bottom: 115px; display: flex; align-items: center; gap: 10px; color: white; font-size: 12px; font-weight: 850; }
+    .reminder-note i { width: 13px; height: 13px; border: 3px solid #67e4d7; border-radius: 50%; box-shadow: 0 0 0 5px rgba(103,228,215,.14); }
+
     .product { background: linear-gradient(180deg, #f7f5ef 0%, #edf7f5 100%); }
     .product .copy { top: 128px; }
     .product h1 { max-width: 640px; }
@@ -111,6 +131,14 @@
     html[data-format="tiktok"] .consequence .impact { right: 110px; bottom: 155px; grid-template-columns: 1fr; }
     html[data-format="tiktok"] .consequence .impact article { min-height: 0; padding: 12px 14px; }
     html[data-format="tiktok"] .impact strong { font-size: 16px; }.impact span { margin-top: 4px; }
+    html[data-format="tiktok"] .booking .copy,
+    html[data-format="tiktok"] .reminders .copy { top: 145px; }
+    html[data-format="tiktok"] .booking .screen { left: 38px; right: 105px; top: 490px; bottom: 95px; }
+    html[data-format="tiktok"] .booking .trial { right: 104px; top: 427px; }
+    html[data-format="tiktok"] .message-stack { right: 112px; top: 520px; }
+    html[data-format="tiktok"] .message:nth-child(2),
+    html[data-format="tiktok"] .message:nth-child(3) { transform: none; }
+    html[data-format="tiktok"] .reminder-note { bottom: 160px; }
     html[data-format="tiktok"] .product .copy,
     html[data-format="tiktok"] .two-up .copy,
     html[data-format="tiktok"] .portal .copy { top: 145px; }
@@ -136,6 +164,13 @@
     html[data-format="meta"] .trial { right: 58px; bottom: 95px; width: 152px; height: 152px; }
     html[data-format="meta"] .consequence .impact { left: 58px; right: 58px; bottom: 70px; gap: 15px; }
     html[data-format="meta"] .impact article { padding: 20px; min-height: 142px; }.meta .impact strong { font-size: 24px; }.meta .impact span { font-size: 13px; }
+    html[data-format="meta"] .booking .copy,
+    html[data-format="meta"] .reminders .copy { top: 150px; }
+    html[data-format="meta"] .booking .screen { left: 245px; right: 245px; top: 500px; bottom: -125px; }
+    html[data-format="meta"] .booking .trial { right: 190px; top: 455px; }
+    html[data-format="meta"] .message-stack { left: 140px; right: 140px; top: 540px; gap: 18px; }
+    html[data-format="meta"] .message { padding: 22px 24px; }.meta .message strong { font-size: 25px; }.meta .message p { font-size: 15px; }
+    html[data-format="meta"] .reminder-note { left: 140px; bottom: 85px; font-size: 15px; }
     html[data-format="meta"] .product .copy,
     html[data-format="meta"] .two-up .copy,
     html[data-format="meta"] .portal .copy { top: 150px; }
@@ -156,23 +191,26 @@
 <body>
   <template id="brand"><header class="brandbar"><div class="brand"><span class="mark"><svg viewBox="0 0 32 32" fill="none"><path d="M10.1 5.4c2.1 0 3.7 1.4 5.9 1.4s3.8-1.4 5.9-1.4c3.4 0 5.6 2.8 5.1 6.1-.6 4-2.4 6.3-3.2 10.5-.7 3.7-1.6 5.3-3.1 5.3-1.6 0-1.6-6.1-4.7-6.1s-3.1 6.1-4.7 6.1c-1.5 0-2.4-1.6-3.1-5.3-.8-4.2-2.6-6.5-3.2-10.5-.5-3.3 1.7-6.1 5.1-6.1Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/></svg></span>NEXUS DENTAL</div><div class="counter"></div></header></template>
 
-  <article class="slide pain" data-slide="1">
-    <img class="photo" src="assets/black-women-paperwork-pexels-5234781.jpg" alt="" /><div class="wash"></div>
-    <div class="copy"><div class="kicker">For dental clinic owners</div><h1>Still using <em>paper, WhatsApp & spreadsheets?</em></h1><p class="sub">When patient information is everywhere, your team loses time.</p></div>
-    <div class="pain-list"><span><i></i>Missed appointments</span><span><i></i>Scattered patient records</span><span><i></i>Hard-to-track payments</span></div>
+  <article class="slide booking" data-slide="1">
+    <div class="copy"><div class="kicker">Online appointment booking</div><h1>Patients shouldn't have to <em>call to book.</em></h1><p class="sub">Let them choose a service, clinician and available time online—on their phone.</p></div>
     <div class="trial"><div><b>2</b><span>months free</span></div></div>
+    <div class="screen"><img src="assets/live-booking-mobile.png" alt="" /></div>
   </article>
 
-  <article class="slide consequence" data-slide="2">
-    <img class="photo" src="../../../public/client-demos/dentocdental/images/T8.jpg" alt="" /><div class="wash"></div>
-    <div class="copy"><div class="kicker">The real cost of disconnected tools</div><h1>Your team feels it. <em>Patients feel it too.</em></h1></div>
-    <div class="impact"><article><strong>Missed follow-ups</strong><span>Important messages become easy to overlook.</span></article><article><strong>Slow front desk</strong><span>Staff search in different places for answers.</span></article><article><strong>Unclear accounts</strong><span>Treatment and payment status drift apart.</span></article></div>
+  <article class="slide reminders" data-slide="2">
+    <div class="copy"><div class="kicker">Automatic appointment reminders</div><h1>A booked patient can still <em>forget.</em></h1><p class="sub">Keep upcoming visits visible without asking the front desk to remember every follow-up.</p></div>
+    <div class="message-stack">
+      <article class="message"><small><span>Nexus Dental</span><span>Confirmed</span></small><strong>Your appointment is booked.</strong><p>The patient receives confirmation after booking.</p></article>
+      <article class="message"><small><span>Appointment reminder</span><span>60 min</span></small><strong>Your visit is coming up.</strong><p>A timely reminder before the appointment.</p></article>
+      <article class="message"><small><span>Appointment reminder</span><span>30 min</span></small><strong>We'll see you shortly.</strong><p>A final reminder closer to the visit.</p></article>
+    </div>
+    <div class="reminder-note"><i></i>Powered by the clinic's configured SMS service</div>
   </article>
 
-  <article class="slide product" data-slide="3">
-    <div class="copy"><div class="kicker">One connected clinic day</div><h1>See what needs attention <em>now.</em></h1><p class="sub">Appointments, waiting patients and open treatment plans in one view.</p></div>
-    <div class="callout">No more tab hunting</div>
-    <div class="screen"><img src="../../meta/video/today.png" alt="" /></div>
+  <article class="slide portal" data-slide="3">
+    <div class="copy"><div class="kicker">Patient self-service portal</div><h1>Give patients answers <em>without another call.</em></h1><p class="sub">Appointments, treatment information, records and messages—available in one mobile-friendly place.</p></div>
+    <div class="promise"><span>APPOINTMENTS</span><span>RECORDS</span><span>MESSAGES</span></div>
+    <div class="screen"><img src="../../meta/video/portal.png" alt="" /></div>
   </article>
 
   <article class="slide product" data-slide="4">
@@ -187,10 +225,10 @@
     <span class="label two">BILLING</span><div class="screen second"><img src="../../meta/video/billing.png" alt="" /></div>
   </article>
 
-  <article class="slide portal" data-slide="6">
-    <div class="copy"><div class="kicker">A better patient experience</div><h1>Give patients answers <em>without another call.</em></h1><p class="sub">Appointments, treatment information, records and messages—made easier to reach.</p></div>
-    <div class="promise"><span>APPOINTMENTS</span><span>RECORDS</span><span>MESSAGES</span></div>
-    <div class="screen"><img src="../../meta/video/portal.png" alt="" /></div>
+  <article class="slide product" data-slide="6">
+    <div class="copy"><div class="kicker">One connected clinic day</div><h1>Your front desk sees what needs attention <em>now.</em></h1><p class="sub">Bookings, waiting patients and open treatment plans in one clear view.</p></div>
+    <div class="callout">One clear workday</div>
+    <div class="screen"><img src="../../meta/video/today.png" alt="" /></div>
   </article>
 
   <article class="slide offer" data-slide="7">
