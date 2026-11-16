@@ -5,7 +5,7 @@ export default function PrivacyPage() {
                 <span className="eyebrow">Your information</span>
                 <h1 className="mt-4 text-4xl font-heading text-secondary mb-8">Privacy policy</h1>
                 <div className="max-w-none space-y-6 text-text-secondary">
-                    <p className="text-sm">Effective Date: February 16, 2026</p>
+                    <p className="text-sm">Last updated: November 16, 2026</p>
 
                     <h2 className="text-xl font-heading text-secondary mt-10">1. Commitment to Privacy</h2>
                     <p>
@@ -25,17 +25,57 @@ export default function PrivacyPage() {
                         <li>Insurance information</li>
                     </ul>
 
-                    <h2 className="text-xl font-heading text-secondary mt-10">3. Data Usage</h2>
+                    <h2 className="text-xl font-heading text-secondary mt-10">3. Product Enquiries and Advertising Lead Forms</h2>
                     <p>
-                        Your data is used solely for clinical treatment, appointment scheduling,
-                        billing, and responding to your support inquiries. We never sell your data
-                        to third parties.
+                        If you request a Nexus Dental demonstration, trial, or product information through our
+                        website or a Meta lead form, we may receive your name, work email, phone or WhatsApp
+                        number, clinic name, role, clinic location, preferred demonstration time, and the answers
+                        you provide in the form. Please do not submit patient information or medical records in a
+                        product-enquiry form.
+                    </p>
+                    <p>
+                        We use product-enquiry information to respond to your request, assess trial eligibility,
+                        arrange a demonstration, and follow up about Nexus Dental. We will use your information for
+                        unrelated or ongoing direct marketing only where you have separately agreed to receive it.
+                        You can withdraw that marketing consent at any time.
+                    </p>
+                    <p>
+                        When you submit a form on Facebook or Instagram, Meta Platforms also processes information
+                        under its own terms and privacy policy before making the lead available to us. We may use
+                        service providers for secure lead storage, email, messaging, scheduling, and customer
+                        relationship management. We do not sell lead information.
                     </p>
 
-                    <h2 className="text-xl font-heading text-secondary mt-10">4. Your Rights</h2>
+                    <h2 className="text-xl font-heading text-secondary mt-10">4. Patient and Clinic Data Usage</h2>
                     <p>
-                        You have the right to request a copy of your records, correct inaccuracies,
-                        and in certain cases, request deletion of non-clinical administrative data.
+                        Patient and clinic data is used for authorised clinical treatment, appointment scheduling,
+                        patient communication, billing, and support. A clinic using Nexus Dental is responsible for
+                        the patient information it enters and for giving its patients the notices required by law.
+                    </p>
+
+                    <h2 className="text-xl font-heading text-secondary mt-10">5. Retention and Security</h2>
+                    <p>
+                        We retain product-enquiry information only for as long as reasonably necessary to respond,
+                        manage the requested demonstration or trial, meet legal obligations, and maintain appropriate
+                        business records. We use reasonable administrative and technical safeguards, but no online
+                        transmission or storage method is completely risk-free.
+                    </p>
+
+                    <h2 className="text-xl font-heading text-secondary mt-10">6. Your Rights and Choices</h2>
+                    <p>
+                        Subject to applicable law, you may ask to access or correct your information, request deletion
+                        of eligible non-clinical information, object to or restrict certain processing, or withdraw
+                        marketing consent. Withdrawing marketing consent does not affect a demonstration or service
+                        request you have already made.
+                    </p>
+
+                    <h2 className="text-xl font-heading text-secondary mt-10">7. Contact</h2>
+                    <p>
+                        For privacy questions, lead-data requests, or to stop marketing messages, email{" "}
+                        <a className="font-semibold text-primary-dark underline" href="mailto:john@stormglide.io">
+                            john@stormglide.io
+                        </a>
+                        . Please do not send patient records or other sensitive medical information by ordinary email.
                     </p>
                 </div>
             </div>
