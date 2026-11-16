@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en" data-format="tiktok">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Nexus Dental — Lively Mobile Carousel</title>
+  <script>
+    const params = new URLSearchParams(location.search);
+    document.documentElement.dataset.format = params.get("format") === "meta" ? "meta" : "tiktok";
+  </script>
+  <style>
+    :root {
+      --navy: #06223a;
+      --teal: #12b8a5;
+      --mint: #62ead7;
+      --coral: #ff705d;
+      --yellow: #ffcf39;
+      --blue: #155ee8;
+      --purple: #9b72f2;
+      --cream: #fff8eb;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; overflow: hidden; }
+    html[data-format="tiktok"], html[data-format="tiktok"] body { width: 720px; height: 1280px; }
+    html[data-format="meta"], html[data-format="meta"] body { width: 1080px; height: 1350px; }
+    body { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--navy); }
+    .slide { position: absolute; inset: 0; display: none; overflow: hidden; color: white; background: var(--navy); }
+    .slide.active { display: block; }
+    .brandbar { position: absolute; z-index: 20; left: 42px; right: 42px; top: 38px; display: flex; align-items: center; justify-content: space-between; }
+    .brand { display: flex; align-items: center; gap: 11px; font-size: 16px; font-weight: 900; letter-spacing: .045em; }
+    .mark { width: 41px; height: 41px; display: grid; place-items: center; border-radius: 13px; color: var(--navy); background: var(--mint); box-shadow: 0 12px 28px rgba(0,0,0,.2); }
+    .mark svg { width: 23px; height: 23px; }
+    .counter { padding: 8px 11px; border: 1px solid rgba(255,255,255,.25); border-radius: 999px; background: rgba(6,34,58,.28); font-size: 11px; font-weight: 900; letter-spacing: .12em; backdrop-filter: blur(12px); }
+    .art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .shade { position: absolute; inset: 0; }
+    .copy { position: absolute; z-index: 10; left: 42px; right: 42px; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 8px; padding: 9px 13px; border: 1px solid rgba(255,255,255,.24); border-radius: 999px; color: white; background: rgba(6,34,58,.35); font-size: 11px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; backdrop-filter: blur(10px); }
+    .eyebrow i { width: 8px; height: 8px; border-radius: 50%; background: var(--yellow); box-shadow: 0 0 0 5px rgba(255,207,57,.16); }
+    h1 { margin: 18px 0 0; font-size: 57px; line-height: .94; letter-spacing: -.055em; text-wrap: balance; }
+    h1 em { color: var(--mint); font-style: normal; }
+    .sub { max-width: 610px; margin: 16px 0 0; color: rgba(255,255,255,.86); font-size: 18px; line-height: 1.38; }
+    .mini-cta { display: inline-flex; align-items: center; gap: 10px; margin-top: 20px; padding: 13px 16px; border-radius: 14px; color: var(--navy); background: var(--yellow); font-size: 14px; font-weight: 900; box-shadow: 0 14px 30px rgba(0,0,0,.18); }
+    .swipe { position: absolute; z-index: 20; left: 42px; right: 42px; bottom: 38px; display: flex; align-items: center; justify-content: space-between; padding: 13px 16px; border: 1px solid rgba(255,255,255,.24); border-radius: 15px; background: rgba(6,34,58,.52); font-size: 12px; font-weight: 800; backdrop-filter: blur(14px); }
+
+    .hero .art { object-position: 54% center; }
+    .hero .shade { background: linear-gradient(180deg, rgba(3,25,43,.83) 0%, rgba(3,25,43,.12) 42%, rgba(3,25,43,.1) 65%, rgba(3,25,43,.82) 100%); }
+    .hero .copy { top: 133px; }
+    .hero h1 { max-width: 600px; }
+
+    .workflow .art { object-position: center; }
+    .workflow .shade { background: linear-gradient(180deg, rgba(4,29,59,.82) 0%, rgba(4,29,59,.08) 39%, rgba(4,29,59,.07) 75%, rgba(4,29,59,.65) 100%); }
+    .workflow .copy { top: 125px; }
+    .workflow h1 { max-width: 630px; }
+    .workflow .bubble { position: absolute; z-index: 8; right: 36px; bottom: 55px; width: 230px; padding: 16px; border-radius: 20px; color: var(--navy); background: rgba(255,255,255,.92); box-shadow: 0 18px 50px rgba(0,0,0,.24); transform: rotate(-2deg); }
+    .bubble b { display: block; font-size: 17px; }.bubble span { display: block; margin-top: 4px; color: #526a7a; font-size: 11px; line-height: 1.35; }
+
+    .ui-slide { background: radial-gradient(circle at 93% 2%, rgba(255,207,57,.75), transparent 25%), radial-gradient(circle at -3% 92%, rgba(155,114,242,.75), transparent 27%), linear-gradient(145deg, #155ee8 0%, #0ab0aa 100%); }
+    .ui-slide.coral { background: radial-gradient(circle at 100% 0%, rgba(255,207,57,.9), transparent 27%), radial-gradient(circle at 0% 100%, rgba(21,94,232,.7), transparent 31%), linear-gradient(145deg, #ff6f5a 0%, #c94a8f 100%); }
+    .ui-slide.sunny { background: radial-gradient(circle at 100% 5%, rgba(98,234,215,.9), transparent 26%), radial-gradient(circle at 1% 100%, rgba(255,112,93,.72), transparent 30%), linear-gradient(145deg, #ffcf39 0%, #ff9f3f 100%); color: var(--navy); }
+    .ui-slide::before, .ui-slide::after { content: ""; position: absolute; border-radius: 50%; border: 2px solid rgba(255,255,255,.28); }
+    .ui-slide::before { width: 310px; height: 310px; right: -165px; top: 305px; }
+    .ui-slide::after { width: 220px; height: 220px; left: -110px; top: 700px; }
+    .ui-slide .copy { top: 121px; }
+    .ui-slide h1 { max-width: 620px; }
+    .ui-slide.sunny h1 { color: var(--navy); }
+    .ui-slide.sunny .eyebrow { color: white; background: var(--navy); border-color: var(--navy); }
+    .ui-slide.sunny .sub { color: rgba(6,34,58,.8); }
+    .device { position: absolute; z-index: 5; left: 39px; right: 39px; top: 465px; bottom: -62px; overflow: hidden; border: 9px solid var(--navy); border-radius: 30px; background: white; box-shadow: 0 35px 65px rgba(2,23,42,.35); transform: rotate(-1.6deg); }
+    .device.right { transform: rotate(1.8deg); }
+    .device img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+    .sample { position: absolute; z-index: 10; left: 18px; top: 18px; padding: 8px 11px; border-radius: 999px; color: white; background: rgba(6,34,58,.9); font-size: 9px; font-weight: 900; letter-spacing: .08em; }
+    .sticker { position: absolute; z-index: 12; display: grid; place-items: center; border: 5px solid white; border-radius: 22px; color: var(--navy); box-shadow: 0 18px 38px rgba(0,0,0,.22); font-weight: 950; transform: rotate(8deg); }
+    .sticker.one { right: 28px; top: 400px; width: 105px; height: 105px; background: var(--yellow); font-size: 36px; }
+    .sticker.two { left: 24px; bottom: 65px; width: 100px; height: 100px; background: var(--mint); font-size: 23px; transform: rotate(-8deg); }
+
+    .split .device { left: 25px; right: auto; width: 68%; top: 455px; transform: rotate(-3deg); }
+    .split .device.second { left: auto; right: -85px; width: 66%; top: 595px; bottom: -35px; transform: rotate(5deg); border-color: white; }
+    .split .device.second::after { content: "BILLING"; position: absolute; right: 18px; top: 18px; padding: 8px 11px; border-radius: 999px; color: white; background: var(--coral); font-size: 9px; font-weight: 900; letter-spacing: .08em; }
+
+    .patient .art { object-position: 52% center; }
+    .patient .shade { background: linear-gradient(180deg, rgba(5,30,51,.78) 0%, rgba(5,30,51,.03) 40%, rgba(5,30,51,.05) 70%, rgba(5,30,51,.83) 100%); }
+    .patient .copy { top: 125px; }
+    .portal-card { position: absolute; z-index: 9; left: 40px; bottom: 70px; width: 285px; height: 370px; overflow: hidden; border: 7px solid white; border-radius: 28px; background: white; box-shadow: 0 25px 55px rgba(3,24,42,.32); transform: rotate(-4deg); }
+    .portal-card img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+    .patient .pills { position: absolute; z-index: 10; right: 36px; bottom: 85px; display: flex; flex-direction: column; gap: 9px; }
+    .patient .pills span { padding: 11px 14px; border-radius: 999px; color: var(--navy); background: white; font-size: 11px; font-weight: 900; box-shadow: 0 10px 24px rgba(0,0,0,.18); }
+
+    .offer .art { object-position: 55% center; filter: saturate(1.08); }
+    .offer .shade { background: linear-gradient(145deg, rgba(4,32,55,.93) 0%, rgba(9,119,109,.72) 55%, rgba(255,95,82,.6) 100%); }
+    .offer .copy { top: 150px; }
+    .offer h1 { max-width: 650px; font-size: 76px; }
+    .offer .sub { max-width: 500px; }
+    .offer-card { position: absolute; z-index: 10; left: 42px; right: 42px; bottom: 54px; padding: 22px; border-radius: 24px; color: var(--navy); background: white; box-shadow: 0 25px 60px rgba(0,0,0,.28); }
+    .offer-card .button { display: flex; align-items: center; justify-content: space-between; padding: 15px 17px; border-radius: 15px; color: white; background: var(--navy); font-size: 15px; font-weight: 900; }
+    .offer-card p { margin: 13px 2px 0; color: #617787; font-size: 10px; line-height: 1.45; }
+
+    /* TikTok overlays live on the top, right edge and lower caption area. Keep
+       every headline and action inside a conservative phone-safe zone. */
+    html[data-format="tiktok"] .brandbar { left: 34px; right: 96px; top: 62px; }
+    html[data-format="tiktok"] .copy { left: 42px; right: 108px; }
+    html[data-format="tiktok"] .hero .copy,
+    html[data-format="tiktok"] .workflow .copy,
+    html[data-format="tiktok"] .patient .copy { top: 152px; }
+    html[data-format="tiktok"] .ui-slide .copy { top: 145px; }
+    html[data-format="tiktok"] .swipe { left: 42px; right: 108px; bottom: 150px; }
+    html[data-format="tiktok"] .workflow .bubble { right: 108px; bottom: 150px; }
+    html[data-format="tiktok"] .portal-card { bottom: 145px; }
+    html[data-format="tiktok"] .patient .pills { right: 108px; bottom: 170px; }
+    html[data-format="tiktok"] .offer .copy { top: 170px; }
+    html[data-format="tiktok"] .offer-card { left: 42px; right: 108px; bottom: 155px; }
+
+    html[data-format="meta"] .brandbar { left: 58px; right: 58px; top: 48px; }
+    html[data-format="meta"] .brand { font-size: 20px; }.meta .counter { font-size: 13px; }
+    html[data-format="meta"] .copy { left: 58px; right: 58px; }
+    html[data-format="meta"] h1 { font-size: 78px; }
+    html[data-format="meta"] .sub { font-size: 23px; max-width: 760px; }
+    html[data-format="meta"] .hero .copy, html[data-format="meta"] .workflow .copy, html[data-format="meta"] .patient .copy { top: 155px; }
+    html[data-format="meta"] .ui-slide .copy { top: 148px; }
+    html[data-format="meta"] .device { left: 58px; right: 58px; top: 515px; bottom: -55px; border-width: 11px; border-radius: 38px; }
+    html[data-format="meta"] .sticker.one { right: 45px; top: 450px; width: 130px; height: 130px; }
+    html[data-format="meta"] .split .device { left: 40px; width: 66%; top: 520px; }
+    html[data-format="meta"] .split .device.second { left: auto; right: -65px; width: 63%; top: 650px; }
+    html[data-format="meta"] .workflow .bubble { right: 58px; bottom: 68px; width: 315px; padding: 22px; }
+    html[data-format="meta"] .bubble b { font-size: 21px; }.meta .bubble span { font-size: 14px; }
+    html[data-format="meta"] .portal-card { left: 58px; bottom: 74px; width: 390px; height: 465px; }
+    html[data-format="meta"] .patient .pills { right: 52px; bottom: 95px; }
+    html[data-format="meta"] .patient .pills span { padding: 14px 18px; font-size: 14px; }
+    html[data-format="meta"] .offer .copy { top: 180px; }
+    html[data-format="meta"] .offer h1 { font-size: 98px; max-width: 850px; }
+    html[data-format="meta"] .offer-card { left: 58px; right: 58px; bottom: 64px; padding: 28px; }
+  </style>
+</head>
+<body>
+  <template id="brand"><header class="brandbar"><div class="brand"><span class="mark"><svg viewBox="0 0 32 32" fill="none"><path d="M10.1 5.4c2.1 0 3.7 1.4 5.9 1.4s3.8-1.4 5.9-1.4c3.4 0 5.6 2.8 5.1 6.1-.6 4-2.4 6.3-3.2 10.5-.7 3.7-1.6 5.3-3.1 5.3-1.6 0-1.6-6.1-4.7-6.1s-3.1 6.1-4.7 6.1c-1.5 0-2.4-1.6-3.1-5.3-.8-4.2-2.6-6.5-3.2-10.5-.5-3.3 1.7-6.1 5.1-6.1Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/></svg></span>NEXUS DENTAL</div><div class="counter"></div></header></template>
+
+  <article class="slide hero" data-slide="1">
+    <img class="art" src="artwork/clinic-team-hero-v1.png" alt="" /><div class="shade"></div>
+    <div class="copy"><div class="eyebrow"><i></i> For dental clinic teams</div><h1>Your clinic. <em>Finally connected.</em></h1><p class="sub">Appointments · Patient records · Treatment · Billing</p></div>
+    <div class="swipe"><span>Limited offer: 2 months free</span><span>SWIPE →</span></div>
+  </article>
+
+  <article class="slide workflow" data-slide="2">
+    <img class="art" src="artwork/connected-workflow-v1.png" alt="" /><div class="shade"></div>
+    <div class="copy"><div class="eyebrow"><i></i> One connected workflow</div><h1>From scattered <em>to simple.</em></h1></div>
+    <div class="bubble"><b>Everything follows the patient.</b><span>From the first booking to treatment and billing.</span></div>
+  </article>
+
+  <article class="slide ui-slide" data-slide="3">
+    <div class="copy"><div class="eyebrow"><i></i> Clinic day</div><h1>See today. <em>Act fast.</em></h1><p class="sub">Appointments and check-in at a glance.</p></div>
+    <div class="sticker one">12</div>
+    <div class="device"><span class="sample">INTERACTIVE DEMO · SAMPLE DATA</span><img src="../meta/video/today.png" alt="" /></div>
+  </article>
+
+  <article class="slide ui-slide coral" data-slide="4">
+    <div class="copy"><div class="eyebrow"><i></i> Patient 360</div><h1>One patient. <em>Every detail.</em></h1><p class="sub">Records, care timeline and account status together.</p></div>
+    <div class="sticker one">360°</div>
+    <div class="device right"><span class="sample">INTERACTIVE DEMO · SAMPLE DATA</span><img src="../meta/video/patient.png" alt="" /></div>
+  </article>
+
+  <article class="slide ui-slide sunny split" data-slide="5">
+    <div class="copy"><div class="eyebrow"><i></i> Care to payment</div><h1>Plan care. <em>Track billing.</em></h1><p class="sub">One clear thread from treatment plan to invoice status.</p></div>
+    <div class="device"><span class="sample">TREATMENT</span><img src="../meta/video/treatment.png" alt="" /></div>
+    <div class="device second"><img src="../meta/video/billing.png" alt="" /></div>
+  </article>
+
+  <article class="slide patient" data-slide="6">
+    <img class="art" src="artwork/patient-portal-life-v1.png" alt="" /><div class="shade"></div>
+    <div class="copy"><div class="eyebrow"><i></i> Patient portal</div><h1>Patients stay <em>in the loop.</em></h1></div>
+    <div class="portal-card"><img src="../meta/video/portal.png" alt="" /></div>
+    <div class="pills"><span>Appointments</span><span>Records</span><span>Messages</span></div>
+  </article>
+
+  <article class="slide offer" data-slide="7">
+    <img class="art" src="artwork/clinic-team-hero-v1.png" alt="" /><div class="shade"></div>
+    <div class="copy"><div class="eyebrow"><i></i> Limited clinic offer</div><h1><em>2 months free.</em><br>See if it fits.</h1><p class="sub">For selected dental clinics ready to modernise their workflow.</p></div>
+    <div class="offer-card"><div class="button"><span>Apply for a private walkthrough</span><span>→</span></div><p>Limited onboarding slots. Offer subject to eligibility and trial terms. Nexus Dental is a Stormglide product.</p></div>
+  </article>
+
+  <script>
+    const slideNumber = Math.min(7, Math.max(1, Number(params.get("slide") || 1)));
+    const current = document.querySelector(`[data-slide="${slideNumber}"]`);
+    current.classList.add("active");
+    const brand = document.querySelector("#brand").content.cloneNode(true);
+    brand.querySelector(".counter").textContent = `${String(slideNumber).padStart(2, "0")} / 07`;
+    current.appendChild(brand);
+  </script>
+</body>
+</html>
